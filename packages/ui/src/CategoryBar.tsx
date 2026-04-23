@@ -1,4 +1,5 @@
 import { ScrollView, View } from 'react-native';
+import type { LucideIcon } from 'lucide-react-native';
 import { type Category, CATEGORIES } from '@bnb/db';
 import { cn } from '@bnb/utils';
 import { Pressable } from './Pressable';
@@ -17,7 +18,7 @@ import {
   Trees,
 } from './icons';
 
-const ICONS: Record<string, React.ComponentType<{ size?: number; color?: string }>> = {
+const ICONS: Record<string, LucideIcon> = {
   compass: Compass,
   palmtree: Palmtree,
   tent: Tent,

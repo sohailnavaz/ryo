@@ -11,11 +11,13 @@ export type TopNavProps = {
   className?: string;
 };
 
-const WEB_TABS = [
+type TopNavTab = { key: string; label: string; disabled?: boolean };
+
+const WEB_TABS: TopNavTab[] = [
   { key: 'explore', label: 'Stays' },
   { key: 'experiences', label: 'Experiences', disabled: true },
   { key: 'online', label: 'Online Experiences', disabled: true },
-] as const;
+];
 
 export function TopNav({ active, onChange, onOpenAccount, className }: TopNavProps) {
   return (

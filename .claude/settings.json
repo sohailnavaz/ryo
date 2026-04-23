@@ -3,7 +3,17 @@
     "allow": [
       "Bash(git init *)",
       "Bash(git add *)",
-      "Bash(git rm *)"
+      "Bash(git rm *)",
+      "Bash(git commit -m ' *)",
+      "Bash(pnpm --filter @bnb/web exec tsc --noEmit)",
+      "Bash(pnpm exec *)",
+      "Bash(pnpm -r --filter '!./apps/web' exec tsc --noEmit)",
+      "Bash(echo \"mobile exit=$?\")",
+      "Bash(echo \"features exit=$?\")",
+      "Bash(echo \"web exit=$?\")",
+      "Bash(echo \"ui exit=$?\")",
+      "Bash(echo \"api exit=$?\")",
+      "Bash(pnpm add *)"
     ]
   }
 }

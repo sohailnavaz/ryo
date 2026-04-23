@@ -4,7 +4,9 @@
     "strict": true,
     "jsx": "react-jsx",
     "noEmit": true,
-    "types": ["nativewind/types"],
+    "moduleResolution": "bundler",
+    "customConditions": ["react-native"],
+    "types": ["node", "nativewind/types"],
     "paths": {
       "@/*": ["./*"]
     }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { Image, ScrollView, View } from 'react-native';
 import { useCreateBooking, useListing } from '@bnb/api';
 import {
   Button,
@@ -127,12 +127,10 @@ export function BookingScreen({ id }: BookingScreenProps) {
             <HStack className="gap-3">
               <View className="h-20 w-24 overflow-hidden rounded-xl bg-surface-alt">
                 {listing.photos[0] ? (
-                  /* eslint-disable-next-line */
-                  // @ts-ignore JSX Image from RN renders fine via RNW on web
-                  <img
-                    src={listing.photos[0].url}
-                    alt=""
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  <Image
+                    source={{ uri: listing.photos[0].url }}
+                    style={{ width: '100%', height: '100%' }}
+                    resizeMode="cover"
                   />
                 ) : null}
               </View>

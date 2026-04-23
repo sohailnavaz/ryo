@@ -19,6 +19,7 @@ export function Map({ lat, lng, zoom = 13, className, style }: MapProps) {
       try {
         const maplibre = await import('maplibre-gl');
         if (cancelled || !ref.current) return;
+        // @ts-expect-error side-effect CSS import has no type
         await import('maplibre-gl/dist/maplibre-gl.css');
         const map = new maplibre.Map({
           container: ref.current,

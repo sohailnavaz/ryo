@@ -25,7 +25,9 @@
     "lint": "echo 'no lint'"
   },
   "dependencies": {
+    "@bnb/db": "workspace:*",
     "@bnb/utils": "workspace:*",
+    "lucide-react": "^0.469.0",
     "lucide-react-native": "^0.469.0",
     "nativewind": "^4.1.23"
   },
