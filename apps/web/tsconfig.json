@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "preserve",
+    "plugins": [{ "name": "next" }],
+    "paths": {
+      "@/*": ["./*"]
+    },
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["node", "nativewind/types"],
+    "incremental": true,
+    "noEmit": true,
+    "allowJs": true
+  },
+  "include": ["next-env.d.ts", "app/**/*", "components/**/*", "lib/**/*", "types/**/*", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}

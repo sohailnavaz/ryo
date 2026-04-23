@@ -1,0 +1,14 @@
+{
+  "name": "@bnb/config",
+  "version": "0.0.0",
+  "private": true,
+  "main": "index.ts",
+  "types": "index.ts",
+  "exports": {
+    "./tsconfig.json": "./tsconfig.json",
+    "./tailwind": "./tailwind.preset.ts"
+  },
+  "dependencies": {
+    "tailwindcss": "^3.4.17"
+  }
+}

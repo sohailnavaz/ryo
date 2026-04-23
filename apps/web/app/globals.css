@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body {
+    height: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body {
+    @apply bg-surface text-ink font-sans;
+  }
+  * {
+    box-sizing: border-box;
+  }
+}
+
+/* Fix react-native-web interop quirks */
+html, body, #__next {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  width: 100%;
+}

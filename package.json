@@ -1,0 +1,29 @@
+{
+  "name": "bnb",
+  "private": true,
+  "version": "0.0.1",
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "dev:web": "turbo run dev --filter=@bnb/web",
+    "dev:mobile": "turbo run dev --filter=@bnb/mobile",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "db:types": "supabase gen types typescript --local > packages/db/supabase.types.ts",
+    "db:reset": "supabase db reset",
+    "db:push": "supabase db push",
+    "db:seed": "psql \"$SUPABASE_DB_URL\" -f supabase/seed.sql"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.3",
+    "typescript": "^5.6.3",
+    "prettier": "^3.4.2",
+    "prettier-plugin-tailwindcss": "^0.6.9"
+  },
+  "engines": {
+    "node": ">=20.11.0",
+    "pnpm": ">=10.0.0"
+  }
+}
