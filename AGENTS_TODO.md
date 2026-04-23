@@ -13,7 +13,8 @@ Next scheduled review: see cron (every 7 hours)
 1. **Before starting work** — read the `## Active assignments` table, your agent's section, and `## Invariants`.
 2. **While working** — keep your row's `Status` current (`queued` → `in-progress` → `blocked` / `done`).
 3. **On handoff / finish** — append an entry to `## Activity log` with date, agent, task, outcome.
-4. **If you deviate** from the plan (scope, stack, approach) — log it under `## Deviations` with rationale. The 7-hour watchdog flags any work that doesn't trace back to an entry here.
+4. **On milestone completion or any user-visible change** — also update [`docs/PROGRESS.md`](docs/PROGRESS.md): tick the §2 status table, add to §3 if a feature landed, append a §8 changelog line, and bump the version at the top. PROGRESS.md is the human-readable living status doc (shareable with collaborators); AGENTS_TODO.md is the internal coord layer — both must agree.
+5. **If you deviate** from the plan (scope, stack, approach) — log it under `## Deviations` with rationale. The 7-hour watchdog flags any work that doesn't trace back to an entry here.
 
 ---
 
@@ -97,6 +98,7 @@ Append-only record of finished or handed-off work. Format:
 
 - 2026-04-23 — main — created this doc and scheduled the 7-hour watchdog — awaiting first assignment
 - 2026-04-23 18:30 — main (session aef4b0f5) — started M0 scaffold (root pnpm workspace, turbo, tsconfig, .gitignore, .npmrc, .prettierrc, README, .env.example) and `packages/config` (tailwind preset with brand/ink/surface tokens), `packages/utils` (cn, currency, dates), `packages/db` (placeholder types + enums for categories/amenities), `packages/api` (Supabase client, listings/bookings/favorites/reviews/auth hooks), `packages/ui` (Button, Card, Input, Text, Heading, Badge, Stack, Divider, Skeleton, IconButton, Avatar, Image, Pressable, icons re-exports) — in progress, continuing with ListingCard/CategoryBar/SearchBar/Sheet/BottomTabBar/TopNav/PriceTotal, then Next.js + Expo scaffolds, then Supabase migrations + seed + features
+- 2026-04-23 — main — wrote `docs/airbnb-reference.md` (product teardown + domain model + pricing + trust/payments + what-Ryo-does-differently + v1 in/out + phase→reference map) — unblocks phases 4–11 reading prior art before they start; deviation: not on the phase list, logged here as a horizontal reference asset. Next: phase 4 owners should read §3 + §5 before writing the schema.
 
 ---
 
@@ -109,5 +111,6 @@ A cron-scheduled agent reads this file and checks:
 3. No recent commits / file changes in `bnb/` that aren't traceable to a row here (otherwise: flag untracked work).
 4. Invariants still hold (spot-check `packages/features` for forbidden imports).
 5. Memory in `/Users/sohailshaik/.claude/projects/-Users-sohailshaik-Desktop-bnb/memory/` is consistent with this doc.
+6. [`docs/PROGRESS.md`](docs/PROGRESS.md) status table and changelog agree with this file's Activity log. Flag drift.
 
 The watchdog writes findings to `## Activity log` and, if it finds deviations, appends them to `## Deviations` with a `needs-review` tag.
