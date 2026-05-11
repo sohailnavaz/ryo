@@ -11,6 +11,27 @@ const LISTING_COLUMNS = `
   photos:listing_photos ( id, listing_id, url, position )
 `;
 
+/**
+ * In production we MUST NOT silently serve dummy listings — that would mask a
+ * misconfigured Supabase deploy. In dev / preview we keep the fallback so the
+ * demo works without a live backend.
+ */
+function isProduction(): boolean {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const env = (globalThis as any)?.process?.env;
+  return env?.NODE_ENV === 'production';
+}
+
+function dummyOrThrow<T>(value: T, context: string): T {
+  if (isProduction()) {
+    throw new Error(
+      `[@bnb/api] ${context} — Supabase is not configured but NODE_ENV=production. ` +
+        `Refusing to serve dummy data. Wire NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.`,
+    );
+  }
+  return value;
+}
+
 function applyFiltersLocal(listings: Listing[], f: SearchFilters): Listing[] {
   let out = listings;
   if (f.category && f.category !== 'All') {
@@ -43,7 +64,9 @@ export async function fetchListings(filters: SearchFilters = {}): Promise<Listin
   try {
     supabase = getSupabase();
   } catch (err) {
-    if (isSupabaseUnavailableError(err)) return applyFiltersLocal(DUMMY_LISTINGS, filters);
+    if (isSupabaseUnavailableError(err)) {
+      return dummyOrThrow(applyFiltersLocal(DUMMY_LISTINGS, filters), 'fetchListings');
+    }
     throw err;
   }
 
@@ -78,7 +101,10 @@ export async function fetchListings(filters: SearchFilters = {}): Promise<Listin
     photos: (l.photos ?? []).slice().sort((a, b) => a.position - b.position),
   }));
   // If the project is wired but the table is empty, fall back so the demo still works.
-  if (rows.length === 0) return applyFiltersLocal(DUMMY_LISTINGS, filters);
+  // In prod this is also a misconfiguration — fail loudly instead.
+  if (rows.length === 0) {
+    return dummyOrThrow(applyFiltersLocal(DUMMY_LISTINGS, filters), 'fetchListings (empty live table)');
+  }
   return rows;
 }
 
@@ -87,7 +113,9 @@ export async function fetchListing(id: string): Promise<Listing | null> {
   try {
     supabase = getSupabase();
   } catch (err) {
-    if (isSupabaseUnavailableError(err)) return findDummyListing(id);
+    if (isSupabaseUnavailableError(err)) {
+      return dummyOrThrow(findDummyListing(id), 'fetchListing');
+    }
     throw err;
   }
 
@@ -97,7 +125,11 @@ export async function fetchListing(id: string): Promise<Listing | null> {
     .eq('id', id)
     .maybeSingle();
   if (error) throw error;
-  if (!data) return findDummyListing(id);
+  if (!data) {
+    // Found nothing in live DB; in dev allow the dummy fallback, in prod return null
+    // (genuine 404 — listing actually doesn't exist).
+    return isProduction() ? null : findDummyListing(id);
+  }
   const l = data as unknown as Listing;
   return { ...l, photos: (l.photos ?? []).slice().sort((a, b) => a.position - b.position) };
 }

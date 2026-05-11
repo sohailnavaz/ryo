@@ -1,5 +1,5 @@
 'use client';
-import { TopNav } from '@bnb/ui';
+import { ErrorBoundary, ToastViewport, TopNav } from '@bnb/ui';
 import { usePathname, useRouter } from 'next/navigation';
 import { ReactNode } from 'react';
 
@@ -14,14 +14,17 @@ export default function MainLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col relative">
       <TopNav
         active={pathToKey(pathname ?? '/')}
         onChange={(k) => router.push(k === 'explore' ? '/' : `/${k}`)}
         onOpenAccount={() => router.push('/profile')}
       />
-      <div className="flex-1 flex flex-col">{children}</div>
+      <div className="flex-1 flex flex-col">
+        <ErrorBoundary>{children}</ErrorBoundary>
+      </div>
       <MobileTabs />
+      <ToastViewport />
     </div>
   );
 }

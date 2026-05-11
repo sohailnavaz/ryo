@@ -19,3 +19,5 @@ export * from './BottomTabBar';
 export * from './TopNav';
 export * from './PriceTotal';
 export * from './icons';
+export * from './Toast';
+export * from './ErrorBoundary';

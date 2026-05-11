@@ -2,7 +2,7 @@
 doc: PROGRESS
 purpose: Human-readable living status doc. Safe to share with collaborators, investors, or friends.
 last_updated: 2026-05-11
-version: 0.4.0
+version: 0.5.0
 ---
 
 # Ryo — Progress
@@ -163,6 +163,18 @@ These are the calls I'd most like a second opinion on. If you're reviewing, skim
 ## 8. Changelog
 
 Append-only, newest first. One line per shipped thing. Version bumps follow branding.md convention (patch / minor / major).
+
+### `0.5.0` — 2026-05-11
+
+**M9 — production-blocking fixes landed.**
+
+- **9.1 Booking double-booking race fixed.** New migration `0002_booking_locks.sql` adds a `btree_gist` exclusion constraint on `(listing_id, daterange)` over non-cancelled bookings. Two concurrent bookings of overlapping dates now resolve to exactly one winner; the loser surfaces as a typed `BookingDatesTakenError` thrown by `useCreateBooking`.
+- **9.2 Error UX layer.** New `Toast` and `ErrorBoundary` primitives in `@bnb/ui` (brand-voice: no "Oops!", warm-but-precise copy, calm restraint). Wired into the web `(main)` shell. `BookingScreen` now toasts success / warning (dates taken) / error instead of `console.warn`-ing into the void.
+- **9.3 Production safeguard.** `fetchListings` / `fetchListing` refuse to silently serve dummy data when `NODE_ENV=production` — a misconfigured production deploy now fails loudly with a clear "wire `NEXT_PUBLIC_SUPABASE_URL`" message instead of showing fake listings to real users.
+
+**Demo auth path (phase 19).**
+- New `packages/api/src/demo-auth.ts` — sign in as Mira (demo) when Supabase isn't wired, persisted to localStorage. `AuthGate`'d routes (`/trips`, `/wishlists`, `/booking/[id]`) accept the demo identity; `/account` greets by name; sign-out clears it. Real Supabase sessions always win once configured.
+- `docs/TODO.md` — punchy, prioritised launch checklist distilled from the production plan. Split into founder ⏳ items and engineering M8–M18.
 
 ### `0.4.0` — 2026-05-11
 - **Guest dashboard `/account` landed.** Closes the gap that host + admin previews existed but the regular guest had no unified hub. Time-of-day greeting, 4-KPI ribbon (upcoming · past · favourites · messages), next-trip hero, upcoming/past lists, favourites grid, account quick-links. `/dashboard` redirects → `/account`.

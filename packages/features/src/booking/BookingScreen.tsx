@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Image, ScrollView, View } from 'react-native';
-import { useCreateBooking, useListing } from '@bnb/api';
+import { BookingDatesTakenError, useCreateBooking, useListing } from '@bnb/api';
 import {
   Button,
   Card,
@@ -12,6 +12,7 @@ import {
   Plus,
   PriceTotal,
   Text,
+  toast,
   VStack,
 } from '@bnb/ui';
 import { computeBookingTotal } from '@bnb/ui';
@@ -49,9 +50,19 @@ export function BookingScreen({ id }: BookingScreenProps) {
         end_date: filters.endDate,
         total_cents: total,
       });
+      toast.success(`You're booked at ${listing.title}.`, {
+        description: `${formatDateRange(filters.startDate, filters.endDate)} · ${guests} guest${guests === 1 ? '' : 's'}.`,
+      });
       router.replace('/trips');
     } catch (e) {
-      console.warn('Booking failed', e);
+      if (e instanceof BookingDatesTakenError) {
+        toast.warning('Those dates just got booked.', {
+          description: 'Pick different dates and we’ll try again.',
+        });
+        return;
+      }
+      const msg = e instanceof Error ? e.message : 'Something went wrong confirming your booking.';
+      toast.error("Couldn't confirm your booking.", { description: msg });
     }
   };
 
