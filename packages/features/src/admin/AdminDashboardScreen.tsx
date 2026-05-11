@@ -14,7 +14,7 @@ import {
 } from '@bnb/ui';
 import { useRouter } from '@bnb/ui/nav';
 import { formatDateRange, formatPrice } from '@bnb/utils';
-import { PreviewBanner, SectionHeader } from '../host/HostDashboardScreen';
+import { PreviewBanner, SectionHeader } from '../shared/dashboard-chrome';
 
 export function AdminDashboardScreen() {
   const router = useRouter();

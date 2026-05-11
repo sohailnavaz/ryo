@@ -1,8 +1,8 @@
 ---
 doc: PROGRESS
 purpose: Human-readable living status doc. Safe to share with collaborators, investors, or friends.
-last_updated: 2026-04-25
-version: 0.3.0
+last_updated: 2026-05-11
+version: 0.4.0
 ---
 
 # Ryo — Progress
@@ -163,6 +163,12 @@ These are the calls I'd most like a second opinion on. If you're reviewing, skim
 ## 8. Changelog
 
 Append-only, newest first. One line per shipped thing. Version bumps follow branding.md convention (patch / minor / major).
+
+### `0.4.0` — 2026-05-11
+- **Guest dashboard `/account` landed.** Closes the gap that host + admin previews existed but the regular guest had no unified hub. Time-of-day greeting, 4-KPI ribbon (upcoming · past · favourites · messages), next-trip hero, upcoming/past lists, favourites grid, account quick-links. `/dashboard` redirects → `/account`.
+- **Shared dashboard chrome.** `PreviewBanner` + `SectionHeader` extracted to `packages/features/src/shared/dashboard-chrome.tsx`; host + admin + account all import from there. Three dashboards now visually consistent.
+- **Synthetic-fallback pattern unified.** New `useGuestDashboard()` mirrors the pattern from `useHostDashboard()` / `useAdminDashboard()`: real Supabase data where RLS allows, deterministic synthetic data derived from `DUMMY_LISTINGS` otherwise; an `isPreview` flag drives whether the banner shows. All three dashboards now use the same approach.
+- **Repo pushed to GitHub** — public at <https://github.com/sohailnavaz/ryo>. Two commits (`c796b6e`, `09259bd`).
 
 ### `0.3.0` — 2026-04-25
 - **Nativewind-on-web wiring fixed.** Tailwind classes now reach the DOM through `<View className="…">` shared-feature components. Web tsconfig got `jsxImportSource: "nativewind"`, web Tailwind config got `nativewind/preset`. Verified live: brand utilities (`bg-surface`, `text-brand-500`, `shadow-card`, `md:flex`, etc.) merged into rendered class lists.

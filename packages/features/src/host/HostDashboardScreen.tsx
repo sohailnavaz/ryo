@@ -15,6 +15,7 @@ import {
 } from '@bnb/ui';
 import { useRouter } from '@bnb/ui/nav';
 import { formatDateRange, formatPrice } from '@bnb/utils';
+import { PreviewBanner, SectionHeader } from '../shared/dashboard-chrome';
 
 export function HostDashboardScreen({ hostId = DEMO_HOST_ID }: { hostId?: string }) {
   const router = useRouter();
@@ -272,44 +273,6 @@ function ReviewsList({
           <Text className="text-ink-soft">{r.body}</Text>
         </Card>
       ))}
-    </VStack>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Shared presentational helpers (also used by the admin screen)
-// ---------------------------------------------------------------------------
-
-export function PreviewBanner({ kind }: { kind: 'host' | 'admin' }) {
-  return (
-    <View className="mt-2 rounded-2xl border border-surface-border bg-surface-alt px-4 py-3">
-      <HStack className="items-start gap-3">
-        <View className="h-8 w-8 rounded-full bg-ink items-center justify-center">
-          <Text className="text-white font-bold">v2</Text>
-        </View>
-        <VStack className="flex-1 gap-0.5">
-          <Text className="font-semibold">
-            {kind === 'host' ? 'Host dashboard preview' : 'Maintenance dashboard preview'}
-          </Text>
-          <Text variant="small" className="text-ink-soft">
-            Not production. Bookings, earnings and users on this page are synthesised for layout
-            review. Real data wires up when v2 ships.
-          </Text>
-        </VStack>
-      </HStack>
-    </View>
-  );
-}
-
-export function SectionHeader({ title, subtitle }: { title: string; subtitle?: string }) {
-  return (
-    <VStack className="mt-10 gap-1">
-      <Heading level={2}>{title}</Heading>
-      {subtitle ? (
-        <Text variant="small" className="text-ink-soft">
-          {subtitle}
-        </Text>
-      ) : null}
     </VStack>
   );
 }

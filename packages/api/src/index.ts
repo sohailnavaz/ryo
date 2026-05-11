@@ -7,3 +7,4 @@ export * from './reviews';
 export * from './filters';
 export * from './host';
 export * from './admin';
+export * from './guest';

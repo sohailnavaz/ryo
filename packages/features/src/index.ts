@@ -10,3 +10,5 @@ export * from './auth/AuthGate';
 export * from './state/filtersStore';
 export * from './host/HostDashboardScreen';
 export * from './admin/AdminDashboardScreen';
+export * from './account/AccountDashboardScreen';
+export * from './shared/dashboard-chrome';
