@@ -2,6 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "jsx": "preserve",
+    "jsxImportSource": "nativewind",
     "plugins": [{ "name": "next" }],
     "paths": {
       "@/*": ["./*"]

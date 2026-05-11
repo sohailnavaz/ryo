@@ -1,8 +1,9 @@
 import type { Config } from 'tailwindcss';
+import nativewindPreset from 'nativewind/preset';
 import preset from '@bnb/config/tailwind';
 
 const config: Config = {
-  presets: [preset as Config],
+  presets: [nativewindPreset, preset as Config],
   content: [
     './app/**/*.{ts,tsx}',
     './components/**/*.{ts,tsx}',
