@@ -30,3 +30,13 @@ export function getSupabase(): SupabaseClient {
   }
   return instance;
 }
+
+/** True when an error came from `getSupabase()` being called before `setSupabaseClient()`. */
+export function isSupabaseUnavailableError(err: unknown): boolean {
+  return err instanceof Error && err.message.includes('Supabase client not initialized');
+}
+
+/** Returns the client, or null if not initialised (read-path safe alternative to `getSupabase()`). */
+export function tryGetSupabase(): SupabaseClient | null {
+  return instance;
+}

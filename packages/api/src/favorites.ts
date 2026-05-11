@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Listing } from '@bnb/db';
-import { getSupabase } from './client';
+import { getSupabase, tryGetSupabase } from './client';
 
 export async function fetchFavorites(): Promise<Listing[]> {
-  const supabase = getSupabase();
+  const supabase = tryGetSupabase();
+  if (!supabase) return []; // Supabase not configured → empty favourites list
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -34,7 +35,8 @@ export function useFavoriteIds() {
   return useQuery({
     queryKey: ['favorite-ids'],
     queryFn: async (): Promise<string[]> => {
-      const supabase = getSupabase();
+      const supabase = tryGetSupabase();
+      if (!supabase) return [];
       const {
         data: { user },
       } = await supabase.auth.getUser();

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import type { Listing } from '@bnb/db';
-import { getSupabase } from './client';
+import { getSupabase, isSupabaseUnavailableError } from './client';
 import type { SearchFilters } from './filters';
 import { DUMMY_LISTINGS, findDummyListing } from './dummy-listings';
 
@@ -10,11 +10,6 @@ const LISTING_COLUMNS = `
   amenities, rating_avg, rating_count, created_at,
   photos:listing_photos ( id, listing_id, url, position )
 `;
-
-function isSupabaseUnavailableError(err: unknown): boolean {
-  if (!(err instanceof Error)) return false;
-  return err.message.includes('Supabase client not initialized');
-}
 
 function applyFiltersLocal(listings: Listing[], f: SearchFilters): Listing[] {
   let out = listings;

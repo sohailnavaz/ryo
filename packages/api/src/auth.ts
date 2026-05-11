@@ -1,14 +1,21 @@
 import { useEffect, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { getSupabase } from './client';
+import { getSupabase, tryGetSupabase } from './client';
 
 export function useSession() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const supabase = getSupabase();
+    const supabase = tryGetSupabase();
+    if (!supabase) {
+      // Supabase not configured (no env vars set in this environment).
+      // Treat as "signed-out, finished loading" so the UI renders its
+      // empty / preview state instead of crashing inside an effect.
+      setLoading(false);
+      return;
+    }
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setLoading(false);

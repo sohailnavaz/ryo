@@ -1,4 +1,10 @@
-export { createSupabaseClient, getSupabase, setSupabaseClient } from './client';
+export {
+  createSupabaseClient,
+  getSupabase,
+  tryGetSupabase,
+  setSupabaseClient,
+  isSupabaseUnavailableError,
+} from './client';
 export * from './listings';
 export * from './bookings';
 export * from './favorites';

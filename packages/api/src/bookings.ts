@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Booking, Listing } from '@bnb/db';
-import { getSupabase } from './client';
+import { getSupabase, tryGetSupabase } from './client';
 
 type TripRow = Booking & { listing: Pick<Listing, 'id' | 'title' | 'city' | 'country' | 'photos'> };
 
 export async function fetchMyBookings(): Promise<TripRow[]> {
-  const supabase = getSupabase();
+  const supabase = tryGetSupabase();
+  if (!supabase) return []; // Supabase not configured → empty trips list
   const {
     data: { user },
   } = await supabase.auth.getUser();
