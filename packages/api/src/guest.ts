@@ -11,6 +11,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { Listing } from '@bnb/db';
 import { getSupabase } from './client';
 import { DUMMY_LISTINGS } from './dummy-listings';
+import { getDemoUser, useDemoUser } from './demo-auth';
 
 export type GuestBooking = {
   id: string;
@@ -238,17 +239,25 @@ async function tryFetchSignedInDashboard(): Promise<GuestDashboard | null> {
 }
 
 function previewDashboard(): GuestDashboard {
-  const seed = hash('ryo-guest-preview');
+  const demo = getDemoUser();
+  const seed = hash(demo?.id ?? 'ryo-guest-preview');
   const bookings = syntheticBookings(seed);
   const r = rng(seed ^ 0x5a17ab1e);
   const favourites = DUMMY_LISTINGS.slice().sort(() => r() - 0.5).slice(0, 4);
   return {
-    user: {
-      id: null,
-      display_name: 'Guest',
-      email: null,
-      avatar_url: null,
-    },
+    user: demo
+      ? {
+          id: demo.id,
+          display_name: demo.full_name,
+          email: demo.email,
+          avatar_url: demo.avatar_url ?? null,
+        }
+      : {
+          id: null,
+          display_name: 'Guest',
+          email: null,
+          avatar_url: null,
+        },
     bookings,
     favourites,
     stats: statsFor(bookings, favourites),
@@ -262,8 +271,12 @@ export async function fetchGuestDashboard(): Promise<GuestDashboard> {
 }
 
 export function useGuestDashboard() {
+  const demo = useDemoUser();
   return useQuery({
-    queryKey: ['guest-dashboard'],
+    // Including the demo id forces a refetch when the demo identity changes
+    // (sign-in / sign-out as Mira). Real signed-in users follow a separate
+    // path inside fetchGuestDashboard and don't depend on this key.
+    queryKey: ['guest-dashboard', demo?.id ?? 'anon'],
     queryFn: fetchGuestDashboard,
     staleTime: 30_000,
   });

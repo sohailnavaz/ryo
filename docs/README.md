@@ -10,6 +10,7 @@ The docs are designed to survive UI iteration. Screens will change constantly; t
 
 - **[branding.md](./branding.md)** — the Ryo brand bible (living, versioned, authoritative for all brand decisions).
 - **[BUSINESS_MODEL.md](./BUSINESS_MODEL.md)** — investor / partner handout. What Ryo is, how it makes money, the path. Forward-friendly.
+- **[TODO.md](./TODO.md)** — punchy, prioritised path to public-web launch. What you need to do, what I'll build, in what order. Distilled from the production plan.
 - **Numbered files (00–14)** — business / product modules. Each is **UI-agnostic**: it defines *what Ryo does*, not *how the screen looks*. When the UI changes, the module doc does not.
 - Every module doc follows the same template: Purpose · User Stories · Core Flows · Data Model · API Surface · Edge Cases · KPIs · Dependencies · v1 Scope · Open Questions.
 
