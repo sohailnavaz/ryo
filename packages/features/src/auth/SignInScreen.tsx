@@ -1,6 +1,11 @@
 import { useState } from 'react';
 import { View } from 'react-native';
-import { signInAsDemo, tryGetSupabase, useSignInWithEmail } from '@bnb/api';
+import {
+  signInAsDemo,
+  tryGetSupabase,
+  useSignInWithEmail,
+  useSignInWithGoogle,
+} from '@bnb/api';
 import {
   Button,
   Card,
@@ -20,6 +25,7 @@ export function SignInScreen({ redirectTo }: SignInScreenProps) {
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const signIn = useSignInWithEmail();
+  const signInGoogle = useSignInWithGoogle();
   const router = useRouter();
   const supabaseConfigured = tryGetSupabase() !== null;
 
@@ -38,6 +44,17 @@ export function SignInScreen({ redirectTo }: SignInScreenProps) {
   const enterAsDemo = () => {
     signInAsDemo();
     router.replace(redirectTo ?? '/account');
+  };
+
+  const continueWithGoogle = async () => {
+    setError(null);
+    try {
+      await signInGoogle.mutateAsync({ redirectTo });
+      // Supabase redirects the browser — nothing else to do here.
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Google sign-in failed.';
+      setError(msg);
+    }
   };
 
   return (
@@ -78,6 +95,14 @@ export function SignInScreen({ redirectTo }: SignInScreenProps) {
               title={signIn.isPending ? 'Sending…' : 'Continue with email'}
               onPress={submit}
               loading={signIn.isPending}
+              disabled={!supabaseConfigured}
+              fullWidth
+            />
+            <Button
+              title={signInGoogle.isPending ? 'Opening Google…' : 'Continue with Google'}
+              variant="outline"
+              onPress={continueWithGoogle}
+              loading={signInGoogle.isPending}
               disabled={!supabaseConfigured}
               fullWidth
             />

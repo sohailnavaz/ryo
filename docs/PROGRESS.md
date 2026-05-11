@@ -2,7 +2,7 @@
 doc: PROGRESS
 purpose: Human-readable living status doc. Safe to share with collaborators, investors, or friends.
 last_updated: 2026-05-11
-version: 0.5.0
+version: 0.6.0
 ---
 
 # Ryo — Progress
@@ -163,6 +163,14 @@ These are the calls I'd most like a second opinion on. If you're reviewing, skim
 ## 8. Changelog
 
 Append-only, newest first. One line per shipped thing. Version bumps follow branding.md convention (patch / minor / major).
+
+### `0.6.0` — 2026-05-11
+
+- **Vercel preview deploy enabled.** `vercel.json` at repo root configures the pnpm-workspace install + monorepo build (`pnpm turbo run build --filter=@bnb/web`) and sets `NEXT_PUBLIC_RYO_PREVIEW_MODE=1` so a Vercel import-from-GitHub flow Just Works without needing Supabase env vars. See `docs/TODO.md` § 🚀 Share for step-by-step.
+- **Preview escape hatch added.** `listings.ts` hard-fail in prod is now opt-in-bypassable via `NEXT_PUBLIC_RYO_PREVIEW_MODE=1`. Default behaviour unchanged.
+- **Profile edit mode.** Name / language / currency are now editable on `/profile`. Demo writes through to `setDemoUser` + localStorage; real signed-in writes call `supabase.auth.updateUser`. Toast feedback throughout.
+- **Booking cancellation.** New `useCancelBooking` mutation; cancel button on `/trips` for upcoming bookings; 2-tap confirm card; toast feedback. Sets `bookings.status = 'cancelled'` (refund-policy logic lands with real payments per `docs/05-bookings.md §4.4`).
+- **Google OAuth button.** `useSignInWithGoogle` mutation + button on `SignInScreen`. Disabled when Supabase isn't configured; real flow when wired.
 
 ### `0.5.0` — 2026-05-11
 

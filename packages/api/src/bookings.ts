@@ -81,3 +81,32 @@ export function useCreateBooking() {
     },
   });
 }
+
+/** Cancel one of the current user's bookings.
+ *
+ *  v1: any future booking can be cancelled by its guest. Real cancellation-policy
+ *  refund logic (per `docs/05-bookings.md §4.4`) lands when payments are real. The
+ *  mutation only flips `status` to `'cancelled'`; the booking row is preserved for
+ *  history.
+ */
+export function useCancelBooking() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (bookingId: string) => {
+      const supabase = getSupabase();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not signed in');
+      const { error } = await supabase
+        .from('bookings')
+        .update({ status: 'cancelled' })
+        .eq('id', bookingId)
+        .eq('guest_id', user.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['my-bookings'] });
+    },
+  });
+}

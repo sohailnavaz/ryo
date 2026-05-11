@@ -8,6 +8,36 @@ last_updated: 2026-05-11
 
 > *Status at a glance:* code for the v1 guest flow has landed (M0–M6), three dashboards exist (`/`, `/account`, `/host`, `/admin`), the site styles correctly, dummy data renders out-of-the-box, and the repo is on GitHub. **What's left is everything around the code: live backend, domain, email, legal, observability, and the few remaining code blockers.**
 
+---
+
+## 🚀 Share the app with someone — Vercel preview deploy
+
+You can give your uncle (or anyone) a public URL like `ryo-sohailnavaz.vercel.app` that works on phone, tablet, laptop, anywhere with internet. Takes ~2 minutes; doesn't need your computer running.
+
+The repo is already prepared for this — `vercel.json` at the root sets the right monorepo build command + turns on `NEXT_PUBLIC_RYO_PREVIEW_MODE=1` so the deploy serves dummy listings (no Supabase needed yet).
+
+### Steps
+
+1. Go to <https://vercel.com/new>
+2. Sign in with **GitHub** (use the same `sohailnavaz` account so it can see the repo)
+3. Click **Import** next to `sohailnavaz/ryo`
+4. On the configure screen:
+   - **Framework Preset:** Next.js (auto-detected)
+   - **Root Directory:** leave blank (repo root — `vercel.json` handles the rest)
+   - Don't add any env vars — `vercel.json` already sets `NEXT_PUBLIC_RYO_PREVIEW_MODE`
+5. Click **Deploy**. Wait ~2 minutes for the first build.
+6. You'll get a URL like `ryo-sohailnavaz.vercel.app`. **That's the link to share with your uncle.**
+
+Every future `git push` to `main` auto-deploys; pull-request branches get their own preview URLs.
+
+### Once Supabase is wired (M8 below)
+
+In Vercel: **Settings → Environment Variables** → add:
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+Then **delete** `NEXT_PUBLIC_RYO_PREVIEW_MODE` from `vercel.json` so the prod hard-fail rule kicks back in. Redeploy.
+
 **Legend** · 🔴 blocker for any user-facing launch · 🟡 needed before public launch (closed-beta-ok without) · 🟢 polish · ⏳ external dependency (someone outside engineering has to act)
 
 ---
@@ -133,10 +163,10 @@ Ordered by dependency. Each is a PR-sized chunk with a verification step. ETAs a
 
 ## Code-level items NOT on the milestone path (smaller, can land anytime)
 
-- [ ] Google OAuth button on `SignInScreen` (`signInWithOAuth` is wired in api but UI missing)
-- [ ] Profile edit mode (currently read-only — name / avatar / locale / currency setters)
+- [x] Google OAuth button on `SignInScreen` — wired via `useSignInWithGoogle`, disabled in preview mode
+- [x] Profile edit mode — name / language / currency editable; demo writes through to localStorage, real writes via `supabase.auth.updateUser`
+- [x] Booking cancellation button on `/trips` — `useCancelBooking` mutation + 2-tap confirm + toast
 - [ ] Phone verification flow (schema fields exist, no UI)
-- [ ] Booking cancellation button on `/trips` (status enum supports it, no UI)
 - [ ] Listing share button (icon present, no `onPress`)
 - [ ] Sort controls on search (API supports `.order()`, UI doesn't expose)
 - [ ] Destination autocomplete (plain text input today)

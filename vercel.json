@@ -1,0 +1,11 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "version": 2,
+  "framework": "nextjs",
+  "buildCommand": "pnpm turbo run build --filter=@bnb/web",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "outputDirectory": "apps/web/.next",
+  "env": {
+    "NEXT_PUBLIC_RYO_PREVIEW_MODE": "1"
+  }
+}

@@ -81,6 +81,18 @@ export function useSignInWithEmail() {
   });
 }
 
+export function useSignInWithGoogle() {
+  return useMutation({
+    mutationFn: async ({ redirectTo }: { redirectTo?: string } = {}) => {
+      const { error } = await getSupabase().auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo },
+      });
+      if (error) throw error;
+    },
+  });
+}
+
 export async function signInWithPassword(email: string, password: string) {
   const { data, error } = await getSupabase().auth.signInWithPassword({ email, password });
   if (error) throw error;

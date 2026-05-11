@@ -15,6 +15,12 @@ const LISTING_COLUMNS = `
  * In production we MUST NOT silently serve dummy listings — that would mask a
  * misconfigured Supabase deploy. In dev / preview we keep the fallback so the
  * demo works without a live backend.
+ *
+ * Explicit escape hatch for hosted-preview deploys (e.g. a Vercel link shared
+ * with friends / investors before the real Supabase project is wired):
+ * set NEXT_PUBLIC_RYO_PREVIEW_MODE=1. With that on, dummy listings are served
+ * in production too. Without it, prod hard-fails so a real misconfiguration
+ * can never sneak through.
  */
 function isProduction(): boolean {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -22,11 +28,18 @@ function isProduction(): boolean {
   return env?.NODE_ENV === 'production';
 }
 
+function isPreviewMode(): boolean {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const env = (globalThis as any)?.process?.env;
+  return env?.NEXT_PUBLIC_RYO_PREVIEW_MODE === '1' || env?.NEXT_PUBLIC_RYO_PREVIEW_MODE === 'true';
+}
+
 function dummyOrThrow<T>(value: T, context: string): T {
-  if (isProduction()) {
+  if (isProduction() && !isPreviewMode()) {
     throw new Error(
       `[@bnb/api] ${context} — Supabase is not configured but NODE_ENV=production. ` +
-        `Refusing to serve dummy data. Wire NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.`,
+        `Refusing to serve dummy data. Wire NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY, ` +
+        `or set NEXT_PUBLIC_RYO_PREVIEW_MODE=1 to opt in to dummy data on this deploy.`,
     );
   }
   return value;
@@ -127,8 +140,8 @@ export async function fetchListing(id: string): Promise<Listing | null> {
   if (error) throw error;
   if (!data) {
     // Found nothing in live DB; in dev allow the dummy fallback, in prod return null
-    // (genuine 404 — listing actually doesn't exist).
-    return isProduction() ? null : findDummyListing(id);
+    // (genuine 404 — listing actually doesn't exist). Preview-mode behaves like dev.
+    return isProduction() && !isPreviewMode() ? null : findDummyListing(id);
   }
   const l = data as unknown as Listing;
   return { ...l, photos: (l.photos ?? []).slice().sort((a, b) => a.position - b.position) };
