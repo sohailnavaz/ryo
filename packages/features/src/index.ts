@@ -8,3 +8,5 @@ export * from './favorites/FavoritesScreen';
 export * from './auth/SignInScreen';
 export * from './auth/AuthGate';
 export * from './state/filtersStore';
+export * from './host/HostDashboardScreen';
+export * from './admin/AdminDashboardScreen';
