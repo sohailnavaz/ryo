@@ -4,8 +4,7 @@
   "framework": "nextjs",
   "buildCommand": "pnpm --filter @bnb/web build",
   "installCommand": "pnpm install --no-frozen-lockfile",
-  "outputDirectory": "apps/web/.next",
-  "ignoreCommand": "false",
+  "outputDirectory": ".next",
   "env": {
     "NEXT_PUBLIC_RYO_PREVIEW_MODE": "1"
   }

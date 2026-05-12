@@ -1,4 +1,4 @@
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import { useAdminDashboard } from '@bnb/api';
 import {
   Avatar,
@@ -14,89 +14,85 @@ import {
 } from '@bnb/ui';
 import { useRouter } from '@bnb/ui/nav';
 import { formatDateRange, formatPrice } from '@bnb/utils';
-import { PreviewBanner, SectionHeader } from '../shared/dashboard-chrome';
+import { SectionHeader } from '../shared/dashboard-chrome';
+import { AdminShell } from './shell';
 
 export function AdminDashboardScreen() {
   const router = useRouter();
   const { data, isLoading } = useAdminDashboard();
 
   return (
-    <ScrollView className="flex-1 bg-surface">
-      <View className="md:mx-auto md:w-full md:max-w-[1280px] px-4 pt-4 pb-20 md:px-10 md:pt-8">
-        <PreviewBanner kind="admin" />
+    <AdminShell
+      title="Platform overview"
+      subtitle="What's moving across Ryo right now. All numbers refresh on page load."
+    >
+      {isLoading || !data ? (
+        <KpiSkeletons />
+      ) : (
+        <KpiRow stats={data.stats} />
+      )}
 
-        <VStack className="mt-6 gap-1">
-          <Text variant="small" className="text-ink-soft uppercase tracking-wider">
-            Maintenance · Operations
-          </Text>
-          <Heading level={1}>Platform overview</Heading>
-          <Text className="text-ink-soft">
-            What's moving across Ryo right now. All numbers refresh on page load.
-          </Text>
-        </VStack>
-
-        {isLoading || !data ? (
-          <KpiSkeletons />
-        ) : (
-          <KpiRow stats={data.stats} />
-        )}
-
-        {/* Two-column on desktop */}
-        <View className="mt-10 flex-col md:flex-row gap-6">
-          <View className="flex-1 md:max-w-[680px] gap-6">
-            <View>
-              <SectionHeader
-                title="Recent bookings"
-                subtitle="Last to be created — across every host"
+      <View className="mt-10 flex-col md:flex-row gap-6">
+        <View className="flex-1 md:max-w-[680px] gap-6">
+          <View>
+            <SectionHeader
+              title="Recent bookings"
+              subtitle="Last to be created — across every host"
+            />
+            {isLoading || !data ? (
+              <ListSkeleton rows={4} />
+            ) : (
+              <RecentBookings
+                bookings={data.recent_bookings}
+                onPressBooking={(id) => router.push(`/admin/bookings/${id}`)}
               />
-              {isLoading || !data ? (
-                <ListSkeleton rows={4} />
-              ) : (
-                <RecentBookings
-                  bookings={data.recent_bookings}
-                  onPressListing={(id) => router.push(`/listing/${id}`)}
-                />
-              )}
-            </View>
-
-            <View>
-              <SectionHeader
-                title="Moderation queue"
-                subtitle={`${data?.moderation.length ?? 0} listings awaiting decision`}
-              />
-              {isLoading || !data ? (
-                <ListSkeleton rows={3} />
-              ) : (
-                <ModerationQueue items={data.moderation} />
-              )}
-            </View>
+            )}
           </View>
 
-          <View className="flex-1 md:max-w-[480px] gap-6">
-            <View>
-              <SectionHeader title="System health" subtitle="30-day rolling, refreshed hourly" />
-              {isLoading || !data ? (
-                <Skeleton className="mt-3 h-72 w-full" />
-              ) : (
-                <SystemHealth health={data.health} />
-              )}
-            </View>
-
-            <View>
-              <SectionHeader title="Audit log" subtitle="Privileged staff actions" />
-              {isLoading || !data ? (
-                <ListSkeleton rows={4} />
-              ) : (
-                <AuditFeed entries={data.audit} />
-              )}
-            </View>
+          <View>
+            <SectionHeader
+              title="Moderation queue"
+              subtitle={`${data?.moderation.length ?? 0} listings awaiting decision`}
+            />
+            {isLoading || !data ? (
+              <ListSkeleton rows={3} />
+            ) : (
+              <ModerationQueue items={data.moderation} onPress={() => router.push('/admin/moderation')} />
+            )}
           </View>
         </View>
 
-        <SectionHeader title="Users" subtitle={`${data?.users.length ?? 0} on file`} />
-        {isLoading || !data ? <ListSkeleton rows={5} /> : <UsersTable users={data.users} />}
+        <View className="flex-1 md:max-w-[480px] gap-6">
+          <View>
+            <SectionHeader title="System health" subtitle="30-day rolling, refreshed hourly" />
+            {isLoading || !data ? (
+              <Skeleton className="mt-3 h-72 w-full" />
+            ) : (
+              <SystemHealth health={data.health} />
+            )}
+          </View>
+
+          <View>
+            <SectionHeader title="Audit log" subtitle="Privileged staff actions" />
+            {isLoading || !data ? (
+              <ListSkeleton rows={4} />
+            ) : (
+              <AuditFeed entries={data.audit} />
+            )}
+          </View>
+        </View>
       </View>
-    </ScrollView>
+
+      <SectionHeader title="Users" subtitle={`${data?.users.length ?? 0} on file`} />
+      {isLoading || !data ? (
+        <ListSkeleton rows={5} />
+      ) : (
+        <UsersTable
+          users={data.users}
+          onPress={(id) => router.push(`/admin/users/${id}`)}
+        />
+      )}
+    </AdminShell>
   );
 }
 
@@ -151,10 +147,10 @@ function KpiCard({ label, value, hint }: { label: string; value: string; hint: s
 
 function RecentBookings({
   bookings,
-  onPressListing,
+  onPressBooking,
 }: {
   bookings: NonNullable<ReturnType<typeof useAdminDashboard>['data']>['recent_bookings'];
-  onPressListing: (id: string) => void;
+  onPressBooking: (id: string) => void;
 }) {
   if (bookings.length === 0) {
     return (
@@ -166,7 +162,7 @@ function RecentBookings({
   return (
     <VStack className="mt-3 gap-2">
       {bookings.map((b) => (
-        <Pressable key={b.id} onPress={() => onPressListing(b.listing_id)}>
+        <Pressable key={b.id} onPress={() => onPressBooking(b.id)}>
           <Card className="px-4 py-3">
             <HStack className="gap-3 items-center">
               <Avatar src={b.guest_avatar} name={b.guest_name} size={32} />
@@ -206,8 +202,10 @@ function RecentBookings({
 
 function ModerationQueue({
   items,
+  onPress,
 }: {
   items: NonNullable<ReturnType<typeof useAdminDashboard>['data']>['moderation'];
+  onPress: () => void;
 }) {
   if (items.length === 0) {
     return (
@@ -219,29 +217,31 @@ function ModerationQueue({
   return (
     <VStack className="mt-3 gap-2">
       {items.map((m) => (
-        <Card key={m.id} className="px-4 py-3">
-          <HStack className="gap-3 items-start">
-            <View className="h-10 w-10 rounded-xl bg-surface-alt items-center justify-center mt-0.5">
-              <Text className="font-bold">!</Text>
-            </View>
-            <VStack className="flex-1 gap-0.5">
-              <HStack className="gap-2 items-center">
-                <Text className="font-semibold flex-1" numberOfLines={1}>
-                  {m.listing_title}
+        <Pressable key={m.id} onPress={onPress}>
+          <Card className="px-4 py-3">
+            <HStack className="gap-3 items-start">
+              <View className="h-10 w-10 rounded-xl bg-surface-alt items-center justify-center mt-0.5">
+                <Text className="font-bold">!</Text>
+              </View>
+              <VStack className="flex-1 gap-0.5">
+                <HStack className="gap-2 items-center">
+                  <Text className="font-semibold flex-1" numberOfLines={1}>
+                    {m.listing_title}
+                  </Text>
+                  <Badge variant={m.state === 'in_review' ? 'brand' : 'dark'}>
+                    {m.state.replace('_', ' ')}
+                  </Badge>
+                </HStack>
+                <Text variant="small" className="text-ink-soft">
+                  {m.listing_city} · {m.reason}
                 </Text>
-                <Badge variant={m.state === 'in_review' ? 'brand' : 'dark'}>
-                  {m.state.replace('_', ' ')}
-                </Badge>
-              </HStack>
-              <Text variant="small" className="text-ink-soft">
-                {m.listing_city} · {m.reason}
-              </Text>
-              <Text variant="caption" className="mt-0.5">
-                Submitted {m.submitted_at}
-              </Text>
-            </VStack>
-          </HStack>
-        </Card>
+                <Text variant="caption" className="mt-0.5">
+                  Submitted {m.submitted_at}
+                </Text>
+              </VStack>
+            </HStack>
+          </Card>
+        </Pressable>
       ))}
     </VStack>
   );
@@ -320,8 +320,10 @@ function AuditFeed({
 
 function UsersTable({
   users,
+  onPress,
 }: {
   users: NonNullable<ReturnType<typeof useAdminDashboard>['data']>['users'];
+  onPress: (id: string) => void;
 }) {
   return (
     <Card className="mt-3 p-0 overflow-hidden">
@@ -333,32 +335,33 @@ function UsersTable({
         <Text variant="label" className="flex-1 text-right">Status</Text>
       </View>
       {users.map((u, i) => (
-        <View
-          key={u.id}
-          className={`px-4 py-3 md:px-5 md:flex-row md:items-center ${i < users.length - 1 ? 'border-b border-surface-border' : ''}`}
-        >
-          <HStack className="flex-[2] gap-3">
-            <Avatar name={u.display_name} size={32} />
-            <VStack className="flex-1 gap-0.5">
-              <Text className="font-semibold" numberOfLines={1}>{u.display_name}</Text>
-              <Text variant="small" className="text-ink-soft" numberOfLines={1}>{u.email}</Text>
-            </VStack>
-          </HStack>
-          <View className="hidden md:flex flex-1">
-            <Badge variant={u.role === 'admin' || u.role === 'concierge' ? 'dark' : 'neutral'}>
-              {u.role}
-            </Badge>
+        <Pressable key={u.id} onPress={() => onPress(u.id)}>
+          <View
+            className={`px-4 py-3 md:px-5 md:flex-row md:items-center ${i < users.length - 1 ? 'border-b border-surface-border' : ''}`}
+          >
+            <HStack className="flex-[2] gap-3">
+              <Avatar name={u.display_name} size={32} />
+              <VStack className="flex-1 gap-0.5">
+                <Text className="font-semibold" numberOfLines={1}>{u.display_name}</Text>
+                <Text variant="small" className="text-ink-soft" numberOfLines={1}>{u.email}</Text>
+              </VStack>
+            </HStack>
+            <View className="hidden md:flex flex-1">
+              <Badge variant={u.role === 'admin' || u.role === 'concierge' ? 'dark' : 'neutral'}>
+                {u.role}
+              </Badge>
+            </View>
+            <Text variant="small" className="hidden md:flex flex-1 text-ink-soft">
+              {u.joined}
+            </Text>
+            <Text variant="small" className="hidden md:flex flex-1 text-ink-soft">
+              {u.bookings}
+            </Text>
+            <View className="hidden md:flex flex-1 items-end">
+              <Badge variant={u.status === 'suspended' ? 'brand' : 'neutral'}>{u.status}</Badge>
+            </View>
           </View>
-          <Text variant="small" className="hidden md:flex flex-1 text-ink-soft">
-            {u.joined}
-          </Text>
-          <Text variant="small" className="hidden md:flex flex-1 text-ink-soft">
-            {u.bookings}
-          </Text>
-          <View className="hidden md:flex flex-1 items-end">
-            <Badge variant={u.status === 'suspended' ? 'brand' : 'neutral'}>{u.status}</Badge>
-          </View>
-        </View>
+        </Pressable>
       ))}
     </Card>
   );

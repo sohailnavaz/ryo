@@ -2,6 +2,7 @@ import {
   Link as ExpoLink,
   router,
   useLocalSearchParams,
+  usePathname as useExpoPathname,
 } from 'expo-router';
 
 export type Router = {
@@ -20,6 +21,10 @@ export function useRouter(): Router {
 
 export function useParams<T extends Record<string, string>>(): T {
   return useLocalSearchParams() as unknown as T;
+}
+
+export function usePathname(): string {
+  return useExpoPathname() ?? '/';
 }
 
 export function Link({

@@ -1,4 +1,4 @@
-import { FlatList, ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import { DEMO_HOST_ID, useHostDashboard, type SyntheticBooking } from '@bnb/api';
 import {
   Avatar,
@@ -15,63 +15,50 @@ import {
 } from '@bnb/ui';
 import { useRouter } from '@bnb/ui/nav';
 import { formatDateRange, formatPrice } from '@bnb/utils';
-import { PreviewBanner, SectionHeader } from '../shared/dashboard-chrome';
+import { SectionHeader } from '../shared/dashboard-chrome';
+import { HostShell } from './shell';
 
 export function HostDashboardScreen({ hostId = DEMO_HOST_ID }: { hostId?: string }) {
   const router = useRouter();
   const { data, isLoading } = useHostDashboard(hostId);
 
   return (
-    <ScrollView className="flex-1 bg-surface">
-      <View className="md:mx-auto md:w-full md:max-w-[1200px] px-4 pt-4 pb-20 md:px-10 md:pt-8">
-        <PreviewBanner kind="host" />
+    <HostShell title="Welcome back, Mira." subtitle="Here's how your homes are doing this week.">
+      {isLoading || !data ? (
+        <KpiSkeletons />
+      ) : (
+        <KpiRow stats={data.stats} currency={data.listings[0]?.currency ?? 'USD'} />
+      )}
 
-        <VStack className="mt-6 gap-1">
-          <Text variant="small" className="text-ink-soft uppercase tracking-wider">
-            Host dashboard
-          </Text>
-          <Heading level={1}>Welcome back, Mira.</Heading>
-          <Text className="text-ink-soft">
-            Here's how your homes are doing this week.
-          </Text>
-        </VStack>
+      <SectionHeader title="Upcoming & in-stay" subtitle="Next 30 days, sorted by check-in" />
+      {isLoading || !data ? (
+        <ListSkeleton rows={3} />
+      ) : (
+        <UpcomingList
+          bookings={data.bookings.filter(
+            (b) => b.status === 'upcoming' || b.status === 'in_stay',
+          )}
+          onPressBooking={(id) => router.push(`/host/bookings/${id}`)}
+        />
+      )}
 
-        {isLoading || !data ? (
-          <KpiSkeletons />
-        ) : (
-          <KpiRow stats={data.stats} currency={data.listings[0]?.currency ?? 'USD'} />
-        )}
+      <SectionHeader title="Your homes" subtitle={`${data?.listings.length ?? 0} active listings`} />
+      {isLoading || !data ? (
+        <GridSkeleton />
+      ) : (
+        <ListingsGrid
+          listings={data.listings}
+          onPress={(id) => router.push(`/host/listings/${id}/edit`)}
+        />
+      )}
 
-        <SectionHeader title="Upcoming & in-stay" subtitle="Next 30 days, sorted by check-in" />
-        {isLoading || !data ? (
-          <ListSkeleton rows={3} />
-        ) : (
-          <UpcomingList
-            bookings={data.bookings.filter(
-              (b) => b.status === 'upcoming' || b.status === 'in_stay',
-            )}
-            onPressListing={(id) => router.push(`/listing/${id}`)}
-          />
-        )}
-
-        <SectionHeader title="Your homes" subtitle={`${data?.listings.length ?? 0} active listings`} />
-        {isLoading || !data ? (
-          <GridSkeleton />
-        ) : (
-          <ListingsGrid
-            listings={data.listings}
-            onPress={(id) => router.push(`/listing/${id}`)}
-          />
-        )}
-
-        <SectionHeader title="Recent reviews" subtitle="What guests are saying" />
-        {isLoading || !data ? (
-          <ListSkeleton rows={3} />
-        ) : (
-          <ReviewsList reviews={data.reviews.slice(0, 5)} />
-        )}
-      </View>
-    </ScrollView>
+      <SectionHeader title="Recent reviews" subtitle="What guests are saying" />
+      {isLoading || !data ? (
+        <ListSkeleton rows={3} />
+      ) : (
+        <ReviewsList reviews={data.reviews.slice(0, 5)} />
+      )}
+    </HostShell>
   );
 }
 
@@ -136,10 +123,10 @@ function KpiCard({ label, value, hint }: { label: string; value: string; hint: s
 
 function UpcomingList({
   bookings,
-  onPressListing,
+  onPressBooking,
 }: {
   bookings: SyntheticBooking[];
-  onPressListing: (id: string) => void;
+  onPressBooking: (id: string) => void;
 }) {
   if (bookings.length === 0) {
     return (
@@ -151,7 +138,7 @@ function UpcomingList({
   return (
     <VStack className="mt-3 gap-3">
       {bookings.slice(0, 6).map((b) => (
-        <Pressable key={b.id} onPress={() => onPressListing(b.listing_id)}>
+        <Pressable key={b.id} onPress={() => onPressBooking(b.id)}>
           <Card className="p-4 md:flex-row md:items-center md:gap-5">
             <View className="h-32 w-full overflow-hidden rounded-xl bg-surface-alt md:h-20 md:w-32 md:flex-shrink-0">
               {b.listing_photo ? (
