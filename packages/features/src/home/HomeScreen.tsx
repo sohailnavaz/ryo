@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { FlatList, View, useWindowDimensions } from 'react-native';
 import { useFavoriteIds, useListings, useToggleFavorite } from '@bnb/api';
+import type { Listing } from '@bnb/db';
 import {
   CategoryBar,
   ListingCard,
+  Pressable,
   SearchBar,
   Skeleton,
   Text,
@@ -11,6 +13,27 @@ import {
 import { useRouter } from '@bnb/ui/nav';
 import { FilterSheet } from '../search/FilterSheet';
 import { useFiltersStore } from '../state/filtersStore';
+
+type SortKey = 'recommended' | 'price_asc' | 'price_desc' | 'top_rated' | 'newest';
+
+const SORTS: ReadonlyArray<{ key: SortKey; label: string }> = [
+  { key: 'recommended', label: 'Recommended' },
+  { key: 'price_asc',   label: 'Price ↑' },
+  { key: 'price_desc',  label: 'Price ↓' },
+  { key: 'top_rated',   label: 'Top-rated' },
+  { key: 'newest',      label: 'Newest' },
+];
+
+function sortListings(rows: Listing[], key: SortKey): Listing[] {
+  if (key === 'recommended') return rows;
+  const out = rows.slice();
+  switch (key) {
+    case 'price_asc':  return out.sort((a, b) => a.price_cents - b.price_cents);
+    case 'price_desc': return out.sort((a, b) => b.price_cents - a.price_cents);
+    case 'top_rated':  return out.sort((a, b) => b.rating_avg - a.rating_avg || b.rating_count - a.rating_count);
+    case 'newest':     return out.sort((a, b) => b.created_at.localeCompare(a.created_at));
+  }
+}
 
 // Cards are fixed-width inside the grid. They never stretch past CARD_MAX,
 // no matter how many results match the current filters. A single result
@@ -29,6 +52,9 @@ export function HomeScreen() {
   const { data, isLoading } = useListings(filters);
   const { data: favIds = [] } = useFavoriteIds();
   const toggleFav = useToggleFavorite();
+  const [sort, setSort] = useState<SortKey>('recommended');
+
+  const sortedData = useMemo(() => sortListings(data ?? [], sort), [data, sort]);
 
   // Horizontal padding matches the SearchBar / CategoryBar wrappers below
   // (px-4 mobile / md:px-10 desktop). Kept in sync so cards line up.
@@ -74,6 +100,41 @@ export function HomeScreen() {
         value={filters.category ?? 'All'}
         onChange={(c) => setFilters({ category: c })}
       />
+
+      {/* Sort + result count */}
+      <View
+        className="flex-row flex-wrap items-center gap-2 px-4 pt-3 md:px-10"
+        accessibilityRole="toolbar"
+      >
+        <Text variant="small" className="text-ink-soft mr-1">
+          {isLoading
+            ? 'Loading…'
+            : `${sortedData.length} ${sortedData.length === 1 ? 'home' : 'homes'}`}
+        </Text>
+        <Text variant="small" className="text-ink-soft mr-1">
+          ·
+        </Text>
+        {SORTS.map((s) => {
+          const selected = s.key === sort;
+          return (
+            <Pressable
+              key={s.key}
+              onPress={() => setSort(s.key)}
+              className={`rounded-full px-3 py-1.5 ${
+                selected ? 'bg-ink' : 'border border-surface-border'
+              }`}
+            >
+              <Text
+                variant="small"
+                className={`font-semibold ${selected ? 'text-white' : 'text-ink'}`}
+              >
+                {s.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
       {isLoading ? (
         <View
           className="px-4 pt-4 pb-20 md:px-10 flex-row flex-wrap"
@@ -89,8 +150,8 @@ export function HomeScreen() {
         </View>
       ) : (
         <FlatList
-          key={`cols-${columns}`}
-          data={data ?? []}
+          key={`cols-${columns}-${sort}`}
+          data={sortedData}
           keyExtractor={(item) => item.id}
           numColumns={columns}
           columnWrapperStyle={columns > 1 ? { gap: CARD_GAP, justifyContent: 'flex-start' } : undefined}

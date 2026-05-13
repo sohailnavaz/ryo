@@ -3,6 +3,7 @@ export * from './search/FilterSheet';
 export * from './listing/ListingScreen';
 export * from './booking/BookingScreen';
 export * from './trips/TripsScreen';
+export * from './trips/TripDetailScreen';
 export * from './profile/ProfileScreen';
 export * from './favorites/FavoritesScreen';
 export * from './auth/SignInScreen';

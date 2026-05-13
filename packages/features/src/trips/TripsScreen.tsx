@@ -1,12 +1,18 @@
 import { useState } from 'react';
-import { FlatList, Image, View } from 'react-native';
-import { useCancelBooking, useMyBookings } from '@bnb/api';
+import { View } from 'react-native';
+import {
+  tryGetSupabase,
+  useCancelBooking,
+  useGuestDashboard,
+  type GuestBooking,
+} from '@bnb/api';
 import {
   Badge,
   Button,
   Card,
   Heading,
   HStack,
+  Image,
   Pressable,
   Skeleton,
   Text,
@@ -16,22 +22,46 @@ import {
 import { useRouter } from '@bnb/ui/nav';
 import { formatDateRange, formatPrice } from '@bnb/utils';
 
+type Tab = 'upcoming' | 'past' | 'cancelled';
+
 export function TripsScreen() {
   const router = useRouter();
-  const { data, isLoading } = useMyBookings();
+  const { data, isLoading } = useGuestDashboard();
   const cancelBooking = useCancelBooking();
-  const [tab, setTab] = useState<'upcoming' | 'past'>('upcoming');
+  const [tab, setTab] = useState<Tab>('upcoming');
   const [confirmCancel, setConfirmCancel] = useState<string | null>(null);
+
+  const isPreview = data?.isPreview ?? false;
   const today = new Date().toISOString().slice(0, 10);
 
-  const filtered = (data ?? []).filter((b) =>
-    tab === 'upcoming' ? b.end_date >= today : b.end_date < today,
-  );
+  const all = data?.bookings ?? [];
+  const filtered = all.filter((b) => {
+    if (tab === 'upcoming') return (b.status === 'upcoming' || b.status === 'in_stay');
+    if (tab === 'past') return b.status === 'completed';
+    return b.status === 'cancelled';
+  });
 
-  const cancel = async (id: string, title: string) => {
+  const upcomingCount = all.filter((b) => b.status === 'upcoming' || b.status === 'in_stay').length;
+  const pastCount = all.filter((b) => b.status === 'completed').length;
+  const cancelledCount = all.filter((b) => b.status === 'cancelled').length;
+
+  const cancel = async (booking: GuestBooking) => {
+    // In preview mode, the booking id is a synthetic string (e.g. `g-up-l-positano-cliffside`).
+    // No real Supabase row exists, so don't call the mutation — just acknowledge.
+    if (isPreview || booking.id.startsWith('g-')) {
+      toast.success(`Cancelled (demo) — ${booking.listing_title}.`, {
+        description: "Real cancellations land when you're signed in with Supabase.",
+      });
+      setConfirmCancel(null);
+      return;
+    }
+    if (!tryGetSupabase()) {
+      toast.error("Couldn't cancel — auth backend isn't configured here.");
+      return;
+    }
     try {
-      await cancelBooking.mutateAsync(id);
-      toast.success(`Cancelled your stay at ${title}.`);
+      await cancelBooking.mutateAsync(booking.id);
+      toast.success(`Cancelled your stay at ${booking.listing_title}.`);
       setConfirmCancel(null);
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Could not cancel that booking.';
@@ -44,84 +74,97 @@ export function TripsScreen() {
       <View className="px-4 pt-6 md:px-10 md:mx-auto md:w-full md:max-w-[1120px]">
         <Heading level={1}>Trips</Heading>
         <HStack className="mt-4 gap-2">
-          {(['upcoming', 'past'] as const).map((t) => (
+          {(
+            [
+              { key: 'upcoming', label: 'Upcoming', count: upcomingCount },
+              { key: 'past', label: 'Past', count: pastCount },
+              { key: 'cancelled', label: 'Cancelled', count: cancelledCount },
+            ] as const
+          ).map((t) => (
             <Pressable
-              key={t}
-              onPress={() => setTab(t)}
+              key={t.key}
+              onPress={() => setTab(t.key)}
               className={`rounded-full border px-4 py-2 ${
-                tab === t ? 'border-ink bg-surface-alt' : 'border-surface-border'
+                tab === t.key ? 'border-ink bg-surface-alt' : 'border-surface-border'
               }`}
             >
-              <Text className="font-semibold capitalize">{t}</Text>
+              <Text className="font-semibold">
+                {t.label}
+                {t.count > 0 ? ` · ${t.count}` : ''}
+              </Text>
             </Pressable>
           ))}
         </HStack>
       </View>
 
       {isLoading ? (
-        <View className="p-4 gap-4">
+        <View className="p-4 md:px-10 md:mx-auto md:max-w-[1120px] w-full gap-4">
           {Array.from({ length: 3 }).map((_, i) => (
             <Skeleton key={i} className="h-28 w-full" />
           ))}
         </View>
       ) : filtered.length === 0 ? (
         <View className="flex-1 items-center justify-center p-10">
-          <Heading level={3}>No {tab} trips</Heading>
-          <Text className="text-ink-soft mt-2">
+          <Heading level={3}>
+            {tab === 'upcoming' ? 'No upcoming trips' : tab === 'past' ? 'No past trips' : 'No cancellations'}
+          </Heading>
+          <Text className="text-ink-soft mt-2 text-center max-w-[420px]">
             {tab === 'upcoming'
-              ? 'Time to dust off your bags and start planning your next adventure.'
-              : 'Your past trips will show up here.'}
+              ? 'Time to dust off your bags. Browse the explore feed and pick somewhere new.'
+              : tab === 'past'
+                ? 'Your past stays will show up here once you have completed bookings.'
+                : 'Bookings you have cancelled appear here.'}
           </Text>
+          {tab === 'upcoming' ? (
+            <Button title="Explore stays" className="mt-4" onPress={() => router.push('/')} />
+          ) : null}
         </View>
       ) : (
-        <FlatList
-          data={filtered}
-          keyExtractor={(b) => b.id}
-          contentContainerStyle={{ padding: 16, gap: 16 }}
-          renderItem={({ item }) => {
-            const cover = item.listing.photos?.sort((a, b) => a.position - b.position)[0]?.url;
-            const isCancelled = item.status === 'cancelled';
-            const isUpcoming = tab === 'upcoming' && !isCancelled;
-            const showConfirm = confirmCancel === item.id;
+        <View className="md:mx-auto md:w-full md:max-w-[1120px] px-4 md:px-10 pt-4 pb-20 gap-3">
+          {filtered.map((b) => {
+            const isCancelled = b.status === 'cancelled';
+            const isUpcomingNow = tab === 'upcoming' && !isCancelled;
+            const showConfirm = confirmCancel === b.id;
             return (
-              <View>
-                <Pressable onPress={() => router.push(`/listing/${item.listing.id}`)}>
+              <View key={b.id}>
+                <Pressable onPress={() => router.push(`/trips/${b.id}`)}>
                   <Card className="p-4 md:flex-row md:gap-4 md:items-center">
                     <View className="h-40 w-full overflow-hidden rounded-xl bg-surface-alt md:h-24 md:w-40 md:flex-shrink-0">
-                      {cover ? (
-                        <Image
-                          source={{ uri: cover }}
-                          style={{ width: '100%', height: '100%' }}
-                          resizeMode="cover"
-                        />
+                      {b.listing_photo ? (
+                        <Image uri={b.listing_photo} style={{ width: '100%', height: '100%' }} />
                       ) : null}
                     </View>
                     <VStack className="mt-3 md:mt-0 md:flex-1 gap-1">
                       <HStack className="justify-between gap-2">
                         <Text className="font-semibold flex-1" numberOfLines={1}>
-                          {item.listing.title}
+                          {b.listing_title}
                         </Text>
-                        <Badge variant={isCancelled ? 'neutral' : 'dark'}>{item.status}</Badge>
+                        <Badge variant={isCancelled ? 'neutral' : b.status === 'in_stay' ? 'brand' : 'dark'}>
+                          {b.status === 'in_stay' ? 'in stay' : b.status}
+                        </Badge>
                       </HStack>
                       <Text variant="small" className="text-ink-soft">
-                        {item.listing.city}, {item.listing.country}
+                        {b.listing_city}, {b.listing_country}
                       </Text>
-                      <Text variant="small">{formatDateRange(item.start_date, item.end_date)}</Text>
+                      <Text variant="small">
+                        {formatDateRange(b.start_date, b.end_date)} · {b.nights}{' '}
+                        {b.nights === 1 ? 'night' : 'nights'}
+                      </Text>
                       <Text variant="small" className="font-semibold">
-                        {formatPrice(item.total_cents, 'USD')}
+                        {formatPrice(b.total_cents, b.currency)}
                       </Text>
                     </VStack>
                   </Card>
                 </Pressable>
 
-                {/* Cancel control — only on upcoming, non-cancelled trips. */}
-                {isUpcoming ? (
+                {/* Cancel control — only on upcoming, non-cancelled */}
+                {isUpcomingNow ? (
                   <View className="mt-2">
                     {!showConfirm ? (
                       <Button
                         title="Cancel this booking"
                         variant="ghost"
-                        onPress={() => setConfirmCancel(item.id)}
+                        onPress={() => setConfirmCancel(b.id)}
                       />
                     ) : (
                       <Card className="p-4 gap-3 border-[#B4432F]/30">
@@ -140,7 +183,7 @@ export function TripsScreen() {
                             title={cancelBooking.isPending ? 'Cancelling…' : 'Yes, cancel'}
                             variant="outline"
                             loading={cancelBooking.isPending}
-                            onPress={() => cancel(item.id, item.listing.title)}
+                            onPress={() => cancel(b)}
                           />
                         </HStack>
                       </Card>
@@ -149,8 +192,8 @@ export function TripsScreen() {
                 ) : null}
               </View>
             );
-          }}
-        />
+          })}
+        </View>
       )}
     </View>
   );
