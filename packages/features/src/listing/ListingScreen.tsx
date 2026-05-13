@@ -14,13 +14,41 @@ import {
   Text,
   VStack,
 } from '@bnb/ui';
-import { ArrowLeft, Bath, Bed, Heart, MapPin, Share2, Star, Users } from '@bnb/ui';
+import { ArrowLeft, Bath, Bed, Heart, MapPin, Share2, Star, Users, Pressable, toast } from '@bnb/ui';
 import { Map } from '@bnb/ui/Map';
 import { useRouter } from '@bnb/ui/nav';
 import { formatDateRange, formatPrice } from '@bnb/utils';
 import { useFiltersStore } from '../state/filtersStore';
 
 export type ListingScreenProps = { id: string };
+
+/** Share the current listing via the Web Share API, falling back to clipboard.
+ *  Returns true if some form of sharing succeeded so the caller can toast. */
+async function shareListing(opts: { id: string; title: string; city: string }): Promise<'shared' | 'copied' | 'failed'> {
+  if (typeof window === 'undefined') return 'failed';
+  const url = window.location.href;
+  const text = `Check out ${opts.title} in ${opts.city} on Ryo`;
+  const nav = window.navigator as Navigator & {
+    share?: (data: { title?: string; text?: string; url?: string }) => Promise<void>;
+  };
+  if (nav.share) {
+    try {
+      await nav.share({ title: opts.title, text, url });
+      return 'shared';
+    } catch {
+      // user cancelled or share rejected — fall through to clipboard
+    }
+  }
+  if (nav.clipboard?.writeText) {
+    try {
+      await nav.clipboard.writeText(url);
+      return 'copied';
+    } catch {
+      // ignore
+    }
+  }
+  return 'failed';
+}
 
 export function ListingScreen({ id }: ListingScreenProps) {
   const { width } = useWindowDimensions();
@@ -46,6 +74,13 @@ export function ListingScreen({ id }: ListingScreenProps) {
   const isFav = favIds.includes(listing.id);
   const goBook = () => router.push(`/booking/${listing.id}`);
 
+  const onShare = async () => {
+    const result = await shareListing({ id: listing.id, title: listing.title, city: listing.city });
+    if (result === 'copied') toast.success('Link copied to clipboard.');
+    else if (result === 'failed') toast.info("Couldn't share — your browser doesn't support it.");
+    // result === 'shared' → native sheet handled the confirmation
+  };
+
   return (
     <View className="flex-1 bg-surface">
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
@@ -56,7 +91,10 @@ export function ListingScreen({ id }: ListingScreenProps) {
                 <ArrowLeft size={18} color="#222" />
               </IconButton>
               <HStack className="gap-2">
-                <IconButton className="bg-surface border border-surface-border">
+                <IconButton
+                  className="bg-surface border border-surface-border"
+                  onPress={onShare}
+                >
                   <Share2 size={18} color="#222" />
                 </IconButton>
                 <IconButton
@@ -75,7 +113,35 @@ export function ListingScreen({ id }: ListingScreenProps) {
 
           {isDesktop ? (
             <>
-              <Heading level={2}>{listing.title}</Heading>
+              <HStack className="justify-between items-start gap-4">
+                <Heading level={2} className="flex-1">
+                  {listing.title}
+                </Heading>
+                <HStack className="gap-4">
+                  <Pressable
+                    onPress={onShare}
+                    accessibilityLabel="Share listing"
+                    className="flex-row items-center gap-1.5"
+                  >
+                    <Share2 size={16} color="#222" />
+                    <Text className="font-semibold underline">Share</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => toggleFav.mutate({ listingId: listing.id, on: !isFav })}
+                    accessibilityLabel="Toggle favourite"
+                    className="flex-row items-center gap-1.5"
+                  >
+                    <Heart
+                      size={16}
+                      color={isFav ? '#ff385c' : '#222'}
+                      fill={isFav ? '#ff385c' : 'transparent'}
+                    />
+                    <Text className="font-semibold underline">
+                      {isFav ? 'Saved' : 'Save'}
+                    </Text>
+                  </Pressable>
+                </HStack>
+              </HStack>
               <HStack className="mt-1 flex-wrap gap-2">
                 <Star size={14} color="#222" fill="#222" />
                 <Text>{listing.rating_avg.toFixed(2)}</Text>

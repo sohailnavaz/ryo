@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
+import { DUMMY_LISTINGS } from '@bnb/api';
 import { AMENITIES } from '@bnb/db';
 import {
   Badge,
@@ -15,6 +16,28 @@ import { useFiltersStore } from '../state/filtersStore';
 
 const PROPERTY_TYPES = ['House', 'Apartment', 'Cabin', 'Villa', 'Treehouse', 'Cottage'];
 
+// Destinations are derived from the catalogue (dummy in dev / preview, real
+// listings once Supabase is wired — same shape). Cities first, then unique
+// countries; users get both granularities.
+const DESTINATION_OPTIONS: ReadonlyArray<{ label: string; key: string }> = (() => {
+  const seen = new Set<string>();
+  const out: { label: string; key: string }[] = [];
+  for (const l of DUMMY_LISTINGS) {
+    const label = `${l.city}, ${l.country}`;
+    if (!seen.has(label)) {
+      seen.add(label);
+      out.push({ label, key: l.city });
+    }
+  }
+  for (const country of new Set(DUMMY_LISTINGS.map((l) => l.country))) {
+    if (!seen.has(country)) {
+      seen.add(country);
+      out.push({ label: country, key: country });
+    }
+  }
+  return out;
+})();
+
 export type FilterSheetProps = {
   open: boolean;
   onClose: () => void;
@@ -26,7 +49,20 @@ export function FilterSheet({ open, onClose }: FilterSheetProps) {
   const reset = useFiltersStore((s) => s.reset);
 
   const [destination, setDestination] = useState(filters.destination ?? '');
+  const [destFocused, setDestFocused] = useState(false);
   const [guests, setGuests] = useState(String(filters.guests ?? ''));
+
+  // Autocomplete: show up to 8 suggestions matching the typed prefix.
+  // When the field is empty AND focused, show a popular-destinations list
+  // (the first 6 in the catalogue order).
+  const suggestions = useMemo(() => {
+    if (!destFocused) return [];
+    const q = destination.trim().toLowerCase();
+    if (q.length === 0) return DESTINATION_OPTIONS.slice(0, 6);
+    return DESTINATION_OPTIONS
+      .filter((o) => o.label.toLowerCase().includes(q))
+      .slice(0, 8);
+  }, [destination, destFocused]);
   const [minPrice, setMinPrice] = useState(String(filters.minPrice ?? ''));
   const [maxPrice, setMaxPrice] = useState(String(filters.maxPrice ?? ''));
   const [propertyTypes, setPropertyTypes] = useState<string[]>(filters.propertyTypes ?? []);
@@ -68,7 +104,29 @@ export function FilterSheet({ open, onClose }: FilterSheetProps) {
               placeholder="e.g. Lisbon, Japan, Amalfi"
               value={destination}
               onChangeText={setDestination}
+              onFocus={() => setDestFocused(true)}
+              onBlur={() => {
+                // Delay so taps on suggestions register before the list collapses
+                setTimeout(() => setDestFocused(false), 150);
+              }}
             />
+            {suggestions.length > 0 ? (
+              <View className="flex-row flex-wrap gap-2">
+                {suggestions.map((s) => (
+                  <Pressable
+                    key={s.label}
+                    onPress={() => {
+                      setDestination(s.label);
+                      setDestFocused(false);
+                    }}
+                  >
+                    <View className="rounded-full border border-surface-border px-3 py-1.5 bg-surface">
+                      <Text variant="small">{s.label}</Text>
+                    </View>
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
           </View>
           <Divider className="my-0" />
           <View className="gap-3">
