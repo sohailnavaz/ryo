@@ -8,7 +8,35 @@ export * from './favorites/FavoritesScreen';
 export * from './auth/SignInScreen';
 export * from './auth/AuthGate';
 export * from './state/filtersStore';
+
 export * from './host/HostDashboardScreen';
+export * from './host/HostCalendarScreen';
+export * from './host/HostBookingsScreen';
+export * from './host/HostBookingDetailScreen';
+export * from './host/HostListingsScreen';
+export * from './host/HostListingEditScreen';
+export * from './host/HostEarningsScreen';
+export * from './host/HostInboxScreen';
+export * from './host/HostInboxThreadScreen';
+export * from './host/HostReviewsScreen';
+export * from './host/HostSettingsScreen';
+export * from './host/HostInsightsScreen';
+export * from './host/shell';
+
 export * from './admin/AdminDashboardScreen';
+export * from './admin/AdminUsersScreen';
+export * from './admin/AdminUserDetailScreen';
+export * from './admin/AdminBookingsScreen';
+export * from './admin/AdminBookingDetailScreen';
+export * from './admin/AdminModerationScreen';
+export * from './admin/AdminFinanceScreen';
+export * from './admin/AdminIncidentsScreen';
+export * from './admin/AdminFlagsScreen';
+export * from './admin/AdminAuditScreen';
+export * from './admin/AdminHealthScreen';
+export * from './admin/AdminSearchScreen';
+export * from './admin/shell';
+
 export * from './account/AccountDashboardScreen';
 export * from './shared/dashboard-chrome';
+export * from './shared/dashboard-shell';

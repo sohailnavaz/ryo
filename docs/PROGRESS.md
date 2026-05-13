@@ -1,8 +1,8 @@
 ---
 doc: PROGRESS
 purpose: Human-readable living status doc. Safe to share with collaborators, investors, or friends.
-last_updated: 2026-05-11
-version: 0.6.0
+last_updated: 2026-05-12
+version: 0.7.0
 ---
 
 # Ryo — Progress
@@ -58,8 +58,8 @@ Primitives (Button, Card, Input, Text, Heading, Badge, Stack, Divider, Skeleton,
 - `trips/` — TripsScreen
 - `profile/` — ProfileScreen
 - `favorites/` — FavoritesScreen
-- `host/` — HostDashboardScreen (v2-preview, web-only route `/host`)
-- `admin/` — AdminDashboardScreen (v2-preview, web-only route `/admin`)
+- `host/` — full host site (v2-preview, web-only): `HostShell` + Dashboard · Calendar · Bookings (list + detail) · Listings (list + read-only editor) · Earnings · Inbox (list + thread) · Reviews · Settings · Insights stub
+- `admin/` — full admin site (v2-preview, web-only): `AdminShell` + Overview · Search · Users (list + inspector) · Bookings (list + inspector) · Moderation · Incidents · Finance · Flags · Audit log · System health
 - `state/` — Zustand store
 
 ### Backend (`supabase/` + `packages/api`)
@@ -69,7 +69,7 @@ Primitives (Button, Card, Input, Text, Heading, Badge, Stack, Divider, Skeleton,
 - Dummy-listings fallback (`packages/api/src/dummy-listings.ts`) — 16 listings with deterministic ids; activates when Supabase isn't configured. **Must hard-fail in `NODE_ENV=production`** per [path-to-production plan M9.3](#);  currently always falls back.
 
 ### Apps
-- **Web** (`apps/web`): Next.js 15 App Router with `(main)`, `auth`, `sign-in` route groups; providers + globals wired. `next build` green — 9 routes, 264 kB first-load JS on dynamic pages.
+- **Web** (`apps/web`): Next.js 15 App Router with `(main)`, `auth`, `sign-in` route groups; providers + globals wired. `next build` green — 30 routes, 328 kB first-load JS on dynamic pages.
 - **Mobile** (`apps/mobile`): Expo Router with `(tabs)`, `auth`, `booking`, `listing`, `sign-in.tsx`. Metro monorepo config + NativeWind v4 + `moduleResolution=bundler` for typecheck. Typecheck green; native simulator smoke-test pending.
 
 ### Product specs (`docs/`)
@@ -163,6 +163,17 @@ These are the calls I'd most like a second opinion on. If you're reviewing, skim
 ## 8. Changelog
 
 Append-only, newest first. One line per shipped thing. Version bumps follow branding.md convention (patch / minor / major).
+
+### `0.7.0` — 2026-05-12
+
+**Host + admin site expansion (Phases 22–24 in AGENTS_TODO).** 21 new routes, ~18 new feature screens, 16 new synthetic-data hooks, shared `DashboardShell` powering all three audiences (guest · host · admin).
+
+- **Shared dashboard shell.** New `DashboardShell` in `packages/features/src/shared/dashboard-shell.tsx`: desktop sidebar rail (sticky) on md+, horizontal scrollable tab strip on mobile, active-route highlighting, persistent `PreviewBanner`. `HostShell` and `AdminShell` are thin wrappers that pass their nav lists. Existing `/host` and `/admin` refactored to render inside their shell — same look across every page in the host / admin sites.
+- **Host pages (10 new):** `/host/calendar` (60-day grid w/ available/booked/blocked colour-coding + iCal-feed status), `/host/bookings` + `/host/bookings/[id]` (filterable list + detail w/ payout breakdown, activity timeline, reversible actions), `/host/listings` + `/host/listings/[id]/edit` (list view + read-only editor showing photos / basics / amenities / pricing / rules), `/host/earnings` (this-month / last-month / YTD switcher, payout queue, by-listing table), `/host/inbox` + `/host/inbox/[id]` (threads list + chat detail w/ reservation sidebar), `/host/reviews` (rating KPI + 6-month trend chart + full list), `/host/settings` (profile / payout / tax / co-host team), `/host/insights` (v3 stub).
+- **Admin pages (11 new):** `/admin/search` (global search grouped by entity kind), `/admin/users` + `/admin/users/[id]` (search + 4-tab inspector — profile / bookings / tickets / audit-trail), `/admin/bookings` + `/admin/bookings/[id]` (filterable list + inspector w/ payment trail, host payout, reason-code action menu), `/admin/moderation` (tabbed listings + flagged-reviews queues), `/admin/incidents` (3-tier queues + selected-incident drawer), `/admin/finance` (GMV chart + 14-day reconciliation + payout queue + chargebacks), `/admin/flags` (toggle list w/ emergency kill-switches highlighted), `/admin/audit` (filterable log by actor / action), `/admin/health` (live signals + recent releases + planned maintenance).
+- **Synthetic-data surface.** All new screens read from `useHost*` / `useAdmin*` hooks in `packages/api/src/{host,admin}.ts`. Derived deterministically from `DUMMY_LISTINGS` + seeded RNG keyed on entity id — so every deep link (`/host/bookings/l-positano-cliffside-up-0`, `/admin/users/u3`) resolves the same way every time. No schema, no RLS, no real auth gating.
+- **Privileged actions.** Every destructive admin action (suspend user, cancel booking, refund, approve listing, toggle flag, etc.) renders the reason-code/confirm copy and shape, but on submit emits a `toast` saying "Preview only — no change persisted". Real wiring lands when v2 ships per [§14 admin-ops](./14-admin-ops.md).
+- **Verified.** `pnpm typecheck` green across `@bnb/{api,ui,features,web}`; `next build` green (30 routes, 328 kB first-load JS); dev-server smoke test confirms HTTP 200 on all new routes including dynamic deep links.
 
 ### `0.6.0` — 2026-05-11
 
