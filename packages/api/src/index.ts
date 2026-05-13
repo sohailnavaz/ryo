@@ -6,6 +6,7 @@ export {
   isSupabaseUnavailableError,
 } from './client';
 export * from './listings';
+export * from './dummy-listings';
 export * from './bookings';
 export * from './favorites';
 export * from './auth';
