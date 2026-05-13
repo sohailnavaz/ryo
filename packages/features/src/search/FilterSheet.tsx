@@ -29,7 +29,8 @@ const DESTINATION_OPTIONS: ReadonlyArray<{ label: string; key: string }> = (() =
       out.push({ label, key: l.city });
     }
   }
-  for (const country of new Set(DUMMY_LISTINGS.map((l) => l.country))) {
+  const countries: string[] = Array.from(new Set<string>(DUMMY_LISTINGS.map((l) => l.country)));
+  for (const country of countries) {
     if (!seen.has(country)) {
       seen.add(country);
       out.push({ label: country, key: country });
