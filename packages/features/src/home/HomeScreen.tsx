@@ -12,6 +12,13 @@ import { useRouter } from '@bnb/ui/nav';
 import { FilterSheet } from '../search/FilterSheet';
 import { useFiltersStore } from '../state/filtersStore';
 
+// Cards are fixed-width inside the grid. They never stretch past CARD_MAX,
+// no matter how many results match the current filters. A single result
+// sits left-aligned at CARD_MAX rather than ballooning to fill the row.
+const CARD_MAX = 320;
+const CARD_GAP = 24;
+const CARD_MIN = 220;
+
 export function HomeScreen() {
   const { width } = useWindowDimensions();
   const router = useRouter();
@@ -23,7 +30,24 @@ export function HomeScreen() {
   const { data: favIds = [] } = useFavoriteIds();
   const toggleFav = useToggleFavorite();
 
-  const columns = width >= 1280 ? 4 : width >= 1024 ? 3 : width >= 640 ? 2 : 1;
+  // Horizontal padding matches the SearchBar / CategoryBar wrappers below
+  // (px-4 mobile / md:px-10 desktop). Kept in sync so cards line up.
+  const PADDING_X = width >= 768 ? 40 : 16;
+  const innerWidth = Math.max(0, width - 2 * PADDING_X);
+
+  // Determine how many cards fit naturally in the inner width given the
+  // CARD_MAX + CARD_GAP. Floor + clamp ≥ 1 so we never compute 0 columns.
+  const naturalCols = Math.max(
+    1,
+    Math.floor((innerWidth + CARD_GAP) / (CARD_MAX + CARD_GAP)),
+  );
+  const columns = Math.min(naturalCols, 4);
+
+  // Per-card width: slot width derived from column count, capped at
+  // CARD_MAX (so cards don't grow on ultra-wide viewports) and floored at
+  // CARD_MIN (so they stay readable on narrow ones).
+  const rawSlot = (innerWidth - CARD_GAP * (columns - 1)) / Math.max(1, columns);
+  const cardWidth = Math.max(CARD_MIN, Math.min(CARD_MAX, rawSlot));
 
   const subLabel =
     [
@@ -51,9 +75,12 @@ export function HomeScreen() {
         onChange={(c) => setFilters({ category: c })}
       />
       {isLoading ? (
-        <View className="flex-row flex-wrap gap-4 p-4 md:px-10">
+        <View
+          className="px-4 pt-4 pb-20 md:px-10 flex-row flex-wrap"
+          style={{ gap: CARD_GAP }}
+        >
           {Array.from({ length: 8 }).map((_, i) => (
-            <View key={i} className="flex-1 min-w-[45%] md:min-w-[30%] lg:min-w-[22%]">
+            <View key={i} style={{ width: cardWidth }}>
               <Skeleton className="aspect-square w-full" />
               <Skeleton className="mt-2 h-4 w-3/4" />
               <Skeleton className="mt-1 h-3 w-1/2" />
@@ -66,12 +93,12 @@ export function HomeScreen() {
           data={data ?? []}
           keyExtractor={(item) => item.id}
           numColumns={columns}
-          columnWrapperStyle={columns > 1 ? { gap: 24 } : undefined}
+          columnWrapperStyle={columns > 1 ? { gap: CARD_GAP, justifyContent: 'flex-start' } : undefined}
           contentContainerStyle={{
-            paddingHorizontal: 16,
+            paddingHorizontal: PADDING_X,
             paddingTop: 16,
             paddingBottom: 80,
-            gap: 24,
+            gap: CARD_GAP,
           }}
           ListEmptyComponent={
             <View className="py-20 items-center">
@@ -79,7 +106,7 @@ export function HomeScreen() {
             </View>
           }
           renderItem={({ item }) => (
-            <View style={{ flex: 1 }}>
+            <View style={{ width: cardWidth }}>
               <ListingCard
                 listing={item}
                 isFavorite={favIds.includes(item.id)}
