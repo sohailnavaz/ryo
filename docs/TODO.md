@@ -45,14 +45,14 @@ last_updated: 2026-05-13
 ### B. Host side — turn the 13 view screens into a working host tool
 
 All exist as read-only previews. Need real actions (most gated on M8):
-- [ ] **Create a listing** — multi-step wizard (type → location → photos → amenities → pricing → policies → publish) — `docs/03-listings.md §4.1`
-- [ ] **Edit listing** — currently read-only; needs write-through + re-moderation on major edits
+- [x] **Create a listing** — single-page publish form (title/desc/type/space/location/price/amenities/photo-URL) → persists, appears on home feed. *(multi-step wizard + photo upload still TODO)*
+- [~] **Edit listing** — `useUpdateListing`/`useDeleteListing` mutations wired; edit-form UI + re-moderation still TODO
 - [ ] **Calendar management** — block/unblock dates, per-day price overrides, min/max stay, iCal import/export
 - [ ] **Accept / decline booking requests** (for request-to-book listings)
 - [ ] **Host-initiated cancellation** with penalty disclosure
 - [ ] **Respond to reviews** (one reply per review)
 - [ ] **Payout setup** — bank/UPI, tax info (PAN/GSTIN), statements, year-end docs
-- [ ] **Real earnings** from real bookings (currently synthetic)
+- [~] **Real earnings** — `useMyListings` is real; earnings still synthetic until real bookings flow through
 - [ ] **Messaging** — unified guest inbox with templates
 - [ ] **Performance insights** from real data (views, conversion, rank)
 - [ ] **Host onboarding + KYC** — ID, selfie, address, property-right proof (`docs/02-auth-identity.md §4.3`)
