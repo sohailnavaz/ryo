@@ -20,12 +20,12 @@ last_updated: 2026-05-13
 ### A. Guest / client side — vs Airbnb "Account" + trip experience
 
 **Profile / Account hub** — we have: name, language, currency. Airbnb has 8 sections; we're missing ~90%:
-- [ ] **Personal info** — legal name, preferred name, email (+ change flow), phone (+ verify), address, emergency contact
+- [x] **Personal info** — legal name, preferred name, phone, city, country (email read-only). *(email-change / address / emergency contact still TODO)*
 - [ ] **Profile photo upload** (needs Storage — M8/M17)
-- [ ] **Public profile** — bio/about, where I live, languages spoken, work, school, decade born, fun fact; "reviews about me"; verification badges (email/phone/ID)
-- [ ] **Login & security** — change password, 2FA, active sessions/devices list + remote sign-out, connected social accounts, deactivate/delete account
+- [x] **About you** — bio, work, languages (chip multi-select). *(school / decade / fun fact / reviews-about-me / verification badges still TODO)*
+- [~] **Login & security** — password-reset email wired; 2FA + sessions list + delete-account are placeholders
 - [ ] **Payments & payouts** — saved cards, add/remove payment method, Ryo credit/wallet, transaction history, receipts
-- [ ] **Notifications** — granular per-channel (email/push/SMS) × per-event toggles, quiet hours
+- [~] **Notifications** — email/push/SMS channel toggles live; per-event granularity + quiet hours still TODO
 - [ ] **Privacy & data** — GDPR/DPDPA export, delete, cookie prefs
 - [ ] **Travel for work / referrals** (later)
 
