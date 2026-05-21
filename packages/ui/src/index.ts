@@ -21,3 +21,4 @@ export * from './PriceTotal';
 export * from './icons';
 export * from './Toast';
 export * from './ErrorBoundary';
+export * from './Toggle';
