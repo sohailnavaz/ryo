@@ -1,12 +1,98 @@
 ---
 doc: TODO
 purpose: Punchy, prioritised list of what's left to ship Ryo to a public web launch. Distilled from the production plan at ~/.claude/plans/lets-check-the-developement-crispy-nygaard.md
-last_updated: 2026-05-11
+last_updated: 2026-05-13
 ---
 
 # Ryo — TODO to production
 
 > *Status at a glance:* code for the v1 guest flow has landed (M0–M6), three dashboards exist (`/`, `/account`, `/host`, `/admin`), the site styles correctly, dummy data renders out-of-the-box, and the repo is on GitHub. **What's left is everything around the code: live backend, domain, email, legal, observability, and the few remaining code blockers.**
+
+---
+
+## 🔍 Feature-completeness gap analysis vs Airbnb (2026-05-13)
+
+> Audit triggered by: "no admin management side development started, and the client profile is also not complete."
+> **Both correct.** What exists is **views**, not **actions**. The host (13 screens) and admin (13 screens) portals render synthetic data beautifully but **zero of them perform a real mutation** — no suspend, approve, refund, accept, edit, or save-through. The guest profile edits only 3 fields. Below is the full benchmark against Airbnb's real surface area.
+
+**The single biggest blocker underneath all of this: there is no live backend.** Auth, payments, persistence, file upload, email, and search are all mocked. Most "actions" below can't be truly built until [M8 live Supabase](#m8--live-supabase--first-preview-deploy--1-day) lands. Until then we can build the *UI + optimistic flows* against synthetic data, but they won't persist.
+
+### A. Guest / client side — vs Airbnb "Account" + trip experience
+
+**Profile / Account hub** — we have: name, language, currency. Airbnb has 8 sections; we're missing ~90%:
+- [ ] **Personal info** — legal name, preferred name, email (+ change flow), phone (+ verify), address, emergency contact
+- [ ] **Profile photo upload** (needs Storage — M8/M17)
+- [ ] **Public profile** — bio/about, where I live, languages spoken, work, school, decade born, fun fact; "reviews about me"; verification badges (email/phone/ID)
+- [ ] **Login & security** — change password, 2FA, active sessions/devices list + remote sign-out, connected social accounts, deactivate/delete account
+- [ ] **Payments & payouts** — saved cards, add/remove payment method, Ryo credit/wallet, transaction history, receipts
+- [ ] **Notifications** — granular per-channel (email/push/SMS) × per-event toggles, quiet hours
+- [ ] **Privacy & data** — GDPR/DPDPA export, delete, cookie prefs
+- [ ] **Travel for work / referrals** (later)
+
+**Guest booking experience:**
+- [ ] Real date-range calendar with live availability (currently mock; M5 + M8)
+- [ ] Guest breakdown — adults / children / infants / pets (currently single number)
+- [ ] Real price calc — nightly + cleaning + service fee + taxes + length-of-stay discounts (currently approximated)
+- [ ] Write a review after a completed stay + see "reviews about me"
+- [ ] Guest ↔ host messaging (pre-booking inquiry + booking thread) — `docs/07-messaging.md`
+- [ ] Wishlists as **named collections** (Airbnb has multiple named lists; we have one flat favourites set)
+- [ ] Trip itinerary detail — check-in instructions, directions, host contact, receipt download, "get help"
+- [ ] Real cancellation + refund flow honouring policy tiers (`docs/05-bookings.md §4.4`)
+- [ ] Recently-viewed + personalised suggestions row
+- [ ] In-app notification inbox
+- [ ] Help center / contact support entry point
+
+### B. Host side — turn the 13 view screens into a working host tool
+
+All exist as read-only previews. Need real actions (most gated on M8):
+- [ ] **Create a listing** — multi-step wizard (type → location → photos → amenities → pricing → policies → publish) — `docs/03-listings.md §4.1`
+- [ ] **Edit listing** — currently read-only; needs write-through + re-moderation on major edits
+- [ ] **Calendar management** — block/unblock dates, per-day price overrides, min/max stay, iCal import/export
+- [ ] **Accept / decline booking requests** (for request-to-book listings)
+- [ ] **Host-initiated cancellation** with penalty disclosure
+- [ ] **Respond to reviews** (one reply per review)
+- [ ] **Payout setup** — bank/UPI, tax info (PAN/GSTIN), statements, year-end docs
+- [ ] **Real earnings** from real bookings (currently synthetic)
+- [ ] **Messaging** — unified guest inbox with templates
+- [ ] **Performance insights** from real data (views, conversion, rank)
+- [ ] **Host onboarding + KYC** — ID, selfie, address, property-right proof (`docs/02-auth-identity.md §4.3`)
+
+### C. Admin / management side — turn 13 view screens into real ops tools
+
+All display-only today. The console must actually *do* things (`docs/14-admin-ops.md §4` safety patterns: reason code + confirm + audit entry + undo window):
+- [ ] **User management** — suspend / unsuspend / ban (with reason code), role grant/revoke, impersonate (read-only assist)
+- [ ] **Listing moderation** — approve / request-changes / reject from the queue, with reason + notes
+- [ ] **Review moderation** — keep / edit-out / remove flagged reviews
+- [ ] **Booking actions** — cancel, full/partial refund, issue credit, re-book, escalate
+- [ ] **Dispute / incident resolution** — assign, resolve, communicate, log outcome
+- [ ] **Finance** — real GMV/payout reconciliation, chargeback handling, adjustments ledger
+- [ ] **Feature flags** — actually toggle (by user/region/%), with audit
+- [ ] **Audit log** — populated from real privileged actions (currently seeded)
+- [ ] **Global search** — resolve a real email/booking/listing id to the live record
+- [ ] **Staff auth** — SSO + mandatory 2FA, least-privilege roles, break-glass (`docs/14 §7`)
+- [ ] **Concierge desk** — the unified inbox + authorised-action console (`docs/12 §8`) — the actual differentiator
+
+### D. Backend / infra (unblocks A–C) — these gate everything above
+
+These are the M8–M18 milestones already listed below. The new gap analysis doesn't change them, it *depends* on them:
+- 🔴 **M8 live Supabase** — without this, no action in A/B/C can persist
+- 🔴 **Real auth** (magic-link delivery + Google OAuth round-trip)
+- 🔴 **Real payments** (Stripe + Razorpay) — v2 per `docs/06`
+- 🔴 **File/image upload** (avatars, listing photos) — Supabase Storage
+- 🔴 **Transactional email** (M10)
+- 🟡 **i18n actually wired** (M13) — strings still hardcoded English
+- 🟡 **Search backend** — full-text + geo (currently client-side filter over dummy data)
+
+### Suggested sequencing for "make it real"
+
+1. **M8 live Supabase** (1 day) — the keystone. Everything below needs it.
+2. **Guest profile completion** (2–3 days) — personal info, photo upload, security, notifications. Highly visible, mostly client work once Storage + auth are live.
+3. **Host: create + edit listing + calendar** (4–5 days) — the supply engine.
+4. **Admin: wire the top-5 actions** (3 days) — suspend user, approve listing, refund booking, resolve incident, toggle flag. Turns the console from a poster into a tool.
+5. **Real payments** (1–2 wk per processor) — v2.
+6. Then messaging, reviews-write, named wishlists, notifications inbox.
+
+**Honest estimate to "feature-complete vs Airbnb v1":** the backend keystone + A/B/C UI-with-real-actions is **~6–9 additional engineering weeks** on top of the M8–M18 infra work. The screens being done makes this *much* faster than it sounds — most of B and C is wiring existing views to real mutations.
 
 ---
 
