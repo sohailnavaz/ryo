@@ -1,5 +1,5 @@
 import { View } from 'react-native';
-import { DEMO_HOST_ID, useHostListings } from '@bnb/api';
+import { DEMO_HOST_ID, tryGetSupabase, useHostListings, useMyListings } from '@bnb/api';
 import {
   Badge,
   Button,
@@ -9,7 +9,6 @@ import {
   Pressable,
   Skeleton,
   Text,
-  toast,
   VStack,
 } from '@bnb/ui';
 import { useRouter } from '@bnb/ui/nav';
@@ -17,8 +16,14 @@ import { formatPrice } from '@bnb/utils';
 import { HostShell } from './shell';
 
 export function HostListingsScreen({ hostId = DEMO_HOST_ID }: { hostId?: string }) {
-  const { data, isLoading } = useHostListings(hostId);
   const router = useRouter();
+  // When signed in against a real Supabase project, show the host's OWN listings
+  // (real, persisted). Otherwise fall back to the synthetic preview set.
+  const signedInReal = tryGetSupabase() !== null;
+  const real = useMyListings();
+  const synthetic = useHostListings(hostId);
+  const data = signedInReal ? real.data : synthetic.data;
+  const isLoading = signedInReal ? real.isLoading : synthetic.isLoading;
 
   return (
     <HostShell
@@ -26,10 +31,7 @@ export function HostListingsScreen({ hostId = DEMO_HOST_ID }: { hostId?: string 
       subtitle="Edit photos, pricing, rules. Major edits re-enter moderation."
     >
       <View className="mt-6 flex-row justify-end">
-        <Button
-          variant="secondary"
-          onPress={() => toast.info('Preview only — opens listing creation wizard.')}
-        >
+        <Button variant="secondary" onPress={() => router.push('/host/listings/new')}>
           + New listing
         </Button>
       </View>
@@ -38,8 +40,9 @@ export function HostListingsScreen({ hostId = DEMO_HOST_ID }: { hostId?: string 
         {isLoading || !data ? (
           <Skeleton className="h-96 w-full" />
         ) : data.length === 0 ? (
-          <Card className="p-8 items-center">
+          <Card className="p-8 items-center gap-3">
             <Text className="text-ink-soft">No listings yet.</Text>
+            <Button title="Create your first listing" onPress={() => router.push('/host/listings/new')} />
           </Card>
         ) : (
           data.map((l) => {

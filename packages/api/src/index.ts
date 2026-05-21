@@ -17,3 +17,4 @@ export * from './admin';
 export * from './guest';
 export * from './demo-auth';
 export * from './profile';
+export * from './host-listings';

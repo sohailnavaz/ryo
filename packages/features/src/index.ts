@@ -15,6 +15,7 @@ export * from './host/HostCalendarScreen';
 export * from './host/HostBookingsScreen';
 export * from './host/HostBookingDetailScreen';
 export * from './host/HostListingsScreen';
+export * from './host/HostListingCreateScreen';
 export * from './host/HostListingEditScreen';
 export * from './host/HostEarningsScreen';
 export * from './host/HostInboxScreen';
