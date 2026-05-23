@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 import {
-  signInAsDemo,
+  signInAsRole,
   tryGetSupabase,
   useSignInWithEmail,
   useSignInWithGoogle,
@@ -41,9 +41,10 @@ export function SignInScreen({ redirectTo }: SignInScreenProps) {
     }
   };
 
-  const enterAsDemo = () => {
-    signInAsDemo();
-    router.replace(redirectTo ?? '/account');
+  const enterAs = (role: 'guest' | 'host' | 'admin') => {
+    signInAsRole(role);
+    const dest = role === 'host' ? '/host' : role === 'admin' ? '/admin' : (redirectTo ?? '/account');
+    router.replace(dest);
   };
 
   const continueWithGoogle = async () => {
@@ -112,20 +113,16 @@ export function SignInScreen({ redirectTo }: SignInScreenProps) {
               </Text>
             ) : null}
 
-            {!supabaseConfigured ? (
-              <>
-                <Divider className="my-2" />
-                <Button
-                  title="Continue as Mira (demo)"
-                  variant="outline"
-                  onPress={enterAsDemo}
-                  fullWidth
-                />
-                <Text variant="small" className="text-ink-soft text-center">
-                  No real account is created. Stored locally; clears on sign-out.
-                </Text>
-              </>
-            ) : null}
+            <Divider className="my-2" />
+            <Text variant="small" className="text-ink-soft text-center">
+              Or explore instantly with a demo account (no email needed):
+            </Text>
+            <Button title="Explore as Guest" variant="outline" onPress={() => enterAs('guest')} fullWidth />
+            <Button title="Explore as Host" variant="outline" onPress={() => enterAs('host')} fullWidth />
+            <Button title="Explore as Admin" variant="outline" onPress={() => enterAs('admin')} fullWidth />
+            <Text variant="caption" className="text-ink-soft text-center">
+              Demo only — no real account; stored locally, clears on sign-out.
+            </Text>
 
             <Button title="Back" variant="ghost" onPress={() => router.back()} />
           </VStack>

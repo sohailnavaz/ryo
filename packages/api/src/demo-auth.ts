@@ -6,6 +6,7 @@
 // Persists to localStorage on web so a page refresh keeps the demo identity.
 
 import { useSyncExternalStore } from 'react';
+import type { UserRole } from '@bnb/db';
 
 const STORAGE_KEY = 'bnb.demo-user';
 
@@ -13,15 +14,46 @@ export type DemoUser = {
   id: string;
   email: string;
   full_name: string;
+  role: UserRole;
   avatar_url?: string | null;
 };
 
-export const DEFAULT_DEMO_USER: DemoUser = {
-  id: 'demo-mira',
+/** Demo identities for each role — lets you explore guest / host / admin areas
+ *  without real auth (useful while email/SMTP isn't wired). TEMPORARY: this is
+ *  a testing bypass and must be removed/gated before public launch (it lets
+ *  anyone assume any role client-side). */
+export const DEMO_GUEST: DemoUser = {
+  id: 'demo-guest-mira',
   email: 'mira@ryostays.local',
-  full_name: 'Mira Host',
+  full_name: 'Mira Guest',
+  role: 'guest',
   avatar_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&q=80',
 };
+
+export const DEMO_HOST: DemoUser = {
+  id: 'demo-host-kenji',
+  email: 'kenji@ryostays.local',
+  full_name: 'Kenji Host',
+  role: 'host',
+  avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80',
+};
+
+export const DEMO_ADMIN: DemoUser = {
+  id: 'demo-admin-sora',
+  email: 'sora@ryostays.local',
+  full_name: 'Sora Admin',
+  role: 'admin',
+  avatar_url: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&q=80',
+};
+
+export const DEMO_USERS: Record<'guest' | 'host' | 'admin', DemoUser> = {
+  guest: DEMO_GUEST,
+  host: DEMO_HOST,
+  admin: DEMO_ADMIN,
+};
+
+/** Back-compat alias — existing callers default to the guest identity. */
+export const DEFAULT_DEMO_USER: DemoUser = DEMO_GUEST;
 
 let cached: DemoUser | null = readStorage();
 const listeners = new Set<() => void>();
@@ -73,6 +105,11 @@ export function setDemoUser(u: DemoUser | null): void {
 
 export function signInAsDemo(u: DemoUser = DEFAULT_DEMO_USER): void {
   setDemoUser(u);
+}
+
+/** Sign in as a demo guest / host / admin. */
+export function signInAsRole(role: 'guest' | 'host' | 'admin'): void {
+  setDemoUser(DEMO_USERS[role]);
 }
 
 export function signOutDemo(): void {

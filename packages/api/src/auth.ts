@@ -14,7 +14,7 @@ function demoAsUser(d: DemoUser): User {
       full_name: d.full_name,
       avatar_url: d.avatar_url ?? null,
     },
-    app_metadata: { demo: true },
+    app_metadata: { demo: true, role: d.role },
     aud: 'authenticated',
     created_at: new Date(0).toISOString(),
   } as unknown as User;
@@ -42,11 +42,12 @@ export function useSession() {
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  // Real Supabase session always wins. Demo user only fills in when there
-  // is no Supabase project wired (`tryGetSupabase()` returns null).
+  // Real Supabase session always wins. The demo identity fills in whenever
+  // there's no real session — including when Supabase IS configured — so the
+  // multi-role demo sign-in works on the live site. TEMPORARY testing bypass;
+  // must be removed/gated before public launch (see demo-auth.ts).
   const realUser = session?.user ?? null;
-  const supabaseAvailable = tryGetSupabase() !== null;
-  const effectiveUser = realUser ?? (!supabaseAvailable && demo ? demoAsUser(demo) : null);
+  const effectiveUser = realUser ?? (demo ? demoAsUser(demo) : null);
 
   return { session, user: effectiveUser, loading };
 }
@@ -55,14 +56,15 @@ export function useUser(): User | null {
   return useSession().user;
 }
 
-/** The current user's role (from `profiles.role`). Demo users and the
- *  no-Supabase preview are always `'guest'`. Returns `null` role when signed
- *  out. Gracefully degrades to `'guest'` if the role column isn't present yet
- *  (migration 0003 not applied) so the app never hard-fails on it. */
+/** The current user's role. Demo users carry their role in `app_metadata.role`
+ *  (multi-role demo sign-in). Real users are looked up from `profiles.role`.
+ *  Returns `null` role when signed out. Gracefully degrades to `'guest'` if the
+ *  role column isn't present yet (migration 0003 not applied). */
 export function useRole(): { role: UserRole | null; loading: boolean } {
   const { user, loading: sessionLoading } = useSession();
   const supabase = tryGetSupabase();
-  const isDemo = (user?.app_metadata as { demo?: boolean } | undefined)?.demo === true;
+  const meta = user?.app_metadata as { demo?: boolean; role?: UserRole } | undefined;
+  const isDemo = meta?.demo === true;
   const realLookup = !!user && !!supabase && !isDemo;
 
   const { data, isLoading } = useQuery({
@@ -81,6 +83,7 @@ export function useRole(): { role: UserRole | null; loading: boolean } {
   });
 
   if (!user) return { role: null, loading: sessionLoading };
+  if (isDemo) return { role: meta?.role ?? 'guest', loading: sessionLoading };
   if (!realLookup) return { role: 'guest', loading: sessionLoading };
   return { role: data ?? null, loading: sessionLoading || isLoading };
 }
