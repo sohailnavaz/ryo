@@ -1,8 +1,8 @@
 ---
 doc: PROGRESS
 purpose: Human-readable living status doc. Safe to share with collaborators, investors, or friends.
-last_updated: 2026-05-12
-version: 0.7.0
+last_updated: 2026-05-23
+version: 0.10.0
 ---
 
 # Ryo — Progress
@@ -20,7 +20,7 @@ version: 0.7.0
 - **Codebase alias:** `bnb` (legacy dir name) → being rebranded to `ryo`. See [branding §12](./branding.md#12-naming-migration-bnb--ryo).
 - **Tagline (locked):** *Just Ryo it.*
 - **Owner:** Makuta Developers — dm@makutadevelopers.com
-- **Stage:** v1 in build — guest-only (no host UI, mock payments).
+- **Stage:** v1 in build. Live Supabase wired (20 listings seeded, real persistence on the dev environment); guest flow + a guest account hub built; host + admin sites exist as v2-preview (host create/edit-listing persist for real, the rest synthetic). Payments still mocked. The public Vercel deploy still serves dummy data until the Supabase env vars are added there.
 
 ---
 
@@ -31,16 +31,16 @@ version: 0.7.0
 | M0 | Monorepo scaffold | ✅ done | pnpm + Turborepo + shared tsconfig/tailwind — `apps/{web,mobile}`, `packages/{ui,features,api,db,utils,config}`. `pnpm typecheck` green, `next build` green. |
 | M1 | Supabase schema | ✅ done | `supabase/migrations/0001_init.sql` — profiles / listings / listing_photos / bookings / reviews / favorites; full RLS + `on_auth_user_created` trigger; `seed.sql` with 20 listings. |
 | M2 | Auth | 🟡 code landed, unverified | `SignInScreen` + `AuthGate` + `packages/api/auth.ts` wired. Magic-link + Google OAuth round-trip not yet tested against a live Supabase project. |
-| M3 | Explore + Search | 🟡 code landed, unverified | `HomeScreen`, `CategoryBar`, `SearchBar`, `FilterSheet`, `Map` (web/native split). Live data + polish pass pending. |
-| M4 | Listing detail | 🟡 code landed, unverified | `ListingScreen` — gallery / amenities / sticky booking card built from `@bnb/ui` primitives. Live-content wiring pending. |
+| M3 | Explore + Search | 🟢 live (dev) | `HomeScreen`, `CategoryBar`, `SearchBar`, `FilterSheet`, `Map` (web/native split). Now reads the 20 live Supabase listings on the dev environment; responsive polish pass still pending. |
+| M4 | Listing detail | 🟢 live (dev) | `ListingScreen` — gallery / amenities / sticky booking card built from `@bnb/ui` primitives. Renders live Supabase listing content on the dev environment. |
 | M5 | Booking flow | 🟡 code landed, unverified | `BookingScreen` + `Calendar` (web/native split) + `PriceTotal`. Mock-payment confirm → `bookings` row happy path pending. |
 | M6 | Trips / Profile / Favorites | 🟡 code landed, unverified | All three screens built. Live-data wiring + auth-gated routes pending. |
 | — | Product specs | ✅ done | 14 UI-agnostic module docs (`docs/00-overview` + `docs/02`–`14`) + `docs/README.md` index + `docs/airbnb-reference.md` + `docs/branding.md` + this doc. |
 | M7 | Responsive polish + e2e | ⚪ queued | Tablet/desktop breakpoint pass + `frontend-design` skill critique against brand. |
-| — | Live verification | ⚪ queued | Spin up Supabase project, wire env vars, confirm auth + booking happy path on web + iOS sim. Tracked as row 15 in [AGENTS_TODO](../AGENTS_TODO.md). |
+| — | Live verification | 🟠 partial | Supabase project live (ref `mtldmawenkdebtchnocs`), 20 listings seeded, dev env reads/writes real data. Still pending: magic-link + Google OAuth round-trip, booking happy path on iOS sim, and Vercel env vars (public deploy still on dummy data). Tracked as row 15 in [AGENTS_TODO](../AGENTS_TODO.md). |
 | — | Rebrand `bnb` → `ryo` | ⚫ blocked | Single PR — blocked on logo + domains ([branding §12](./branding.md#12-naming-migration-bnb--ryo)). |
 
-**Legend:** ✅ done · 🟡 code landed, live-verification pending · 🟠 in progress · ⚪ queued · ⚫ blocked
+**Legend:** ✅ done · 🟢 live on the dev environment · 🟡 code landed, live-verification pending · 🟠 in progress / partial · ⚪ queued · ⚫ blocked
 
 ---
 
@@ -56,16 +56,17 @@ Primitives (Button, Card, Input, Text, Heading, Badge, Stack, Divider, Skeleton,
 - `listing/` — ListingScreen (detail)
 - `booking/` — BookingScreen
 - `trips/` — TripsScreen
-- `profile/` — ProfileScreen
+- `profile/` — ProfileScreen (account hub: personal info incl. address + emergency contact, about-you incl. school/decade/fun-fact, preferences, granular notifications + quiet hours, security, privacy & data export)
 - `favorites/` — FavoritesScreen
-- `host/` — full host site (v2-preview, web-only): `HostShell` + Dashboard · Calendar · Bookings (list + detail) · Listings (list + read-only editor) · Earnings · Inbox (list + thread) · Reviews · Settings · Insights stub
-- `admin/` — full admin site (v2-preview, web-only): `AdminShell` + Overview · Search · Users (list + inspector) · Bookings (list + inspector) · Moderation · Incidents · Finance · Flags · Audit log · System health
+- `host/` — full host site (v2-preview, web-only): `HostShell` + Dashboard · **Calendar (editable: tap a day to block/re-open or set a per-day price override, persisted client-side)** · Bookings (list + detail) · Listings (list + **real editable form** for owned listings: edit/save/delete via Supabase; synthetic ids read-only) · Earnings · Inbox (list + thread) · Reviews · Settings · Insights stub
+- `admin/` — full admin site (v2-preview, web-only): `AdminShell` + Overview · Search · Users (list + inspector) · Bookings (list + inspector) · Moderation · Incidents · Finance · Flags · Audit log · System health. **Top-5 actions now live** (client-side): suspend user · approve/reject listing · keep/remove review · refund/cancel booking · resolve incident · toggle flag — each via `ReasonCodeModal`/`ConfirmModal` with a real audit log
 - `state/` — Zustand store
 
 ### Backend (`supabase/` + `packages/api`)
 - Migration `0001_init.sql` — tables, enums, RLS policies, seed data
 - API hooks: `listings`, `bookings`, `favorites`, `reviews`, `auth`, `filters` (TanStack Query wrappers)
 - v2-preview synthetic data: `host` (`useHostDashboard`), `admin` (`useAdminDashboard`) — derive plausible bookings/earnings/users from the existing public-read listings, no schema or RLS changes
+- v2-preview admin mutations: `admin-store.ts` — client-side override layer (useSyncExternalStore + localStorage + append-only audit log) backing the live admin actions; `admin.ts` read hooks merge it. Swapped for privileged Supabase writes when staff auth lands
 - Dummy-listings fallback (`packages/api/src/dummy-listings.ts`) — 16 listings with deterministic ids; activates when Supabase isn't configured. **Must hard-fail in `NODE_ENV=production`** per [path-to-production plan M9.3](#);  currently always falls back.
 
 ### Apps
@@ -163,6 +164,36 @@ These are the calls I'd most like a second opinion on. If you're reviewing, skim
 ## 8. Changelog
 
 Append-only, newest first. One line per shipped thing. Version bumps follow branding.md convention (patch / minor / major).
+
+### `0.10.0` — 2026-05-23
+
+**Host calendar becomes editable.** `/host/calendar` stops being a read-only grid — a host can now tap any non-booked day to **block / re-open** it or set a **per-day nightly price override**. Edits persist client-side via a new `packages/api/src/host-calendar-store.ts` override layer (same `useSyncExternalStore` + localStorage pattern as `admin-store.ts` / `demo-auth.ts`); `HostCalendarScreen` merges the overrides over the synthetic days so changes reflect instantly and survive a refresh. Booked days stay immovable; a small dot marks days with a custom price. Still client-side — when a real `listing_calendar` table + RLS land, the store is swapped for Supabase writes and deleted.
+
+**Status accuracy.** §1 + §2 corrected to reflect that live Supabase is wired (20 listings, real persistence on the dev environment): Explore (M3) + Listing detail (M4) now render live data; the public Vercel deploy still serves dummy data until its env vars are added.
+
+### `0.9.0` — 2026-05-23
+
+**Guest profile — round two (backend-free fields).** The account hub fills out the fields that don't need a backend to be real:
+
+- **Personal info** now captures your **address** and an **emergency contact** (name + phone), alongside the existing name / phone / city / country.
+- **About you** adds **where you went to school**, the **decade you were born** (chip picker), and a **fun fact** — the public-profile colour Airbnb shows.
+- **Notifications** are no longer just three channel switches. They're grouped into **Channels** (email / push / SMS), **What you hear about** (account & policy vs. promotions & inspiration), and **Timing** (a quiet-hours toggle that pauses non-urgent alerts overnight).
+
+All of these persist through the same `user_metadata` path as the rest of the profile — no schema change. What's still left needs the backend: saved payment methods, 2FA, a real active-sessions list, verification badges, and "reviews about me".
+
+### `0.8.0` — 2026-05-22
+
+**Guest profile + host listing edit.** Alongside the admin actions below, two more view→action gaps closed:
+
+- **Guest profile photo + data export.** Personal-info now sets a profile photo by URL (live preview, persists); a new Privacy & data section exports your profile as a JSON download. (Full file upload + server-side GDPR export still pending the backend.)
+- **Host listing edit is real.** A signed-in host now edits their own listing through a full form — title, description, type, price, currency, capacity, location, amenities — saving to Supabase via `useUpdateListing`, with a confirm-gated delete. (Previously the editor only knew synthetic preview data, so real owned listings 404'd here.)
+
+**Admin console actions go live (client-side).** The admin portal stops being read-only: its top-5 privileged actions now perform real mutations instead of "Preview only" toasts.
+
+- **What works now.** Suspend / reinstate a user · approve / request-changes / reject a listing · keep / remove a flagged review · toggle a feature flag (emergency flags require a note) · assign + resolve an incident · cancel + fully refund a booking. Each is gated behind a reason-code + confirm dialog, writes to an audit log, and reflects optimistically across every admin screen.
+- **New shared primitives.** `ConfirmModal` + `ReasonCodeModal` in `@bnb/ui` (brand-styled centered dialogs; reason-code chips + optional/required note). These are the Phase-25 primitives, now landed.
+- **How it persists.** A new `packages/api/src/admin-store.ts` override layer (same `useSyncExternalStore` + localStorage pattern as demo-auth) holds the changes + an append-only audit log; admin read hooks merge it. Changes survive a page refresh and surface in `/admin/audit`. **Still client-side** — no backend write yet; when real staff auth + Supabase land, each action becomes a privileged server call and this layer is deleted.
+- **Honest status:** the admin console is now a working tool against synthetic data, not a poster. Host-side actions + the rest of the guest profile remain views.
 
 ### `0.7.0` — 2026-05-12
 

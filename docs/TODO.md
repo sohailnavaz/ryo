@@ -13,20 +13,20 @@ last_updated: 2026-05-13
 ## 🔍 Feature-completeness gap analysis vs Airbnb (2026-05-13)
 
 > Audit triggered by: "no admin management side development started, and the client profile is also not complete."
-> **Both correct.** What exists is **views**, not **actions**. The host (13 screens) and admin (13 screens) portals render synthetic data beautifully but **zero of them perform a real mutation** — no suspend, approve, refund, accept, edit, or save-through. The guest profile edits only 3 fields. Below is the full benchmark against Airbnb's real surface area.
+> **Both correct *at the time*.** What existed was **views**, not **actions**. The host (13 screens) and admin (13 screens) portals rendered synthetic data beautifully but performed no mutations. **Update 2026-05-22:** the admin console's top-5 actions (suspend, approve, refund/cancel, resolve, toggle flag — plus review keep/remove) now perform real client-side mutations with reason-code + confirm + audit log (`packages/api/src/admin-store.ts`); they persist locally and reflect across the console but do not yet hit a backend. The guest profile still edits only a subset of fields. Below is the full benchmark against Airbnb's real surface area.
 
 **The single biggest blocker underneath all of this: there is no live backend.** Auth, payments, persistence, file upload, email, and search are all mocked. Most "actions" below can't be truly built until [M8 live Supabase](#m8--live-supabase--first-preview-deploy--1-day) lands. Until then we can build the *UI + optimistic flows* against synthetic data, but they won't persist.
 
 ### A. Guest / client side — vs Airbnb "Account" + trip experience
 
 **Profile / Account hub** — we have: name, language, currency. Airbnb has 8 sections; we're missing ~90%:
-- [x] **Personal info** — legal name, preferred name, phone, city, country (email read-only). *(email-change / address / emergency contact still TODO)*
-- [ ] **Profile photo upload** (needs Storage — M8/M17)
-- [x] **About you** — bio, work, languages (chip multi-select). *(school / decade / fun fact / reviews-about-me / verification badges still TODO)*
+- [x] **Personal info** — legal name, preferred name, phone, city, country, **address, emergency contact** (email read-only). *(email-change still TODO)*
+- [~] **Profile photo** — paste-a-URL editor live (persists to user_metadata + live header preview); drag-drop file upload still needs Storage (M8/M17)
+- [x] **About you** — bio, work, languages (chip multi-select), **school, decade born, fun fact**. *(reviews-about-me / verification badges still TODO — need backend)*
 - [~] **Login & security** — password-reset email wired; 2FA + sessions list + delete-account are placeholders
 - [ ] **Payments & payouts** — saved cards, add/remove payment method, Ryo credit/wallet, transaction history, receipts
-- [~] **Notifications** — email/push/SMS channel toggles live; per-event granularity + quiet hours still TODO
-- [ ] **Privacy & data** — GDPR/DPDPA export, delete, cookie prefs
+- [x] **Notifications** — email/push/SMS channel toggles + category granularity (account/policy, promotions) + quiet-hours toggle live
+- [~] **Privacy & data** — client-side "download my data" (JSON) export live; full server-side GDPR/DPDPA export + delete + granular cookie prefs still TODO
 - [ ] **Travel for work / referrals** (later)
 
 **Guest booking experience:**
@@ -46,7 +46,7 @@ last_updated: 2026-05-13
 
 All exist as read-only previews. Need real actions (most gated on M8):
 - [x] **Create a listing** — single-page publish form (title/desc/type/space/location/price/amenities/photo-URL) → persists, appears on home feed. *(multi-step wizard + photo upload still TODO)*
-- [~] **Edit listing** — `useUpdateListing`/`useDeleteListing` mutations wired; edit-form UI + re-moderation still TODO
+- [x] **Edit listing** — full editable form (title/description/type/price/currency/beds/baths/guests/city/country/amenities) persisting via `useUpdateListing`; delete via `useDeleteListing` behind a `ConfirmModal`; signed-in hosts edit their own real listings, synthetic ids fall back to a read-only preview. Photo reorder/upload + re-moderation routing still TODO
 - [ ] **Calendar management** — block/unblock dates, per-day price overrides, min/max stay, iCal import/export
 - [ ] **Accept / decline booking requests** (for request-to-book listings)
 - [ ] **Host-initiated cancellation** with penalty disclosure
@@ -60,14 +60,14 @@ All exist as read-only previews. Need real actions (most gated on M8):
 ### C. Admin / management side — turn 13 view screens into real ops tools
 
 All display-only today. The console must actually *do* things (`docs/14-admin-ops.md §4` safety patterns: reason code + confirm + audit entry + undo window):
-- [ ] **User management** — suspend / unsuspend / ban (with reason code), role grant/revoke, impersonate (read-only assist)
-- [ ] **Listing moderation** — approve / request-changes / reject from the queue, with reason + notes
-- [ ] **Review moderation** — keep / edit-out / remove flagged reviews
-- [ ] **Booking actions** — cancel, full/partial refund, issue credit, re-book, escalate
-- [ ] **Dispute / incident resolution** — assign, resolve, communicate, log outcome
+- [~] **User management** — suspend / reinstate **live** (reason code + confirm + audit, client-side store); role grant/revoke + impersonate still TODO
+- [~] **Listing moderation** — approve / request-changes / reject **live** from the queue with reason + notes; re-moderation routing TODO
+- [~] **Review moderation** — keep / remove flagged reviews **live**; inline edit-out still TODO
+- [~] **Booking actions** — cancel + full refund **live** (reason code + audit); partial refund / credit / re-book / escalate still TODO
+- [~] **Dispute / incident resolution** — assign + resolve **live** with reason code; richer comms log TODO
 - [ ] **Finance** — real GMV/payout reconciliation, chargeback handling, adjustments ledger
-- [ ] **Feature flags** — actually toggle (by user/region/%), with audit
-- [ ] **Audit log** — populated from real privileged actions (currently seeded)
+- [x] **Feature flags** — toggle **live** (reason code + audit; emergency flags require a note). Per-user/region/% targeting still TODO
+- [~] **Audit log** — now populated from real console actions (client-side store) in addition to seed; server-backed log lands with Supabase
 - [ ] **Global search** — resolve a real email/booking/listing id to the live record
 - [ ] **Staff auth** — SSO + mandatory 2FA, least-privilege roles, break-glass (`docs/14 §7`)
 - [ ] **Concierge desk** — the unified inbox + authorised-action console (`docs/12 §8`) — the actual differentiator
