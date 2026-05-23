@@ -3,8 +3,8 @@ import './globals.css';
 import { Providers } from './providers';
 
 export const metadata: Metadata = {
-  title: 'bnb — stay anywhere',
-  description: 'Airbnb-concept app. Find and book places to stay around the world.',
+  title: 'Ryo — stay anywhere',
+  description: 'Vetted hosts, a 24/7 concierge, and honest pricing — find and book places to stay around the world. Just Ryo it.',
 };
 
 export const viewport: Viewport = {
