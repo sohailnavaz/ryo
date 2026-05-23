@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { UserRole } from '@bnb/db';
 import { getSupabase, tryGetSupabase } from './client';
 import { signOutDemo, useDemoUser, type DemoUser } from './demo-auth';
 
@@ -52,6 +53,36 @@ export function useSession() {
 
 export function useUser(): User | null {
   return useSession().user;
+}
+
+/** The current user's role (from `profiles.role`). Demo users and the
+ *  no-Supabase preview are always `'guest'`. Returns `null` role when signed
+ *  out. Gracefully degrades to `'guest'` if the role column isn't present yet
+ *  (migration 0003 not applied) so the app never hard-fails on it. */
+export function useRole(): { role: UserRole | null; loading: boolean } {
+  const { user, loading: sessionLoading } = useSession();
+  const supabase = tryGetSupabase();
+  const isDemo = (user?.app_metadata as { demo?: boolean } | undefined)?.demo === true;
+  const realLookup = !!user && !!supabase && !isDemo;
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['role', user?.id],
+    enabled: realLookup,
+    staleTime: 60_000,
+    queryFn: async (): Promise<UserRole> => {
+      const { data, error } = await getSupabase()
+        .from('profiles')
+        .select('role')
+        .eq('id', user!.id)
+        .single();
+      if (error) return 'guest'; // column missing / row absent → safe default
+      return ((data as { role?: UserRole } | null)?.role ?? 'guest') as UserRole;
+    },
+  });
+
+  if (!user) return { role: null, loading: sessionLoading };
+  if (!realLookup) return { role: 'guest', loading: sessionLoading };
+  return { role: data ?? null, loading: sessionLoading || isLoading };
 }
 
 export function useSignOut() {

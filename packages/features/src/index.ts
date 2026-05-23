@@ -8,6 +8,7 @@ export * from './profile/ProfileScreen';
 export * from './favorites/FavoritesScreen';
 export * from './auth/SignInScreen';
 export * from './auth/AuthGate';
+export * from './auth/StaffGate';
 export * from './state/filtersStore';
 
 export * from './host/HostDashboardScreen';
@@ -39,6 +40,12 @@ export * from './admin/AdminHealthScreen';
 export * from './admin/AdminSearchScreen';
 export * from './admin/shell';
 
+export * from './incidents/GetHelpSheet';
+export * from './incidents/GuestIncidentsScreen';
+
 export * from './account/AccountDashboardScreen';
 export * from './shared/dashboard-chrome';
 export * from './shared/dashboard-shell';
+
+export * from './concierge/ConciergeScreen';
+export * from './concierge/useConcierge';

@@ -52,10 +52,13 @@ export type Review = {
   author_avatar?: string;
 };
 
+export type UserRole = 'guest' | 'host' | 'staff' | 'admin';
+
 export type Profile = {
   id: string;
   full_name: string | null;
   avatar_url: string | null;
+  role: UserRole;
   created_at: string;
 };
 
