@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { useHostIsPreview } from '@bnb/api';
 import { DashboardShell } from '../shared/dashboard-shell';
 
 export const HOST_NAV = [
@@ -17,11 +18,17 @@ export function HostShell({
   title,
   subtitle,
   children,
+  isPreview = true,
 }: {
   title: string;
   subtitle?: string;
   children: ReactNode;
+  /** Override the auto-detected preview state. When omitted, the banner hides
+   *  automatically once the signed-in host's real data loads. */
+  isPreview?: boolean;
 }) {
+  // Detected from the shared dashboard query: false once real host data loads.
+  const detected = useHostIsPreview();
   return (
     <DashboardShell
       kind="host"
@@ -30,6 +37,7 @@ export function HostShell({
       title={title}
       subtitle={subtitle}
       maxWidth={1280}
+      isPreview={isPreview ?? detected}
     >
       {children}
     </DashboardShell>

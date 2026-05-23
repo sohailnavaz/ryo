@@ -3,11 +3,10 @@ import { View } from 'react-native';
 import {
   DEMO_HOST_ID,
   dayKey,
-  setDayBlocked,
-  setDayPrice,
   useHostCalendar,
-  useHostCalendarOverrides,
+  useHostCalendarStore,
   type CalendarDay,
+  type HostCalendarStore,
 } from '@bnb/api';
 import {
   Badge,
@@ -32,7 +31,9 @@ type EffectiveDay = CalendarDay & { hasPriceOverride: boolean; isManualBlock: bo
 
 export function HostCalendarScreen({ hostId = DEMO_HOST_ID }: { hostId?: string }) {
   const { data, isLoading } = useHostCalendar(hostId, 60);
-  const overrides = useHostCalendarOverrides();
+  const listingIds = useMemo(() => (data?.listings ?? []).map((l) => l.id), [data]);
+  const store = useHostCalendarStore(listingIds);
+  const overrides = store.overrides;
   const [activeListing, setActiveListing] = useState<string | null>(null);
   const [editing, setEditing] = useState<EffectiveDay | null>(null);
 
@@ -105,7 +106,7 @@ export function HostCalendarScreen({ hostId = DEMO_HOST_ID }: { hostId?: string 
         </>
       )}
 
-      <DayEditorSheet day={editing} onClose={() => setEditing(null)} />
+      <DayEditorSheet day={editing} store={store} onClose={() => setEditing(null)} />
     </HostShell>
   );
 }
@@ -260,7 +261,15 @@ function DayCell({
   );
 }
 
-function DayEditorSheet({ day, onClose }: { day: EffectiveDay | null; onClose: () => void }) {
+function DayEditorSheet({
+  day,
+  store,
+  onClose,
+}: {
+  day: EffectiveDay | null;
+  store: HostCalendarStore;
+  onClose: () => void;
+}) {
   const [price, setPrice] = useState('');
 
   // Seed the price field whenever a new day opens.
@@ -285,7 +294,7 @@ function DayEditorSheet({ day, onClose }: { day: EffectiveDay | null; onClose: (
   const applyPrice = () => {
     const dollars = Number(price);
     if (!Number.isFinite(dollars) || dollars <= 0) return;
-    setDayPrice(day.listing_id, day.date, Math.round(dollars * 100));
+    void store.setPrice(day.listing_id, day.date, Math.round(dollars * 100));
     onClose();
   };
 
@@ -302,7 +311,7 @@ function DayEditorSheet({ day, onClose }: { day: EffectiveDay | null; onClose: (
         <Button
           variant={isBlocked ? 'primary' : 'secondary'}
           onPress={() => {
-            setDayBlocked(day.listing_id, day.date, !isBlocked);
+            void store.setBlocked(day.listing_id, day.date, !isBlocked);
             onClose();
           }}
         >
@@ -332,7 +341,7 @@ function DayEditorSheet({ day, onClose }: { day: EffectiveDay | null; onClose: (
               <Button
                 variant="ghost"
                 onPress={() => {
-                  setDayPrice(day.listing_id, day.date, null);
+                  void store.setPrice(day.listing_id, day.date, null);
                   onClose();
                 }}
               >

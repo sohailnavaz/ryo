@@ -26,6 +26,7 @@ import {
 } from '@bnb/ui';
 import { useRouter } from '@bnb/ui/nav';
 import { formatPrice } from '@bnb/utils';
+import { AddressAutocomplete } from './AddressAutocomplete';
 import { HostShell } from './shell';
 
 const PROPERTY_TYPES = ['House', 'Apartment', 'Cabin', 'Villa', 'Treehouse', 'Cottage'];
@@ -109,6 +110,8 @@ function RealEditor({
   const [guests, setGuests] = useState('2');
   const [city, setCity] = useState('');
   const [country, setCountry] = useState('');
+  const [address, setAddress] = useState('');
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [amenities, setAmenities] = useState<string[]>([]);
 
   useEffect(() => {
@@ -123,6 +126,8 @@ function RealEditor({
     setGuests(String(listing.max_guests));
     setCity(listing.city);
     setCountry(listing.country);
+    setAddress(listing.address ?? '');
+    setCoords(listing.lat || listing.lng ? { lat: listing.lat, lng: listing.lng } : null);
     setAmenities(listing.amenities ?? []);
   }, [listing]);
 
@@ -174,6 +179,8 @@ function RealEditor({
           max_guests: toInt(guests, listing.max_guests),
           city: city.trim(),
           country: country.trim(),
+          address: address.trim(),
+          ...(coords ? { lat: coords.lat, lng: coords.lng } : {}),
           amenities,
         },
       },
@@ -310,12 +317,27 @@ function RealEditor({
           <Card className="p-5">
             <Text className="font-semibold">Location</Text>
             <VStack className="mt-3 gap-3">
+              <AddressAutocomplete
+                label="Update address"
+                onResolved={(place) => {
+                  setAddress(place.address);
+                  if (place.city) setCity(place.city);
+                  if (place.country) setCountry(place.country);
+                  setCoords({ lat: place.lat, lng: place.lng });
+                }}
+              />
               <Labeled label="City">
                 <Input value={city} onChangeText={setCity} />
               </Labeled>
               <Labeled label="Country">
                 <Input value={country} onChangeText={setCountry} />
               </Labeled>
+              {coords ? (
+                <Text variant="caption" className="text-ink-soft">
+                  Pinned at {coords.lat.toFixed(4)}, {coords.lng.toFixed(4)}
+                  {address ? ` · ${address}` : ''}
+                </Text>
+              ) : null}
             </VStack>
           </Card>
 

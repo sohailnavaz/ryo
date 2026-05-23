@@ -14,6 +14,7 @@ import {
   VStack,
 } from '@bnb/ui';
 import { useRouter } from '@bnb/ui/nav';
+import { AddressAutocomplete } from './AddressAutocomplete';
 
 const PROPERTY_TYPES = ['House', 'Apartment', 'Cabin', 'Villa', 'Treehouse', 'Cottage'];
 const CURRENCIES = ['USD', 'INR', 'EUR', 'GBP', 'JPY', 'AUD'];
@@ -33,6 +34,8 @@ export function HostListingCreateScreen() {
   const [guests, setGuests] = useState('2');
   const [city, setCity] = useState('');
   const [country, setCountry] = useState('');
+  const [address, setAddress] = useState('');
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [amenities, setAmenities] = useState<string[]>([]);
   const [photoUrl, setPhotoUrl] = useState('');
 
@@ -68,6 +71,9 @@ export function HostListingCreateScreen() {
       max_guests: num(guests, 2),
       city: city.trim(),
       country: country.trim(),
+      address: address.trim() || undefined,
+      lat: coords?.lat,
+      lng: coords?.lng,
       amenities,
       photo_urls: photoUrl.trim() ? [photoUrl.trim()] : [],
     };
@@ -143,6 +149,14 @@ export function HostListingCreateScreen() {
         <Card className="p-5 gap-4">
           <Heading level={3}>Location</Heading>
           <Divider />
+          <AddressAutocomplete
+            onResolved={(place) => {
+              setAddress(place.address);
+              if (place.city) setCity(place.city);
+              if (place.country) setCountry(place.country);
+              setCoords({ lat: place.lat, lng: place.lng });
+            }}
+          />
           <HStack className="gap-3">
             <Field label="City" className="flex-1">
               <Input value={city} onChangeText={setCity} placeholder="Goa" />
@@ -151,6 +165,12 @@ export function HostListingCreateScreen() {
               <Input value={country} onChangeText={setCountry} placeholder="India" />
             </Field>
           </HStack>
+          {coords ? (
+            <Text variant="caption" className="text-ink-soft">
+              Pinned at {coords.lat.toFixed(4)}, {coords.lng.toFixed(4)}
+              {address ? ` · ${address}` : ''}
+            </Text>
+          ) : null}
         </Card>
 
         <Card className="p-5 gap-4">

@@ -18,6 +18,9 @@ export type DashboardShellProps = {
   subtitle?: string;
   children: ReactNode;
   maxWidth?: number;
+  /** Show the "v2 preview / synthetic data" banner. Defaults to true to preserve
+   *  existing behaviour; host pages pass `false` once real signed-in data loads. */
+  isPreview?: boolean;
 };
 
 function isActive(pathname: string, item: NavItem): boolean {
@@ -36,6 +39,7 @@ export function DashboardShell({
   subtitle,
   children,
   maxWidth = 1280,
+  isPreview = true,
 }: DashboardShellProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -48,7 +52,7 @@ export function DashboardShell({
         className="md:mx-auto md:w-full px-4 pt-4 pb-20 md:px-10 md:pt-8"
         style={{ maxWidth }}
       >
-        <PreviewBanner kind={kind} />
+        {isPreview ? <PreviewBanner kind={kind} /> : null}
 
         {/* Mobile horizontal tabs */}
         <View className="md:hidden mt-4 -mx-4 px-4">

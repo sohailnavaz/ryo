@@ -6,6 +6,7 @@
 import { useQuery } from '@tanstack/react-query';
 import type { Listing } from '@bnb/db';
 import { fetchListings } from './listings';
+import { tryGetSupabase } from './client';
 
 export const DEMO_HOST_ID = '11111111-1111-1111-1111-111111111111';
 
@@ -287,16 +288,165 @@ function statsFor(listings: Listing[], bookings: SyntheticBooking[]): HostStats 
   };
 }
 
-export async function fetchHostDashboard(hostId: string) {
-  const all = await fetchListings();
-  const listings = all.filter((l) => l.host_id === hostId);
+export type HostDashboard = {
+  hostId: string;
+  listings: Listing[];
+  bookings: SyntheticBooking[];
+  reviews: SyntheticReview[];
+  stats: HostStats;
+  /** true → data is synthetic (no signed-in host with listings); UI shows a preview banner. */
+  isPreview: boolean;
+};
+
+// ---------------------------------------------------------------------------
+// Real path — when a host is signed in against a live Supabase project we read
+// their OWN data: listings (host_id = auth.uid()), the bookings on those
+// listings (RLS policy "bookings host read own listings"), and their reviews
+// (public-read). Earnings/stats are derived from the real bookings. When there
+// is no Supabase, no session, or the user owns no listings, we fall through to
+// the deterministic synthetic layer below (isPreview: true).
+// ---------------------------------------------------------------------------
+
+const LISTING_COLUMNS = `
+  id, host_id, title, description, price_cents, currency, property_type,
+  bedrooms, bathrooms, max_guests, address, city, country, lat, lng,
+  amenities, rating_avg, rating_count, created_at,
+  photos:listing_photos ( id, listing_id, url, position )
+`;
+
+/** Map a real bookings row (DB status is only confirmed|cancelled) to the
+ *  date-derived display status the host UI renders. */
+function deriveStatus(
+  start: string,
+  end: string,
+  dbStatus: string,
+  today: string,
+): SyntheticBooking['status'] {
+  if (dbStatus === 'cancelled') return 'cancelled';
+  if (end <= today) return 'completed';
+  if (start <= today && end > today) return 'in_stay';
+  return 'upcoming';
+}
+
+async function tryFetchRealHostDashboard(): Promise<HostDashboard | null> {
+  const supabase = tryGetSupabase();
+  if (!supabase) return null;
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data: listingRows, error: lErr } = await supabase
+    .from('listings')
+    .select(LISTING_COLUMNS)
+    .eq('host_id', user.id)
+    .order('created_at', { ascending: false });
+  if (lErr) throw lErr;
+
+  const listings = ((listingRows ?? []) as unknown as Listing[]).map((l) => ({
+    ...l,
+    photos: (l.photos ?? []).slice().sort((a, b) => a.position - b.position),
+  }));
+  // No owned listings → let the synthetic preview render instead of an empty dashboard.
+  if (listings.length === 0) return null;
+
+  const ids = listings.map((l) => l.id);
+  const byId = new Map(listings.map((l) => [l.id, l] as const));
+  const photoOf = (l: Listing | undefined) =>
+    (l?.photos ?? []).slice().sort((a, b) => a.position - b.position)[0]?.url ?? null;
+
+  const [bookingsRes, reviewsRes] = await Promise.all([
+    supabase
+      .from('bookings')
+      .select(
+        `id, listing_id, guest_id, start_date, end_date, total_cents, status, created_at,
+         guest:profiles ( full_name, avatar_url )`,
+      )
+      .in('listing_id', ids)
+      .order('start_date', { ascending: true }),
+    supabase
+      .from('reviews')
+      .select(`id, listing_id, rating, body, created_at, guest:profiles ( full_name, avatar_url )`)
+      .in('listing_id', ids)
+      .order('created_at', { ascending: false }),
+  ]);
+  if (bookingsRes.error) throw bookingsRes.error;
+  if (reviewsRes.error) throw reviewsRes.error;
+
+  const today = todayIso();
+  type RawBooking = {
+    id: string; listing_id: string; start_date: string; end_date: string;
+    total_cents: number; status: string; created_at: string;
+    guest?: { full_name: string | null; avatar_url: string | null } | null;
+  };
+  const bookings: SyntheticBooking[] = ((bookingsRes.data ?? []) as unknown as RawBooking[]).map((b) => {
+    const l = byId.get(b.listing_id);
+    const nights = Math.max(
+      1,
+      Math.round((+new Date(b.end_date) - +new Date(b.start_date)) / 86_400_000),
+    );
+    return {
+      id: b.id,
+      listing_id: b.listing_id,
+      listing_title: l?.title ?? 'Listing',
+      listing_city: l?.city ?? '',
+      listing_country: l?.country ?? '',
+      listing_photo: photoOf(l),
+      guest_name: b.guest?.full_name ?? 'Guest',
+      guest_avatar: b.guest?.avatar_url ?? '',
+      start_date: b.start_date,
+      end_date: b.end_date,
+      nights,
+      total_cents: b.total_cents,
+      currency: l?.currency ?? 'USD',
+      status: deriveStatus(b.start_date, b.end_date, b.status, today),
+      created_at: b.created_at.slice(0, 10),
+    };
+  });
+
+  type RawReview = {
+    id: string; listing_id: string; rating: number; body: string; created_at: string;
+    guest?: { full_name: string | null; avatar_url: string | null } | null;
+  };
+  const reviews: SyntheticReview[] = ((reviewsRes.data ?? []) as unknown as RawReview[]).map((rv) => ({
+    id: rv.id,
+    listing_id: rv.listing_id,
+    listing_title: byId.get(rv.listing_id)?.title ?? 'Listing',
+    guest_name: rv.guest?.full_name ?? 'Guest',
+    guest_avatar: rv.guest?.avatar_url ?? '',
+    rating: rv.rating,
+    body: rv.body,
+    created_at: rv.created_at.slice(0, 10),
+  }));
+
+  return {
+    hostId: user.id,
+    listings,
+    bookings,
+    reviews,
+    stats: statsFor(listings, bookings),
+    isPreview: false,
+  };
+}
+
+function syntheticHostDashboard(listings: Listing[], hostId: string): HostDashboard {
   const today = todayIso();
   const bookings = listings.flatMap((l) => bookingsForListing(l, today));
   const reviews = listings.flatMap((l) => reviewsForListing(l));
   bookings.sort((a, b) => a.start_date.localeCompare(b.start_date));
   reviews.sort((a, b) => b.created_at.localeCompare(a.created_at));
-  const stats = statsFor(listings, bookings);
-  return { hostId, listings, bookings, reviews, stats };
+  return { hostId, listings, bookings, reviews, stats: statsFor(listings, bookings), isPreview: true };
+}
+
+export async function fetchHostDashboard(hostId: string): Promise<HostDashboard> {
+  // Prefer the signed-in host's real data; fall back to the synthetic preview.
+  const real = await tryFetchRealHostDashboard();
+  if (real) return real;
+
+  const all = await fetchListings();
+  const listings = all.filter((l) => l.host_id === hostId);
+  return syntheticHostDashboard(listings, hostId);
 }
 
 export function useHostDashboard(hostId: string = DEMO_HOST_ID) {
@@ -305,6 +455,14 @@ export function useHostDashboard(hostId: string = DEMO_HOST_ID) {
     queryFn: () => fetchHostDashboard(hostId),
     staleTime: 60_000,
   });
+}
+
+/** Whether the host site is showing synthetic preview data (true) or the
+ *  signed-in host's real data (false). Used to gate the "v2 preview" banner.
+ *  Assumes preview until the dashboard query resolves. */
+export function useHostIsPreview(hostId: string = DEMO_HOST_ID): boolean {
+  const { data } = useHostDashboard(hostId);
+  return data?.isPreview ?? true;
 }
 
 // ---------------------------------------------------------------------------
