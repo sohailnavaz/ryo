@@ -4,6 +4,7 @@
 // produced by ./host.ts so anon visitors can see a plausible operations view without any auth.
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { tryGetSupabase } from './client';
 import { fetchListings } from './listings';
 import { fetchHostDashboard, type SyntheticBooking } from './host';
 import {
@@ -20,6 +21,13 @@ import {
   type ReviewDecision,
   type UserStatus,
 } from './admin-store';
+import { auditIsLive, fetchRealAudit, recordAudit } from './audit';
+import {
+  getCreatedIncidents,
+  updateIncidentStatus,
+  type Incident,
+  type IncidentStatus,
+} from './incidents';
 
 export type AdminStats = {
   total_users: number;
@@ -472,14 +480,66 @@ const INCIDENT_SEED: AdminIncident[] = [
   },
 ];
 
+/** Fold a real / guest-created incident into the admin queue's shape. */
+function incidentToAdmin(i: Incident): AdminIncident {
+  return {
+    id: i.id,
+    tier: i.tier,
+    state: i.status,
+    title: i.subject,
+    user_id: i.guest_id,
+    user_name: i.guest_name,
+    booking_id: i.booking_id ?? undefined,
+    assigned_to: i.assigned_to ?? undefined,
+    opened_at: i.created_at.slice(0, 10),
+    summary: i.detail,
+  };
+}
+
 export function useAdminIncidents() {
   return useQuery({
     queryKey: ['admin-incidents'],
-    queryFn: async () => {
+    queryFn: async (): Promise<AdminIncident[]> => {
+      const sb = tryGetSupabase();
+      if (sb) {
+        // Real mode: the queue is whatever guests + the system have opened.
+        const { data, error } = await sb
+          .from('incidents')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        return (data ?? []).map((r) =>
+          incidentToAdmin({
+            id: String(r.id),
+            guest_id: String(r.guest_id ?? ''),
+            guest_name: String(r.guest_name ?? 'Guest'),
+            booking_id: (r.booking_id as string) ?? null,
+            listing_id: (r.listing_id as string) ?? null,
+            listing_title: (r.listing_title as string) ?? null,
+            host_id: (r.host_id as string) ?? null,
+            host_name: (r.host_name as string) ?? null,
+            category: (r.category as Incident['category']) ?? 'other',
+            tier: (r.tier as Incident['tier']) ?? 3,
+            status: (r.status as IncidentStatus) ?? 'new',
+            subject: String(r.subject ?? ''),
+            detail: String(r.detail ?? ''),
+            assigned_to: (r.assigned_to as string) ?? null,
+            created_at: String(r.created_at ?? ''),
+            updated_at: String(r.updated_at ?? ''),
+            resolved_at: (r.resolved_at as string) ?? null,
+          }),
+        );
+      }
+      // Demo: seed incidents (with console overrides) + anything guests opened
+      // via "Get help" (incident-store) so the support→incident loop is visible.
       const ov = getAdminOverrides();
-      return INCIDENT_SEED.map((i) =>
+      const seed = INCIDENT_SEED.map((i) =>
         ov.incidents[i.id] ? { ...i, state: ov.incidents[i.id] as IncidentState } : i,
       );
+      const created = getCreatedIncidents()
+        .map(incidentToAdmin)
+        .map((i) => (ov.incidents[i.id] ? { ...i, state: ov.incidents[i.id] as IncidentState } : i));
+      return [...created, ...seed];
     },
     staleTime: 60_000,
   });
@@ -625,6 +685,8 @@ export function useAdminAudit(filter: AdminAuditFilter = {}) {
   return useQuery({
     queryKey: ['admin-audit', filter],
     queryFn: async () => {
+      // Real mode: the audit log is the source of truth (docs/14 §5).
+      if (auditIsLive()) return fetchRealAudit(filter);
       const d = await fetchAdminDashboard();
       let entries = [...d.audit, ...AUDIT_SEED_EXTRA];
       if (filter.actor)
@@ -737,6 +799,12 @@ export function useAdminSetUserStatus() {
       note?: string;
     }) => {
       setUserStatus(v.userId, v.status, v.reason_code, v.note);
+      await recordAudit({
+        action: v.status === 'suspended' ? 'user_suspended' : 'user_reinstated',
+        target: `user:${v.userId}`,
+        reason_code: v.reason_code,
+        note: v.note,
+      });
     },
     onSuccess: () => invalidateAdmin(qc),
   });
@@ -753,6 +821,12 @@ export function useAdminModerateListing() {
       note?: string;
     }) => {
       setModerationDecision(v.itemId, v.listingId, v.decision, v.reason_code, v.note);
+      await recordAudit({
+        action: `listing_${v.decision}`,
+        target: `listing:${v.listingId}`,
+        reason_code: v.reason_code,
+        note: v.note,
+      });
     },
     onSuccess: () => invalidateAdmin(qc),
   });
@@ -768,6 +842,12 @@ export function useAdminModerateReview() {
       note?: string;
     }) => {
       setReviewDecision(v.reviewId, v.decision, v.reason_code, v.note);
+      await recordAudit({
+        action: v.decision === 'removed' ? 'review_removed' : 'review_kept',
+        target: `review:${v.reviewId}`,
+        reason_code: v.reason_code,
+        note: v.note,
+      });
     },
     onSuccess: () => invalidateAdmin(qc),
   });
@@ -778,6 +858,12 @@ export function useAdminToggleFlag() {
   return useMutation({
     mutationFn: async (v: { key: string; enabled: boolean; reason_code: string; note?: string }) => {
       setFlagEnabled(v.key, v.enabled, v.reason_code, v.note);
+      await recordAudit({
+        action: v.enabled ? 'flag_enabled' : 'flag_disabled',
+        target: `flag:${v.key}`,
+        reason_code: v.reason_code,
+        note: v.note,
+      });
     },
     onSuccess: () => invalidateAdmin(qc),
   });
@@ -792,9 +878,31 @@ export function useAdminSetIncidentState() {
       reason_code: string;
       note?: string;
     }) => {
-      setIncidentState(v.incidentId, v.state, v.reason_code, v.note);
+      // Real rows + guest-created incidents flow through ./incidents (which
+      // writes the status + an incident_event). Synthetic seed incidents fall
+      // back to the admin-store override map.
+      const assigned_to = v.state === 'in_progress' ? ADMIN_ACTOR : undefined;
+      const handled = await updateIncidentStatus(
+        v.incidentId,
+        v.state as IncidentStatus,
+        ADMIN_ACTOR,
+        v.note,
+        assigned_to,
+      );
+      if (!handled) setIncidentState(v.incidentId, v.state, v.reason_code, v.note);
+      await recordAudit({
+        action: v.state === 'resolved' ? 'incident_resolved' : `incident_${v.state}`,
+        target: `incident:${v.incidentId}`,
+        reason_code: v.reason_code,
+        note: v.note,
+      });
     },
-    onSuccess: () => invalidateAdmin(qc),
+    onSuccess: () => {
+      invalidateAdmin(qc);
+      for (const key of ['my-incidents', 'host-incidents', 'incident', 'incident-events']) {
+        qc.invalidateQueries({ queryKey: [key] });
+      }
+    },
   });
 }
 
@@ -809,6 +917,12 @@ export function useAdminRefundBooking() {
       note?: string;
     }) => {
       refundBooking(v.bookingId, v.refunded_cents, v.cancelled, v.reason_code, v.note);
+      await recordAudit({
+        action: v.cancelled ? 'booking_cancelled' : 'booking_refunded',
+        target: `booking:${v.bookingId}`,
+        reason_code: v.reason_code,
+        note: v.note,
+      });
     },
     onSuccess: () => invalidateAdmin(qc),
   });

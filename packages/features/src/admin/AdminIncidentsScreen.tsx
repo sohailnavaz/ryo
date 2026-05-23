@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import { View } from 'react-native';
-import { useAdminIncidents, useAdminSetIncidentState, type AdminIncident } from '@bnb/api';
+import {
+  incidentSla,
+  useAdminIncidents,
+  useAdminSetIncidentState,
+  type AdminIncident,
+  type IncidentSlaState,
+} from '@bnb/api';
 import {
   Avatar,
   Badge,
@@ -17,6 +23,17 @@ import {
 import { AdminShell } from './shell';
 
 const TIERS = [1, 2, 3] as const;
+
+function slaVariant(state: IncidentSlaState): 'neutral' | 'brand' | 'dark' {
+  if (state === 'breached') return 'brand';
+  if (state === 'due_soon') return 'dark';
+  return 'neutral';
+}
+
+/** AdminIncident carries only `opened_at` (a date); anchor the SLA clock there. */
+function slaForIncident(i: AdminIncident) {
+  return incidentSla({ tier: i.tier, created_at: `${i.opened_at}T09:00:00Z`, status: i.state });
+}
 
 const RESOLVE_REASONS = [
   { code: 'resolved_guest', label: 'Resolved with guest' },
@@ -101,17 +118,33 @@ export function AdminIncidentsScreen() {
                                     {i.user_name} · opened {i.opened_at}
                                   </Text>
                                 </VStack>
-                                <Badge
-                                  variant={
-                                    i.state === 'resolved'
-                                      ? 'neutral'
-                                      : i.state === 'new'
-                                        ? 'brand'
-                                        : 'dark'
-                                  }
-                                >
-                                  {i.state.replace('_', ' ')}
-                                </Badge>
+                                <VStack className="items-end gap-1">
+                                  <Badge
+                                    variant={
+                                      i.state === 'resolved'
+                                        ? 'neutral'
+                                        : i.state === 'new'
+                                          ? 'brand'
+                                          : 'dark'
+                                    }
+                                  >
+                                    {i.state.replace('_', ' ')}
+                                  </Badge>
+                                  {i.state !== 'resolved'
+                                    ? (() => {
+                                        const sla = slaForIncident(i);
+                                        return (
+                                          <Badge variant={slaVariant(sla.state)}>
+                                            {sla.state === 'breached'
+                                              ? 'SLA breached'
+                                              : sla.state === 'due_soon'
+                                                ? 'Due soon'
+                                                : 'On track'}
+                                          </Badge>
+                                        );
+                                      })()
+                                    : null}
+                                </VStack>
                               </HStack>
                             </Card>
                           </Pressable>
@@ -159,6 +192,16 @@ export function AdminIncidentsScreen() {
                     Opened {current.opened_at}
                     {current.assigned_to ? ` · assigned to ${current.assigned_to}` : ''}
                   </Text>
+                  {current.state !== 'resolved'
+                    ? (() => {
+                        const sla = slaForIncident(current);
+                        return (
+                          <Badge className="mt-2" variant={slaVariant(sla.state)}>
+                            {sla.label}
+                          </Badge>
+                        );
+                      })()
+                    : null}
                   <View className="mt-3 rounded-xl bg-surface-alt px-3 py-3">
                     <Text variant="small">{current.summary}</Text>
                   </View>
