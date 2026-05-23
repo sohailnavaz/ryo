@@ -27,6 +27,7 @@ import { useRouter } from '@bnb/ui/nav';
 const LOCALES = ['en-IN', 'en-US', 'hi-IN', 'es-ES', 'fr-FR', 'ja-JP', 'ar-AE'];
 const CURRENCIES = ['USD', 'INR', 'EUR', 'GBP', 'JPY', 'AUD'];
 const LANGUAGES = ['English', 'Hindi', 'Spanish', 'French', 'Arabic', 'Japanese', 'German', 'Portuguese'];
+const DECADES = ['1950s', '1960s', '1970s', '1980s', '1990s', '2000s'];
 
 export function ProfileScreen() {
   const router = useRouter();
@@ -72,6 +73,7 @@ export function ProfileScreen() {
         <PreferencesSection profile={profile} />
         <NotificationsSection profile={profile} />
         <SecuritySection email={profile.email} isDemo={profile.is_demo} />
+        <PrivacySection profile={profile} />
 
         <Button
           title={signOut.isPending ? 'Signing out…' : 'Sign out'}
@@ -208,15 +210,26 @@ function AboutSection({ profile }: { profile: RyoProfile }) {
   const [editing, setEditing] = useState(false);
   const [bio, setBio] = useState(profile.bio);
   const [work, setWork] = useState(profile.work);
+  const [school, setSchool] = useState(profile.school);
+  const [funFact, setFunFact] = useState(profile.fun_fact);
+  const [bornDecade, setBornDecade] = useState(profile.born_decade);
   const [languages, setLanguages] = useState<string[]>(profile.languages);
 
   useEffect(() => {
     setBio(profile.bio);
     setWork(profile.work);
+    setSchool(profile.school);
+    setFunFact(profile.fun_fact);
+    setBornDecade(profile.born_decade);
     setLanguages(profile.languages);
-  }, [profile.bio, profile.work, profile.languages]);
+  }, [profile.bio, profile.work, profile.school, profile.fun_fact, profile.born_decade, profile.languages]);
 
-  const save = () => doSave(update, { bio, work, languages }, () => setEditing(false));
+  const save = () =>
+    doSave(
+      update,
+      { bio, work, school, fun_fact: funFact, born_decade: bornDecade, languages },
+      () => setEditing(false),
+    );
 
   return (
     <SectionCard
@@ -232,6 +245,16 @@ function AboutSection({ profile }: { profile: RyoProfile }) {
         <VStack className="gap-3">
           <LabeledInput label="Bio" value={bio} onChangeText={setBio} placeholder="Tell guests a little about yourself" multiline />
           <LabeledInput label="Work" value={work} onChangeText={setWork} placeholder="What you do" />
+          <LabeledInput label="Where you went to school" value={school} onChangeText={setSchool} placeholder="School or university" />
+          <LabeledInput label="Fun fact" value={funFact} onChangeText={setFunFact} placeholder="Something memorable about you" />
+          <VStack className="gap-2">
+            <Text variant="small" className="text-ink-soft font-semibold">Decade you were born</Text>
+            <ChipPicker
+              options={DECADES}
+              selected={bornDecade ? [bornDecade] : []}
+              onToggle={(v) => setBornDecade((cur) => (cur === v ? '' : v))}
+            />
+          </VStack>
           <VStack className="gap-2">
             <Text variant="small" className="text-ink-soft font-semibold">Languages you speak</Text>
             <ChipPicker
@@ -248,6 +271,9 @@ function AboutSection({ profile }: { profile: RyoProfile }) {
         <VStack className="gap-1">
           <FieldRow label="Bio" value={profile.bio} />
           <FieldRow label="Work" value={profile.work} />
+          <FieldRow label="School" value={profile.school} />
+          <FieldRow label="Born in" value={profile.born_decade} />
+          <FieldRow label="Fun fact" value={profile.fun_fact} />
           <FieldRow label="Languages" value={profile.languages.join(', ')} />
         </VStack>
       )}
@@ -265,6 +291,10 @@ function PersonalInfoSection({ profile }: { profile: RyoProfile }) {
   const [phone, setPhone] = useState(profile.phone);
   const [city, setCity] = useState(profile.city);
   const [country, setCountry] = useState(profile.country);
+  const [address, setAddress] = useState(profile.address);
+  const [emName, setEmName] = useState(profile.emergency_contact_name);
+  const [emPhone, setEmPhone] = useState(profile.emergency_contact_phone);
+  const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url ?? '');
 
   useEffect(() => {
     setFullName(profile.full_name);
@@ -272,11 +302,37 @@ function PersonalInfoSection({ profile }: { profile: RyoProfile }) {
     setPhone(profile.phone);
     setCity(profile.city);
     setCountry(profile.country);
-  }, [profile.full_name, profile.preferred_name, profile.phone, profile.city, profile.country]);
+    setAddress(profile.address);
+    setEmName(profile.emergency_contact_name);
+    setEmPhone(profile.emergency_contact_phone);
+    setAvatarUrl(profile.avatar_url ?? '');
+  }, [
+    profile.full_name,
+    profile.preferred_name,
+    profile.phone,
+    profile.city,
+    profile.country,
+    profile.address,
+    profile.emergency_contact_name,
+    profile.emergency_contact_phone,
+    profile.avatar_url,
+  ]);
 
   const save = () =>
-    doSave(update, { full_name: fullName, preferred_name: preferredName, phone, city, country }, () =>
-      setEditing(false),
+    doSave(
+      update,
+      {
+        full_name: fullName,
+        preferred_name: preferredName,
+        phone,
+        city,
+        country,
+        address,
+        emergency_contact_name: emName,
+        emergency_contact_phone: emPhone,
+        avatar_url: avatarUrl.trim() || null,
+      },
+      () => setEditing(false),
     );
 
   return (
@@ -290,6 +346,18 @@ function PersonalInfoSection({ profile }: { profile: RyoProfile }) {
     >
       {editing ? (
         <VStack className="gap-3">
+          <HStack className="gap-3 items-center">
+            <Avatar src={avatarUrl.trim() || null} name={preferredName || fullName} size={56} />
+            <View className="flex-1">
+              <LabeledInput
+                label="Profile photo URL"
+                value={avatarUrl}
+                onChangeText={setAvatarUrl}
+                placeholder="https://…  (upload arrives with Storage)"
+                autoCapitalize="none"
+              />
+            </View>
+          </HStack>
           <LabeledInput label="Legal name" value={fullName} onChangeText={setFullName} />
           <LabeledInput label="Preferred name" value={preferredName} onChangeText={setPreferredName} placeholder="What we call you" />
           <LabeledInput label="Phone" value={phone} onChangeText={setPhone} placeholder="+91 …" keyboardType="phone-pad" />
@@ -301,6 +369,15 @@ function PersonalInfoSection({ profile }: { profile: RyoProfile }) {
               <LabeledInput label="Country" value={country} onChangeText={setCountry} />
             </View>
           </HStack>
+          <LabeledInput label="Address" value={address} onChangeText={setAddress} placeholder="Street, area, postal code" multiline />
+          <HStack className="gap-3">
+            <View className="flex-1">
+              <LabeledInput label="Emergency contact" value={emName} onChangeText={setEmName} placeholder="Name" />
+            </View>
+            <View className="flex-1">
+              <LabeledInput label="Their phone" value={emPhone} onChangeText={setEmPhone} placeholder="+91 …" keyboardType="phone-pad" />
+            </View>
+          </HStack>
         </VStack>
       ) : (
         <VStack className="gap-1">
@@ -309,6 +386,11 @@ function PersonalInfoSection({ profile }: { profile: RyoProfile }) {
           <FieldRow label="Email" value={profile.email ?? ''} />
           <FieldRow label="Phone" value={profile.phone} />
           <FieldRow label="Location" value={[profile.city, profile.country].filter(Boolean).join(', ')} />
+          <FieldRow label="Address" value={profile.address} />
+          <FieldRow
+            label="Emergency contact"
+            value={[profile.emergency_contact_name, profile.emergency_contact_phone].filter(Boolean).join(' · ')}
+          />
         </VStack>
       )}
     </SectionCard>
@@ -393,9 +475,17 @@ function NotificationsSection({ profile }: { profile: RyoProfile }) {
     <Card className="p-5 gap-3">
       <Heading level={3}>Notifications</Heading>
       <Divider />
+      <Text variant="small" className="text-ink-soft font-semibold">Channels</Text>
       <Row label="Email" hint="Booking confirmations, receipts, trip updates" k="notif_email" />
       <Row label="Push" hint="Real-time alerts in the app" k="notif_push" />
       <Row label="SMS" hint="Arrival-day reminders only" k="notif_sms" />
+      <Divider />
+      <Text variant="small" className="text-ink-soft font-semibold">What you hear about</Text>
+      <Row label="Account & policy" hint="Security alerts and important policy changes" k="notif_account" />
+      <Row label="Promotions & inspiration" hint="Deals, new stays, and travel ideas" k="notif_promotions" />
+      <Divider />
+      <Text variant="small" className="text-ink-soft font-semibold">Timing</Text>
+      <Row label="Quiet hours" hint="Pause non-urgent notifications overnight (9pm–8am)" k="quiet_hours" />
     </Card>
   );
 }
@@ -458,6 +548,63 @@ function SecuritySection({ email, isDemo }: { email: string | null; isDemo: bool
           }
         />
       </HStack>
+    </Card>
+  );
+}
+
+// ---- Privacy & data -------------------------------------------------------
+
+function PrivacySection({ profile }: { profile: RyoProfile }) {
+  const exportData = () => {
+    const payload = JSON.stringify({ exported_at: new Date().toISOString(), profile }, null, 2);
+    // Web: trigger a real download. Native: surface the data via a toast (file
+    // export arrives with the share-sheet wiring).
+    if (typeof document !== 'undefined') {
+      const blob = new Blob([payload], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'ryo-my-data.json';
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Your data is downloading.', { description: 'ryo-my-data.json' });
+    } else {
+      toast.info('Data export', { description: 'Available as a file download on the web app.' });
+    }
+  };
+
+  return (
+    <Card className="p-5 gap-3">
+      <Heading level={3}>Privacy & data</Heading>
+      <Divider />
+      <HStack className="justify-between items-center py-1">
+        <VStack className="flex-1 pr-3">
+          <Text className="font-semibold">Download your data</Text>
+          <Text variant="small" className="text-ink-soft">
+            Your profile as JSON. Bookings, messages & reviews are added once the backend is live.
+          </Text>
+        </VStack>
+        <Button title="Export" variant="outline" onPress={exportData} />
+      </HStack>
+      <HStack className="justify-between items-center py-1">
+        <VStack className="flex-1 pr-3">
+          <Text className="font-semibold">Cookie preferences</Text>
+          <Text variant="small" className="text-ink-soft">
+            We use only essential cookies today. Granular controls land with analytics.
+          </Text>
+        </VStack>
+        <Button
+          title="Manage"
+          variant="outline"
+          disabled
+          onPress={() => undefined}
+        />
+      </HStack>
+      {profile.is_demo ? (
+        <Text variant="caption" className="text-ink-soft">
+          Demo account — export reflects only what this browser holds.
+        </Text>
+      ) : null}
     </Card>
   );
 }

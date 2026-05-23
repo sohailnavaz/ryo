@@ -23,13 +23,22 @@ export type RyoProfile = {
   bio: string;
   city: string;
   country: string;
+  address: string;
+  emergency_contact_name: string;
+  emergency_contact_phone: string;
   languages: string[];
   work: string;
+  school: string;
+  born_decade: string;
+  fun_fact: string;
   preferred_locale: string;
   preferred_currency: string;
   notif_email: boolean;
   notif_push: boolean;
   notif_sms: boolean;
+  notif_account: boolean;
+  notif_promotions: boolean;
+  quiet_hours: boolean;
   is_demo: boolean;
 };
 
@@ -43,13 +52,22 @@ const EMPTY: Omit<RyoProfile, 'id' | 'email' | 'is_demo'> = {
   bio: '',
   city: '',
   country: '',
+  address: '',
+  emergency_contact_name: '',
+  emergency_contact_phone: '',
   languages: [],
   work: '',
+  school: '',
+  born_decade: '',
+  fun_fact: '',
   preferred_locale: 'en-US',
   preferred_currency: 'USD',
   notif_email: true,
   notif_push: true,
   notif_sms: false,
+  notif_account: true,
+  notif_promotions: false,
+  quiet_hours: false,
 };
 
 type Meta = Record<string, unknown>;
@@ -65,13 +83,22 @@ function fromMeta(meta: Meta): Omit<RyoProfile, 'id' | 'email' | 'is_demo'> {
     bio: str('bio'),
     city: str('city'),
     country: str('country'),
+    address: str('address'),
+    emergency_contact_name: str('emergency_contact_name'),
+    emergency_contact_phone: str('emergency_contact_phone'),
     languages: Array.isArray(meta['languages']) ? (meta['languages'] as string[]) : [],
     work: str('work'),
+    school: str('school'),
+    born_decade: str('born_decade'),
+    fun_fact: str('fun_fact'),
     preferred_locale: str('preferred_locale', 'en-US'),
     preferred_currency: str('preferred_currency', 'USD'),
     notif_email: bool('notif_email', true),
     notif_push: bool('notif_push', true),
     notif_sms: bool('notif_sms', false),
+    notif_account: bool('notif_account', true),
+    notif_promotions: bool('notif_promotions', false),
+    quiet_hours: bool('quiet_hours', false),
   };
 }
 
