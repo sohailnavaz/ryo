@@ -3,9 +3,23 @@
 // (see docs/14-admin-ops.md). Until then, these hooks aggregate the same synthetic per-listing data
 // produced by ./host.ts so anon visitors can see a plausible operations view without any auth.
 
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchListings } from './listings';
 import { fetchHostDashboard, type SyntheticBooking } from './host';
+import {
+  ADMIN_ACTOR,
+  getAdminOverrides,
+  refundBooking,
+  setFlagEnabled,
+  setIncidentState,
+  setModerationDecision,
+  setReviewDecision,
+  setUserStatus,
+  type IncidentState,
+  type ModerationDecision,
+  type ReviewDecision,
+  type UserStatus,
+} from './admin-store';
 
 export type AdminStats = {
   total_users: number;
@@ -91,6 +105,7 @@ function addDays(iso: string, n: number): string {
 
 export async function fetchAdminDashboard() {
   const all = await fetchListings();
+  const ov = getAdminOverrides();
   // Aggregate synthetic bookings across all hosts.
   const hostIds = Array.from(new Set(all.map((l) => l.host_id)));
   const dashboards = await Promise.all(hostIds.map((id) => fetchHostDashboard(id)));
@@ -118,15 +133,21 @@ export async function fetchAdminDashboard() {
     active_incidents: 1,
   };
 
-  const moderation: AdminModerationItem[] = all.slice(0, stats.pending_moderation).map((l, i) => ({
-    id: `mod-${l.id}`,
-    listing_id: l.id,
-    listing_title: l.title,
-    listing_city: l.city,
-    reason: MODERATION_SEED_REASONS[i % MODERATION_SEED_REASONS.length] as string,
-    submitted_at: addDays(today, -(i + 1)),
-    state: i === 0 ? 'in_review' : 'pending',
-  }));
+  const moderation: AdminModerationItem[] = all
+    .slice(0, stats.pending_moderation)
+    .map((l, i) => ({
+      id: `mod-${l.id}`,
+      listing_id: l.id,
+      listing_title: l.title,
+      listing_city: l.city,
+      reason: MODERATION_SEED_REASONS[i % MODERATION_SEED_REASONS.length] as string,
+      submitted_at: addDays(today, -(i + 1)),
+      state: (i === 0 ? 'in_review' : 'pending') as AdminModerationItem['state'],
+    }))
+    // Drop anything a moderator has already actioned via the console.
+    .filter((m) => !ov.moderation[m.id]);
+  // Reflect resolved moderation in the pending count.
+  stats.pending_moderation = moderation.length;
 
   const recent: SyntheticBooking[] = bookings
     .slice()
@@ -152,13 +173,28 @@ export async function fetchAdminDashboard() {
     uptime_30d_pct: 99.97,
   };
 
+  const mergedAudit: AdminAuditEntry[] = [
+    ...ov.audit.map((a) => ({
+      id: a.id,
+      actor: a.actor,
+      action: a.action,
+      target: a.target,
+      reason_code: a.reason_code,
+      created_at: a.created_at,
+    })),
+    ...audit,
+  ];
+
   return {
     stats,
     listings: all,
-    users: ADMIN_USERS_SEED,
+    users: ADMIN_USERS_SEED.map((u) => ({
+      ...u,
+      status: ov.userStatus[u.id] ?? u.status,
+    })),
     moderation,
     recent_bookings: recent,
-    audit,
+    audit: mergedAudit,
     health,
   };
 }
@@ -200,9 +236,14 @@ export function useAdminUsers(query?: string) {
   return useQuery({
     queryKey: ['admin-users', query ?? ''],
     queryFn: async () => {
-      if (!query) return ADMIN_USERS_SEED;
+      const ov = getAdminOverrides();
+      const withStatus = ADMIN_USERS_SEED.map((u) => ({
+        ...u,
+        status: ov.userStatus[u.id] ?? u.status,
+      }));
+      if (!query) return withStatus;
       const q = query.toLowerCase();
-      return ADMIN_USERS_SEED.filter(
+      return withStatus.filter(
         (u) =>
           u.display_name.toLowerCase().includes(q) ||
           u.email.toLowerCase().includes(q) ||
@@ -220,6 +261,8 @@ export function useAdminUser(userId: string | undefined) {
     queryFn: async (): Promise<AdminUserDetail | null> => {
       const u = ADMIN_USERS_SEED.find((x) => x.id === userId);
       if (!u) return null;
+      const ov = getAdminOverrides();
+      const status = ov.userStatus[u.id] ?? u.status;
       const d = await fetchAdminDashboard();
       // Map a few synthetic bookings onto this user so the inspector has content.
       const bookings = d.recent_bookings.slice(0, u.bookings).map((b) => ({
@@ -231,9 +274,20 @@ export function useAdminUser(userId: string | undefined) {
         total_cents: b.total_cents,
         currency: b.currency,
       }));
-      const audit = d.audit.filter((a) => a.target.includes(u.id.replace('u', 'u-')));
+      // Seed audit (targets like "user:u-7") + any console actions on this user.
+      const seedAudit = d.audit.filter((a) => a.target.includes(u.id.replace('u', 'u-')));
+      const consoleAudit = d.audit.filter((a) => a.target === `user:${u.id}`);
+      const audit = [...consoleAudit, ...seedAudit];
+      const suspendedViaConsole = ov.userStatus[u.id] === 'suspended' && u.status !== 'suspended';
+      const notes =
+        status === 'suspended'
+          ? suspendedViaConsole
+            ? ['Suspended from the console — see audit trail for reason code.']
+            : ['Suspended after 3 review-bombing reports — under T&S review.']
+          : [];
       return {
         ...u,
+        status,
         phone: `+1 555 ${100 + u.id.charCodeAt(1)}`,
         verified: u.role !== 'guest' || u.bookings > 0,
         city: ['Lisbon', 'Tokyo', 'Mumbai', 'Mexico City', 'Berlin'][u.id.charCodeAt(1) % 5] as string,
@@ -242,10 +296,7 @@ export function useAdminUser(userId: string | undefined) {
         last_active: addDays(todayIso(), -Math.abs(u.id.charCodeAt(1) % 30)),
         bookings_as_guest: bookings,
         audit_trail: audit,
-        notes:
-          u.status === 'suspended'
-            ? ['Suspended after 3 review-bombing reports — under T&S review.']
-            : [],
+        notes,
       };
     },
     staleTime: 60_000,
@@ -259,8 +310,11 @@ export function useAdminBookings(filter: AdminBookingsFilter = 'all') {
     queryKey: ['admin-bookings', filter],
     queryFn: async () => {
       const d = await fetchAdminDashboard();
+      const ov = getAdminOverrides();
       // recent_bookings is 8; widen by re-fetching the synthesized full set across hosts.
-      const all = await collectAllBookings();
+      const all = (await collectAllBookings()).map((b) =>
+        ov.bookingRefund[b.id]?.cancelled ? { ...b, status: 'cancelled' as const } : b,
+      );
       const rows = filter === 'all' ? all : all.filter((b) => b.status === filter);
       return {
         rows: rows.sort((a, b) => b.created_at.localeCompare(a.created_at)),
@@ -279,7 +333,6 @@ export function useAdminBookings(filter: AdminBookingsFilter = 'all') {
 }
 
 async function collectAllBookings(): Promise<SyntheticBooking[]> {
-  const { fetchListings } = await import('./listings');
   const all = await fetchListings();
   const hostIds = Array.from(new Set(all.map((l) => l.host_id)));
   const dashboards = await Promise.all(hostIds.map((id) => fetchHostDashboard(id)));
@@ -305,10 +358,15 @@ export function useAdminBooking(bookingId: string | undefined) {
     queryFn: async (): Promise<AdminBookingDetail | null> => {
       if (!bookingId) return null;
       const all = await collectAllBookings();
-      const b = all.find((x) => x.id === bookingId);
-      if (!b) return null;
-      const captured = b.status === 'cancelled' ? 0 : b.total_cents;
-      const refunded = b.status === 'cancelled' ? b.total_cents : 0;
+      const found = all.find((x) => x.id === bookingId);
+      if (!found) return null;
+      const ov = getAdminOverrides();
+      const override = ov.bookingRefund[bookingId];
+      const b: SyntheticBooking =
+        override?.cancelled ? { ...found, status: 'cancelled' } : found;
+      const baseRefund = b.status === 'cancelled' ? b.total_cents : 0;
+      const refunded = override ? override.refunded_cents : baseRefund;
+      const captured = b.total_cents - refunded;
       const events: AdminBookingDetail['events'] = [
         { at: b.created_at, label: 'Reservation requested', actor: b.guest_name },
         { at: b.created_at, label: 'Auto-accepted (instant book)', actor: 'system' },
@@ -321,9 +379,18 @@ export function useAdminBooking(bookingId: string | undefined) {
         events.push({ at: b.end_date, label: 'Guest checked out', actor: b.guest_name });
         events.push({ at: addDays(b.end_date, 1), label: 'Host payout scheduled', actor: 'system' });
       }
-      if (b.status === 'cancelled') {
+      if (b.status === 'cancelled' && !override) {
         events.push({ at: b.created_at, label: 'Booking cancelled by guest', actor: b.guest_name });
         events.push({ at: b.created_at, label: 'Full refund issued', actor: 'system' });
+      }
+      if (override) {
+        events.push({
+          at: todayIso(),
+          label: override.cancelled
+            ? 'Booking cancelled from console'
+            : `Refund issued from console (${Math.round((override.refunded_cents / b.total_cents) * 100)}%)`,
+          actor: ADMIN_ACTOR,
+        });
       }
       return {
         ...b,
@@ -408,7 +475,12 @@ const INCIDENT_SEED: AdminIncident[] = [
 export function useAdminIncidents() {
   return useQuery({
     queryKey: ['admin-incidents'],
-    queryFn: async () => INCIDENT_SEED,
+    queryFn: async () => {
+      const ov = getAdminOverrides();
+      return INCIDENT_SEED.map((i) =>
+        ov.incidents[i.id] ? { ...i, state: ov.incidents[i.id] as IncidentState } : i,
+      );
+    },
     staleTime: 60_000,
   });
 }
@@ -523,7 +595,14 @@ const FLAGS_SEED: AdminFlag[] = [
 export function useAdminFlags() {
   return useQuery({
     queryKey: ['admin-flags'],
-    queryFn: async () => FLAGS_SEED,
+    queryFn: async () => {
+      const ov = getAdminOverrides();
+      return FLAGS_SEED.map((f) =>
+        ov.flags[f.key] !== undefined
+          ? { ...f, enabled: ov.flags[f.key] as boolean, updated_by: ADMIN_ACTOR, updated_at: todayIso() }
+          : f,
+      );
+    },
     staleTime: 60_000,
   });
 }
@@ -619,5 +698,118 @@ export function useAdminGlobalSearch(query: string) {
       return out.slice(0, 40);
     },
     staleTime: 30_000,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Mutations — privileged staff actions.
+//
+// These persist client-side via ./admin-store (v2-preview): they write the
+// override + an audit entry, then invalidate every admin query so the change
+// reflects optimistically across the console. When real staff auth + Supabase
+// land, each mutationFn becomes a privileged server call (docs/14-admin-ops.md).
+// ---------------------------------------------------------------------------
+
+const ADMIN_QUERY_KEYS = [
+  'admin-dashboard',
+  'admin-users',
+  'admin-user',
+  'admin-bookings',
+  'admin-booking',
+  'admin-incidents',
+  'admin-flags',
+  'admin-audit',
+  'admin-finance',
+  'admin-search',
+];
+
+function invalidateAdmin(qc: ReturnType<typeof useQueryClient>) {
+  for (const key of ADMIN_QUERY_KEYS) qc.invalidateQueries({ queryKey: [key] });
+}
+
+export function useAdminSetUserStatus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (v: {
+      userId: string;
+      status: UserStatus;
+      reason_code: string;
+      note?: string;
+    }) => {
+      setUserStatus(v.userId, v.status, v.reason_code, v.note);
+    },
+    onSuccess: () => invalidateAdmin(qc),
+  });
+}
+
+export function useAdminModerateListing() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (v: {
+      itemId: string;
+      listingId: string;
+      decision: ModerationDecision;
+      reason_code: string;
+      note?: string;
+    }) => {
+      setModerationDecision(v.itemId, v.listingId, v.decision, v.reason_code, v.note);
+    },
+    onSuccess: () => invalidateAdmin(qc),
+  });
+}
+
+export function useAdminModerateReview() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (v: {
+      reviewId: string;
+      decision: ReviewDecision;
+      reason_code: string;
+      note?: string;
+    }) => {
+      setReviewDecision(v.reviewId, v.decision, v.reason_code, v.note);
+    },
+    onSuccess: () => invalidateAdmin(qc),
+  });
+}
+
+export function useAdminToggleFlag() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (v: { key: string; enabled: boolean; reason_code: string; note?: string }) => {
+      setFlagEnabled(v.key, v.enabled, v.reason_code, v.note);
+    },
+    onSuccess: () => invalidateAdmin(qc),
+  });
+}
+
+export function useAdminSetIncidentState() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (v: {
+      incidentId: string;
+      state: IncidentState;
+      reason_code: string;
+      note?: string;
+    }) => {
+      setIncidentState(v.incidentId, v.state, v.reason_code, v.note);
+    },
+    onSuccess: () => invalidateAdmin(qc),
+  });
+}
+
+export function useAdminRefundBooking() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (v: {
+      bookingId: string;
+      refunded_cents: number;
+      cancelled: boolean;
+      reason_code: string;
+      note?: string;
+    }) => {
+      refundBooking(v.bookingId, v.refunded_cents, v.cancelled, v.reason_code, v.note);
+    },
+    onSuccess: () => invalidateAdmin(qc),
   });
 }

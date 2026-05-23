@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { View } from 'react-native';
-import { useAdminIncidents, type AdminIncident } from '@bnb/api';
+import { useAdminIncidents, useAdminSetIncidentState, type AdminIncident } from '@bnb/api';
 import {
   Avatar,
   Badge,
@@ -8,6 +8,7 @@ import {
   Card,
   HStack,
   Pressable,
+  ReasonCodeModal,
   Skeleton,
   Text,
   toast,
@@ -17,15 +18,53 @@ import { AdminShell } from './shell';
 
 const TIERS = [1, 2, 3] as const;
 
+const RESOLVE_REASONS = [
+  { code: 'resolved_guest', label: 'Resolved with guest' },
+  { code: 'resolved_host', label: 'Resolved with host' },
+  { code: 'rebooked', label: 'Guest rebooked' },
+  { code: 'refunded', label: 'Refund issued' },
+  { code: 'no_action', label: 'No action needed' },
+  { code: 'other', label: 'Other' },
+];
+
 export function AdminIncidentsScreen() {
   const { data, isLoading } = useAdminIncidents();
   const [selected, setSelected] = useState<AdminIncident | null>(null);
+  const [resolveOpen, setResolveOpen] = useState(false);
+  const setIncidentState = useAdminSetIncidentState();
+
+  // Keep the detail pane in sync with refreshed query data after a mutation.
+  const current = selected ? (data?.find((i) => i.id === selected.id) ?? selected) : null;
 
   return (
     <AdminShell
       title="Incidents"
       subtitle="Severity-tiered queues. Tier 1 = active impact; Tier 3 = informational."
     >
+      {current ? (
+        <ReasonCodeModal
+          open={resolveOpen}
+          onClose={() => setResolveOpen(false)}
+          title={`Resolve “${current.title}”?`}
+          message="Closes the incident and records the outcome in the audit log."
+          reasonCodes={RESOLVE_REASONS}
+          requireNote
+          confirmLabel="Resolve"
+          loading={setIncidentState.isPending}
+          onSubmit={({ reason_code, note }) =>
+            setIncidentState.mutate(
+              { incidentId: current.id, state: 'resolved', reason_code, note: note || undefined },
+              {
+                onSuccess: () => {
+                  setResolveOpen(false);
+                  toast.success('Incident resolved.');
+                },
+                onError: () => toast.error('Could not resolve. Try again.'),
+              },
+            )
+          }
+        />
+      ) : null}
       <View className="mt-6">
         {isLoading || !data ? (
           <Skeleton className="h-[400px] w-full" />
@@ -85,61 +124,67 @@ export function AdminIncidentsScreen() {
             </View>
 
             <View className="md:w-[400px]">
-              {selected ? (
+              {current ? (
                 <Card className="p-5">
                   <Badge
                     className="self-start"
-                    variant={selected.tier === 1 ? 'brand' : 'neutral'}
+                    variant={current.tier === 1 ? 'brand' : 'neutral'}
                   >
-                    Tier {selected.tier}
+                    Tier {current.tier}
                   </Badge>
-                  <Text className="mt-3 font-semibold">{selected.title}</Text>
+                  <Text className="mt-3 font-semibold">{current.title}</Text>
                   <HStack className="mt-3 gap-3 items-center">
-                    <Avatar name={selected.user_name} size={36} />
+                    <Avatar name={current.user_name} size={36} />
                     <VStack className="flex-1 gap-0.5">
-                      <Text className="font-semibold">{selected.user_name}</Text>
-                      {selected.booking_id ? (
+                      <Text className="font-semibold">{current.user_name}</Text>
+                      {current.booking_id ? (
                         <Text variant="small" className="text-ink-soft">
-                          {selected.booking_id}
+                          {current.booking_id}
                         </Text>
                       ) : null}
                     </VStack>
                     <Badge
                       variant={
-                        selected.state === 'resolved'
+                        current.state === 'resolved'
                           ? 'neutral'
-                          : selected.state === 'new'
+                          : current.state === 'new'
                             ? 'brand'
                             : 'dark'
                       }
                     >
-                      {selected.state.replace('_', ' ')}
+                      {current.state.replace('_', ' ')}
                     </Badge>
                   </HStack>
                   <Text variant="small" className="mt-3 text-ink-soft">
-                    Opened {selected.opened_at}
-                    {selected.assigned_to ? ` · assigned to ${selected.assigned_to}` : ''}
+                    Opened {current.opened_at}
+                    {current.assigned_to ? ` · assigned to ${current.assigned_to}` : ''}
                   </Text>
                   <View className="mt-3 rounded-xl bg-surface-alt px-3 py-3">
-                    <Text variant="small">{selected.summary}</Text>
+                    <Text variant="small">{current.summary}</Text>
                   </View>
 
                   <VStack className="mt-4 gap-2">
                     <Button
                       variant="secondary"
+                      disabled={current.state === 'resolved' || setIncidentState.isPending}
                       onPress={() =>
-                        toast.info('Preview only — opens assignment picker (concierge / T&S).')
+                        setIncidentState.mutate(
+                          { incidentId: current.id, state: 'in_progress', reason_code: 'self_assign' },
+                          {
+                            onSuccess: () => toast.success('Assigned to you.'),
+                            onError: () => toast.error('Could not assign. Try again.'),
+                          },
+                        )
                       }
                     >
                       Assign to me
                     </Button>
                     <Button
                       variant="outline"
-                      onPress={() =>
-                        toast.success('Preview only — would mark resolved with reason code.')
-                      }
+                      disabled={current.state === 'resolved'}
+                      onPress={() => setResolveOpen(true)}
                     >
-                      Resolve
+                      {current.state === 'resolved' ? 'Resolved' : 'Resolve'}
                     </Button>
                   </VStack>
                 </Card>

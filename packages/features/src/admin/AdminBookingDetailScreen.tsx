@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { View } from 'react-native';
-import { useAdminBooking } from '@bnb/api';
+import { useAdminBooking, useAdminRefundBooking } from '@bnb/api';
 import {
   Avatar,
   Badge,
@@ -8,6 +9,7 @@ import {
   Divider,
   HStack,
   Pressable,
+  ReasonCodeModal,
   Skeleton,
   Text,
   toast,
@@ -17,8 +19,19 @@ import { useRouter } from '@bnb/ui/nav';
 import { formatDateRange, formatPrice } from '@bnb/utils';
 import { AdminShell } from './shell';
 
+const REFUND_REASONS = [
+  { code: 'host_cancellation', label: 'Host cancellation' },
+  { code: 'cleanliness', label: 'Cleanliness issue' },
+  { code: 'misrepresentation', label: 'Listing misrepresented' },
+  { code: 'safety', label: 'Safety concern' },
+  { code: 'goodwill', label: 'Goodwill' },
+  { code: 'other', label: 'Other' },
+];
+
 export function AdminBookingDetailScreen({ bookingId }: { bookingId: string }) {
   const { data, isLoading } = useAdminBooking(bookingId);
+  const [mode, setMode] = useState<'refund' | 'cancel' | null>(null);
+  const refund = useAdminRefundBooking();
   const router = useRouter();
 
   if (isLoading) {
@@ -45,6 +58,40 @@ export function AdminBookingDetailScreen({ bookingId }: { bookingId: string }) {
       title={data.listing_title}
       subtitle={`${data.listing_city}, ${data.listing_country} · ${formatDateRange(data.start_date, data.end_date)}`}
     >
+      <ReasonCodeModal
+        open={mode !== null}
+        onClose={() => setMode(null)}
+        title={mode === 'cancel' ? 'Cancel this booking?' : 'Issue a full refund?'}
+        message={
+          mode === 'cancel'
+            ? `Cancels the reservation and refunds ${formatPrice(data.total_cents, data.currency)} to the guest. Logged to the audit trail.`
+            : `Refunds ${formatPrice(data.total_cents, data.currency)} to the guest without cancelling. Logged to the audit trail.`
+        }
+        reasonCodes={REFUND_REASONS}
+        requireNote
+        confirmLabel={mode === 'cancel' ? 'Cancel booking' : 'Issue refund'}
+        destructive={mode === 'cancel'}
+        loading={refund.isPending}
+        onSubmit={({ reason_code, note }) =>
+          refund.mutate(
+            {
+              bookingId: data.id,
+              refunded_cents: data.total_cents,
+              cancelled: mode === 'cancel',
+              reason_code,
+              note: note || undefined,
+            },
+            {
+              onSuccess: () => {
+                const wasCancel = mode === 'cancel';
+                setMode(null);
+                toast.success(wasCancel ? 'Booking cancelled and refunded.' : 'Full refund issued.');
+              },
+              onError: () => toast.error('Could not process. Try again.'),
+            },
+          )
+        }
+      />
       <HStack className="mt-2 gap-2 flex-wrap">
         <Badge variant={data.status === 'in_stay' ? 'brand' : data.status === 'upcoming' ? 'dark' : 'neutral'}>
           {data.status}
@@ -103,20 +150,18 @@ export function AdminBookingDetailScreen({ bookingId }: { bookingId: string }) {
             <Text className="font-semibold">Privileged actions</Text>
             <VStack className="mt-3 gap-2">
               <Button
-                variant="outline"
-                onPress={() =>
-                  toast.info('Preview only — opens cancellation flow with reason code.')
-                }
+                variant={data.status === 'cancelled' ? 'outline' : 'danger'}
+                disabled={data.status === 'cancelled'}
+                onPress={() => setMode('cancel')}
               >
-                Cancel booking
+                {data.status === 'cancelled' ? 'Cancelled' : 'Cancel booking'}
               </Button>
               <Button
                 variant="outline"
-                onPress={() =>
-                  toast.info('Preview only — opens partial / full refund modal.')
-                }
+                disabled={data.payment.refunded_cents >= data.total_cents}
+                onPress={() => setMode('refund')}
               >
-                Issue refund
+                {data.payment.refunded_cents >= data.total_cents ? 'Refunded' : 'Issue refund'}
               </Button>
               <Button
                 variant="outline"

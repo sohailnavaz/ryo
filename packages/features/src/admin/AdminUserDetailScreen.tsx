@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { View } from 'react-native';
-import { useAdminUser } from '@bnb/api';
+import { useAdminSetUserStatus, useAdminUser } from '@bnb/api';
 import {
   Avatar,
   Badge,
@@ -9,6 +9,7 @@ import {
   Divider,
   HStack,
   Pressable,
+  ReasonCodeModal,
   Skeleton,
   Text,
   toast,
@@ -27,9 +28,26 @@ const TABS: Array<{ key: Tab; label: string }> = [
   { key: 'audit',    label: 'Audit trail' },
 ];
 
+const SUSPEND_REASONS = [
+  { code: 'ts_pattern', label: 'T&S violation pattern' },
+  { code: 'fraud_risk', label: 'Fraud / payment risk' },
+  { code: 'review_abuse', label: 'Review abuse' },
+  { code: 'safety', label: 'Safety concern' },
+  { code: 'other', label: 'Other' },
+];
+
+const REINSTATE_REASONS = [
+  { code: 'appeal_upheld', label: 'Appeal upheld' },
+  { code: 'issue_resolved', label: 'Issue resolved' },
+  { code: 'false_positive', label: 'False positive' },
+  { code: 'other', label: 'Other' },
+];
+
 export function AdminUserDetailScreen({ userId }: { userId: string }) {
   const { data, isLoading } = useAdminUser(userId);
   const [tab, setTab] = useState<Tab>('profile');
+  const [suspendOpen, setSuspendOpen] = useState(false);
+  const setStatus = useAdminSetUserStatus();
   const router = useRouter();
 
   if (isLoading) {
@@ -51,8 +69,41 @@ export function AdminUserDetailScreen({ userId }: { userId: string }) {
     );
   }
 
+  const isSuspended = data.status === 'suspended';
+
   return (
     <AdminShell title={data.display_name} subtitle={`${data.email} · ${data.role}`}>
+      <ReasonCodeModal
+        open={suspendOpen}
+        onClose={() => setSuspendOpen(false)}
+        title={isSuspended ? `Reinstate ${data.display_name}?` : `Suspend ${data.display_name}?`}
+        message={
+          isSuspended
+            ? 'Restores account access. Logged to the audit trail.'
+            : 'Blocks sign-in and new bookings immediately. Logged to the audit trail.'
+        }
+        reasonCodes={isSuspended ? REINSTATE_REASONS : SUSPEND_REASONS}
+        confirmLabel={isSuspended ? 'Reinstate' : 'Suspend'}
+        destructive={!isSuspended}
+        loading={setStatus.isPending}
+        onSubmit={({ reason_code, note }) =>
+          setStatus.mutate(
+            {
+              userId: data.id,
+              status: isSuspended ? 'active' : 'suspended',
+              reason_code,
+              note: note || undefined,
+            },
+            {
+              onSuccess: () => {
+                setSuspendOpen(false);
+                toast.success(isSuspended ? 'User reinstated.' : 'User suspended.');
+              },
+              onError: () => toast.error('Could not update user. Try again.'),
+            },
+          )
+        }
+      />
       <HStack className="mt-2 gap-2 flex-wrap">
         <Badge variant={data.status === 'suspended' ? 'brand' : 'neutral'}>{data.status}</Badge>
         {data.verified ? <Badge variant="neutral">verified</Badge> : null}
@@ -92,12 +143,10 @@ export function AdminUserDetailScreen({ userId }: { userId: string }) {
             <Text className="font-semibold">Actions</Text>
             <VStack className="mt-3 gap-2">
               <Button
-                variant="outline"
-                onPress={() =>
-                  toast.info('Preview only — would open suspension flow with reason code.')
-                }
+                variant={isSuspended ? 'outline' : 'danger'}
+                onPress={() => setSuspendOpen(true)}
               >
-                {data.status === 'suspended' ? 'Reinstate' : 'Suspend'}
+                {isSuspended ? 'Reinstate' : 'Suspend'}
               </Button>
               <Button
                 variant="outline"
