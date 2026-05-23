@@ -38,7 +38,126 @@ export type CreateBookingInput = {
   start_date: string;
   end_date: string;
   total_cents: number;
+  // Guest party (capacity = adults + children ≤ listing.max_guests).
+  adults: number;
+  children: number;
+  infants: number;
+  pets: number;
+  // Structured price breakdown, written verbatim from the shared pricing engine.
+  subtotal_cents: number;
+  cleaning_fee_cents: number;
+  service_fee_cents: number;
+  taxes_cents: number;
+  discount_cents: number;
 };
+
+/** A privacy-safe booked date range for a listing — no guest identity. */
+export type BookedRange = { start_date: string; end_date: string };
+
+// --- synthetic availability (until the `listing_booked_ranges` RPC ships) ---
+// Deterministic per-listing so the live-availability calendar demos sensibly in
+// the unconfigured dev / preview environment. Mirrors the hash+LCG primitives
+// used in guest.ts / host.ts. Removed once L1 lands the RPC + bookings have real
+// rows to read.
+function hashStr(s: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+function lcg(seed: number) {
+  let s = seed || 1;
+  return () => {
+    s = (Math.imul(s, 1664525) + 1013904223) >>> 0;
+    return s / 0xffffffff;
+  };
+}
+function isoAddDays(base: Date, n: number): string {
+  const d = new Date(base);
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+function syntheticBookedRanges(listingId: string): BookedRange[] {
+  const r = lcg(hashStr(listingId));
+  const today = new Date();
+  const out: BookedRange[] = [];
+  let cursor = 3 + Math.floor(r() * 6);
+  for (let i = 0; i < 3; i++) {
+    const len = 2 + Math.floor(r() * 4);
+    const start = isoAddDays(today, cursor);
+    const end = isoAddDays(today, cursor + len);
+    out.push({ start_date: start, end_date: end });
+    cursor += len + 4 + Math.floor(r() * 12);
+  }
+  return out;
+}
+
+export async function fetchListingBookedRanges(listingId: string): Promise<BookedRange[]> {
+  const supabase = tryGetSupabase();
+  if (!supabase) return syntheticBookedRanges(listingId);
+  // Privacy-safe RPC (L1 migration): returns only date ranges, no guest data.
+  const { data, error } = await supabase.rpc('listing_booked_ranges', {
+    p_listing_id: listingId,
+  });
+  // RPC not deployed yet → fail soft to synthetic so the calendar still demos.
+  if (error) return syntheticBookedRanges(listingId);
+  return (data ?? []) as BookedRange[];
+}
+
+/** Booked date ranges for a listing, for greying-out the availability calendar. */
+export function useListingBookedRanges(listingId: string | undefined) {
+  return useQuery({
+    queryKey: ['listing-booked-ranges', listingId],
+    queryFn: () => fetchListingBookedRanges(listingId!),
+    enabled: !!listingId,
+    staleTime: 60_000,
+  });
+}
+
+/** Full booking row including the stored breakdown + guest counts. */
+export type BookingDetail = Booking & {
+  adults: number | null;
+  children: number | null;
+  infants: number | null;
+  pets: number | null;
+  subtotal_cents: number | null;
+  cleaning_fee_cents: number | null;
+  service_fee_cents: number | null;
+  taxes_cents: number | null;
+  discount_cents: number | null;
+};
+
+export async function fetchBooking(bookingId: string): Promise<BookingDetail | null> {
+  const supabase = tryGetSupabase();
+  if (!supabase) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data, error } = await supabase
+    .from('bookings')
+    .select('*')
+    .eq('id', bookingId)
+    .eq('guest_id', user.id)
+    .maybeSingle();
+  // Pre-migration the breakdown columns don't exist → `select *` still returns the
+  // base row; an error (or no row) just means "no rich detail", so fall back.
+  if (error) return null;
+  return (data as BookingDetail | null) ?? null;
+}
+
+/** Rich detail for one of the current user's bookings. Synthetic preview ids
+ *  (prefixed `g-`) have no real row, so the query stays disabled for them. */
+export function useBooking(bookingId: string | undefined) {
+  return useQuery({
+    queryKey: ['booking', bookingId],
+    queryFn: () => fetchBooking(bookingId!),
+    enabled: !!bookingId && !bookingId.startsWith('g-'),
+    staleTime: 30_000,
+  });
+}
 
 /** Postgres exclusion_violation code emitted by the `bookings_no_overlap` constraint. */
 export const BOOKING_DATES_TAKEN_CODE = '23P01';
