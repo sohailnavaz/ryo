@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Image, Pressable, View } from 'react-native';
 import type { Listing } from '@bnb/db';
-import { cn, formatPrice } from '@bnb/utils';
+import { cn, formatPrice, sizeImage } from '@bnb/utils';
 import { IconButton } from './IconButton';
 import { Text } from './Text';
 import { ChevronLeft, ChevronRight, Heart, Star } from './icons';
@@ -36,7 +36,7 @@ export function ListingCard({
       <View className="relative aspect-square w-full overflow-hidden rounded-2xl bg-surface-alt transition duration-200 group-hover:shadow-card">
         {current ? (
           <Image
-            source={{ uri: current }}
+            source={{ uri: sizeImage(current, 320) }}
             className="h-full w-full transition-transform duration-500 ease-out group-hover:scale-[1.04]"
             resizeMode="cover"
           />
