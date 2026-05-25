@@ -31,6 +31,7 @@ import {
   nightsBetween,
   type GuestCounts,
 } from '@bnb/utils';
+import { AddToCalendar } from '../shared/AddToCalendar';
 import { useFiltersStore } from '../state/filtersStore';
 
 export type BookingScreenProps = { id: string };
@@ -274,6 +275,25 @@ export function BookingScreen({ id }: BookingScreenProps) {
               <Text variant="caption" className="text-ink-soft mt-2 text-center">
                 Pick your dates to see the total.
               </Text>
+            ) : null}
+            {canBook && filters.startDate && filters.endDate ? (
+              <View className="mt-3">
+                <AddToCalendar
+                  fullWidth
+                  label="Add stay to calendar"
+                  hint="Add your check-in and check-out to your calendar."
+                  event={{
+                    title: `Ryo stay — ${listing.title}`,
+                    location: [listing.city, listing.country].filter(Boolean).join(', '),
+                    start: filters.startDate,
+                    end: filters.endDate,
+                    details: `Your Ryo stay at ${listing.title}.\nCheck-in ${formatDateRange(
+                      filters.startDate,
+                      filters.endDate,
+                    )} · ${nights} ${nights === 1 ? 'night' : 'nights'}.`,
+                  }}
+                />
+              </View>
             ) : null}
           </Card>
         </View>

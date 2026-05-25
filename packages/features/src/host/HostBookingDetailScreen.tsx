@@ -23,6 +23,7 @@ import {
 } from '@bnb/ui';
 import { useRouter } from '@bnb/ui/nav';
 import { formatDateRange, formatPrice } from '@bnb/utils';
+import { AddToCalendar } from '../shared/AddToCalendar';
 import { HostShell } from './shell';
 
 const DECLINE_REASONS = [
@@ -245,6 +246,28 @@ export function HostBookingDetailScreen({
                 <Button variant="outline" onPress={() => setCancelOpen(true)}>
                   Cancel booking
                 </Button>
+              ) : null}
+              {!isCancelled ? (
+                <AddToCalendar
+                  fullWidth
+                  variant="ghost"
+                  label="Add to calendar"
+                  hint="Add this reservation's check-in and check-out to your calendar."
+                  event={{
+                    title: `Ryo guest — ${data.guest_name} · ${data.listing_title}`,
+                    location: [data.listing_city, data.listing_country]
+                      .filter(Boolean)
+                      .join(', '),
+                    start: data.start_date,
+                    end: data.end_date,
+                    details: `${data.guest_name} checks in at ${data.listing_title}.\n${
+                      data.nights
+                    } ${data.nights === 1 ? 'night' : 'nights'} · ${formatDateRange(
+                      data.start_date,
+                      data.end_date,
+                    )}.`,
+                  }}
+                />
               ) : null}
             </VStack>
             {data.cancellation ? (

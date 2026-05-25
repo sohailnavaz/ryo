@@ -38,6 +38,7 @@ import {
 } from '@bnb/utils';
 import { GetHelpSheet } from '../incidents/GetHelpSheet';
 import { ReviewCard } from '../reviews/ReviewCard';
+import { AddToCalendar } from '../shared/AddToCalendar';
 
 export type TripDetailScreenProps = { id: string };
 
@@ -151,6 +152,24 @@ export function TripDetailScreen({ id }: TripDetailScreenProps) {
                 label="Cancellation"
                 value={canCancel ? 'Flexible · cancel anytime up to 24h before' : 'Past the window'}
               />
+              {booking.status !== 'cancelled' ? (
+                <>
+                  <Divider />
+                  <AddToCalendar
+                    event={{
+                      title: `Ryo stay — ${booking.listing_title}`,
+                      location: [booking.listing_city, booking.listing_country]
+                        .filter(Boolean)
+                        .join(', '),
+                      start: booking.start_date,
+                      end: booking.end_date,
+                      details: `Your Ryo stay at ${booking.listing_title}, hosted by ${
+                        booking.host_name
+                      }.\nConfirmation ${confirmationCode(booking.id)} · check-in after ${CHECK_IN_TIME}, check-out before ${CHECK_OUT_TIME}.`,
+                    }}
+                  />
+                </>
+              ) : null}
             </Card>
 
             {/* Getting there — directions placeholder (exact address shared 24h before) */}
