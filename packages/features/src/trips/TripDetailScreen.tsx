@@ -18,6 +18,8 @@ import {
   HStack,
   IconButton,
   Image,
+  Mail,
+  MapPin,
   PriceTotal,
   Pressable,
   Skeleton,
@@ -29,11 +31,13 @@ import { useRouter } from '@bnb/ui/nav';
 import {
   computePricing,
   formatDateRange,
+  formatPrice,
   stayDiscount,
   type GuestCounts,
   type PriceBreakdown,
 } from '@bnb/utils';
 import { GetHelpSheet } from '../incidents/GetHelpSheet';
+import { ReviewCard } from '../reviews/ReviewCard';
 
 export type TripDetailScreenProps = { id: string };
 
@@ -134,17 +138,56 @@ export function TripDetailScreen({ id }: TripDetailScreenProps) {
             <Card className="p-5 gap-3">
               <Heading level={3}>Your stay</Heading>
               <Divider />
-              <FieldRow label="Check-in" value={booking.start_date} />
-              <FieldRow label="Check-out" value={booking.end_date} />
+              <FieldRow label="Check-in" value={`${booking.start_date} · after ${CHECK_IN_TIME}`} />
+              <FieldRow label="Check-out" value={`${booking.end_date} · before ${CHECK_OUT_TIME}`} />
               <FieldRow
                 label="Nights"
                 value={`${booking.nights} ${booking.nights === 1 ? 'night' : 'nights'}`}
               />
               <FieldRow label="Guests" value={guestSummary(guests)} />
               <FieldRow label="Hosted by" value={booking.host_name} />
+              <FieldRow label="Confirmation" value={confirmationCode(booking.id)} />
               <FieldRow
                 label="Cancellation"
                 value={canCancel ? 'Flexible · cancel anytime up to 24h before' : 'Past the window'}
+              />
+            </Card>
+
+            {/* Getting there — directions placeholder (exact address shared 24h before) */}
+            <Card className="p-5 gap-3">
+              <HStack className="items-center gap-2">
+                <MapPin size={18} color="#1F5A6B" />
+                <Heading level={3}>Getting there</Heading>
+              </HStack>
+              <Divider />
+              <FieldRow label="Area" value={`${booking.listing_city}, ${booking.listing_country}`} />
+              <Text variant="small" className="text-ink-soft">
+                {booking.status === 'upcoming'
+                  ? 'The exact address and door-to-door directions unlock 24 hours before check-in.'
+                  : 'Open the listing for the neighbourhood map and directions.'}
+              </Text>
+              <Button
+                title="View on map"
+                variant="outline"
+                onPress={() => router.push(`/listing/${booking.listing_id}`)}
+              />
+            </Card>
+
+            {/* Host contact */}
+            <Card className="p-5 gap-3">
+              <Heading level={3}>Your host</Heading>
+              <Divider />
+              <FieldRow label="Host" value={booking.host_name} />
+              <FieldRow label="Responds" value="Within an hour, typically" />
+              <Button
+                title="Message your host"
+                variant="outline"
+                leftIcon={<Mail size={16} color="#222" />}
+                onPress={() =>
+                  toast.success('Messaging is coming soon.', {
+                    description: 'For anything urgent, concierge is available 24/7 below.',
+                  })
+                }
               />
             </Card>
 
@@ -184,13 +227,20 @@ export function TripDetailScreen({ id }: TripDetailScreenProps) {
 
           <View className="flex-1 md:max-w-[420px] gap-6">
             <Card className="p-5 gap-3">
-              <Heading level={3}>Price breakdown</Heading>
+              <Heading level={3}>Receipt</Heading>
               <Divider />
               <PriceTotal breakdown={breakdown} currency={booking.currency} />
+              <Divider />
+              <FieldRow label="Total paid" value={formatPrice(breakdown.totalCents, booking.currency)} />
+              <FieldRow label="Payment" value="Mock payment · no card charged" />
+              <FieldRow label="Confirmation" value={confirmationCode(booking.id)} />
               <Text variant="caption" className="mt-1">
-                Mock payment · no card was charged
+                A full receipt emails to you once real payments go live.
               </Text>
             </Card>
+
+            {/* Write-a-review — renders only for past stays (gated inside) */}
+            <ReviewCard booking={booking} />
 
             {canCancel ? (
               <Card className="p-5 gap-3">
@@ -244,6 +294,20 @@ export function TripDetailScreen({ id }: TripDetailScreenProps) {
 }
 
 // ---------------------------------------------------------------------------
+
+const CHECK_IN_TIME = '3:00 PM';
+const CHECK_OUT_TIME = '11:00 AM';
+
+/** A short, stable, human-friendly confirmation code derived from the booking id. */
+function confirmationCode(bookingId: string): string {
+  let h = 2166136261;
+  for (let i = 0; i < bookingId.length; i++) {
+    h ^= bookingId.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  h >>>= 0;
+  return `RYO-${h.toString(36).toUpperCase().padStart(6, '0').slice(0, 6)}`;
+}
 
 /** A booking's price breakdown: stored values for real bookings, engine-derived
  *  (from the nightly rate) for synthetic preview bookings. */

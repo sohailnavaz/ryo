@@ -4,6 +4,7 @@ import {
   tryGetSupabase,
   useCancelBooking,
   useGuestDashboard,
+  useReviewDrafts,
   type GuestBooking,
 } from '@bnb/api';
 import {
@@ -15,6 +16,7 @@ import {
   Image,
   Pressable,
   Skeleton,
+  Star,
   Text,
   toast,
   VStack,
@@ -28,6 +30,7 @@ export function TripsScreen() {
   const router = useRouter();
   const { data, isLoading } = useGuestDashboard();
   const cancelBooking = useCancelBooking();
+  const { drafts: reviewDrafts } = useReviewDrafts();
   const [tab, setTab] = useState<Tab>('upcoming');
   const [confirmCancel, setConfirmCancel] = useState<string | null>(null);
 
@@ -125,6 +128,8 @@ export function TripsScreen() {
             const isCancelled = b.status === 'cancelled';
             const isUpcomingNow = tab === 'upcoming' && !isCancelled;
             const showConfirm = confirmCancel === b.id;
+            const review = reviewDrafts[b.id];
+            const isPast = tab === 'past';
             return (
               <View key={b.id}>
                 <Pressable onPress={() => router.push(`/trips/${b.id}`)}>
@@ -156,6 +161,22 @@ export function TripsScreen() {
                     </VStack>
                   </Card>
                 </Pressable>
+
+                {/* Review affordance — only on past (completed) trips */}
+                {isPast ? (
+                  <Pressable onPress={() => router.push(`/trips/${b.id}`)} className="mt-2">
+                    <HStack className="items-center gap-2 px-1">
+                      <Star
+                        size={14}
+                        color="#C87156"
+                        fill={review ? '#C87156' : 'transparent'}
+                      />
+                      <Text variant="small" className="text-ink underline">
+                        {review ? `Your review · ${review.rating}/5` : 'Leave a review'}
+                      </Text>
+                    </HStack>
+                  </Pressable>
+                ) : null}
 
                 {/* Cancel control — only on upcoming, non-cancelled */}
                 {isUpcomingNow ? (
