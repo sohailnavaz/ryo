@@ -1,7 +1,8 @@
 'use client';
 import { ErrorBoundary, ToastViewport, TopNav } from '@bnb/ui';
+import { useRole, useSignOut, useUser } from '@bnb/api';
 import { usePathname, useRouter } from 'next/navigation';
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 
 const pathToKey = (p: string) => {
   if (p.startsWith('/trips')) return 'trips';
@@ -13,13 +14,15 @@ const pathToKey = (p: string) => {
 export default function MainLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const [menuOpen, setMenuOpen] = useState(false);
   return (
     <div className="flex min-h-screen flex-col relative">
       <TopNav
         active={pathToKey(pathname ?? '/')}
         onChange={(k) => router.push(k === 'explore' ? '/' : `/${k}`)}
-        onOpenAccount={() => router.push('/profile')}
+        onOpenAccount={() => setMenuOpen((v) => !v)}
       />
+      <AccountMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
       <div className="flex-1 flex flex-col">
         <ErrorBoundary>{children}</ErrorBoundary>
       </div>
@@ -29,15 +32,104 @@ export default function MainLayout({ children }: { children: ReactNode }) {
   );
 }
 
+function AccountMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const router = useRouter();
+  const user = useUser();
+  const { role } = useRole();
+  const signOut = useSignOut();
+  if (!open) return null;
+
+  const go = (path: string) => {
+    onClose();
+    router.push(path);
+  };
+
+  const name = (user?.user_metadata as { full_name?: string } | undefined)?.full_name;
+  const isHost = role === 'host' || role === 'admin' || role === 'staff';
+  const isStaff = role === 'staff' || role === 'admin';
+
+  const Item = ({ label, path, accent }: { label: string; path: string; accent?: boolean }) => (
+    <button
+      type="button"
+      onClick={() => go(path)}
+      className={`w-full px-4 py-2.5 text-left text-[14px] hover:bg-surface-alt ${
+        accent ? 'font-semibold text-ink' : 'text-ink-soft'
+      }`}
+    >
+      {label}
+    </button>
+  );
+
+  return (
+    <>
+      {/* click-away backdrop */}
+      <button
+        type="button"
+        aria-label="Close menu"
+        onClick={onClose}
+        className="fixed inset-0 z-40 hidden md:block cursor-default"
+      />
+      <div className="absolute right-10 top-[68px] z-50 hidden md:block w-64 overflow-hidden rounded-2xl border border-surface-border bg-surface shadow-card">
+        {user ? (
+          <div className="border-b border-surface-border px-4 py-3">
+            <p className="text-[14px] font-semibold text-ink">{name ?? 'Signed in'}</p>
+            <p className="text-[12px] capitalize text-ink-soft">{role ?? 'guest'} account</p>
+          </div>
+        ) : null}
+
+        <div className="py-1">
+          {user ? (
+            <>
+              <Item label="Account" path="/account" accent />
+              <Item label="Trips" path="/trips" />
+              <Item label="Wishlists" path="/wishlists" />
+              <Item label="Profile" path="/profile" />
+            </>
+          ) : null}
+
+          <div className="my-1 h-px bg-surface-border" />
+          <Item label="🛎️ Concierge" path="/concierge" accent />
+
+          {isHost ? (
+            <>
+              <div className="my-1 h-px bg-surface-border" />
+              <Item label="Host dashboard" path="/host" accent />
+            </>
+          ) : null}
+
+          {isStaff ? <Item label="Admin console" path="/admin" accent /> : null}
+
+          <div className="my-1 h-px bg-surface-border" />
+          {user ? (
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                signOut.mutate(undefined, { onSuccess: () => router.push('/') });
+              }}
+              className="w-full px-4 py-2.5 text-left text-[14px] text-ink-soft hover:bg-surface-alt"
+            >
+              Sign out
+            </button>
+          ) : (
+            <Item label="Sign in" path="/sign-in" accent />
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
 function MobileTabs() {
   const router = useRouter();
   const pathname = usePathname();
   const key = pathToKey(pathname ?? '/');
-  const tabs: Array<{ key: string; label: string; path: string; icon: string }> = [
-    { key: 'explore', label: 'Explore', path: '/', icon: 'compass' },
-    { key: 'wishlists', label: 'Wishlists', path: '/wishlists', icon: 'heart' },
-    { key: 'trips', label: 'Trips', path: '/trips', icon: 'home' },
-    { key: 'profile', label: 'Profile', path: '/profile', icon: 'user' },
+  const tabs: Array<{ key: string; label: string; path: string }> = [
+    { key: 'explore', label: 'Explore', path: '/' },
+    { key: 'wishlists', label: 'Wishlists', path: '/wishlists' },
+    { key: 'trips', label: 'Trips', path: '/trips' },
+    { key: 'concierge', label: 'Concierge', path: '/concierge' },
+    { key: 'profile', label: 'Profile', path: '/profile' },
   ];
   return (
     <nav className="md:hidden sticky bottom-0 left-0 right-0 border-t border-surface-border bg-surface flex">

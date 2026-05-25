@@ -28,7 +28,7 @@ export function TopNav({ active, onChange, onOpenAccount, className }: TopNavPro
       )}
     >
       <Pressable onPress={() => onChange('explore')} className="flex-row items-center gap-1">
-        <Text className="text-[22px] font-bold text-brand-500">bnb</Text>
+        <Text className="text-[22px] font-bold text-brand-500">Ryo</Text>
       </Pressable>
       <View className="flex-row items-center gap-6">
         {WEB_TABS.map((t) => (
