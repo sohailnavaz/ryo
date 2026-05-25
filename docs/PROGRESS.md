@@ -20,7 +20,7 @@ version: 0.11.1
 - **Codebase alias:** `bnb` (legacy dir name) → being rebranded to `ryo`. See [branding §12](./branding.md#12-naming-migration-bnb--ryo).
 - **Tagline (locked):** *Just Ryo it.*
 - **Owner:** Makuta Developers — dm@makutadevelopers.com
-- **Stage:** v1 in build. Live Supabase wired (20 listings seeded, real persistence on the dev environment); guest flow + a guest account hub built; host + admin sites exist as v2-preview (host create/edit-listing persist for real, the rest synthetic). Payments still mocked. The public Vercel deploy still serves dummy data until the Supabase env vars are added there.
+- **Stage:** v1, **live at https://ryo-web.vercel.app** on real Supabase data. **Real auth + a real persisted booking verified end-to-end** (sign in → book → saves → shows in trips). Guest flow + account hub built; Stories / Map / globe / Notifications / Offline PWA / Phrasebook / host actions+payouts shipped. Host + admin + incidents still **v2-preview (client-side)**; payments mocked; demo-role bypass present (remove before public launch).
 
 ---
 
@@ -30,11 +30,11 @@ version: 0.11.1
 |---|-----------|-------|-------|
 | M0 | Monorepo scaffold | ✅ done | pnpm + Turborepo + shared tsconfig/tailwind — `apps/{web,mobile}`, `packages/{ui,features,api,db,utils,config}`. `pnpm typecheck` green, `next build` green. |
 | M1 | Supabase schema | ✅ done | `supabase/migrations/0001_init.sql` — profiles / listings / listing_photos / bookings / reviews / favorites; full RLS + `on_auth_user_created` trigger; `seed.sql` with 20 listings. |
-| M2 | Auth | 🟡 code landed, unverified | `SignInScreen` + `AuthGate` + `packages/api/auth.ts` wired. Magic-link + Google OAuth round-trip not yet tested against a live Supabase project. |
+| M2 | Auth | 🟢 live-verified | Magic-link sign-in confirmed live on real Supabase; + email/password sign-in/up + forgot-password (`/reset-password`). Google OAuth needs a client; SMTP (custom) recommended to lift the email rate-limit. |
 | M3 | Explore + Search | 🟢 live (dev) | `HomeScreen`, `CategoryBar`, `SearchBar`, `FilterSheet`, `Map` (web/native split). Now reads the 20 live Supabase listings on the dev environment; responsive polish pass still pending. |
 | M4 | Listing detail | 🟢 live (dev) | `ListingScreen` — gallery / amenities / sticky booking card built from `@bnb/ui` primitives. Renders live Supabase listing content on the dev environment. |
-| M5 | Booking flow | 🟡 code landed, unverified | `BookingScreen` + `Calendar` (web/native split) + `PriceTotal`. Mock-payment confirm → `bookings` row happy path pending. |
-| M6 | Trips / Profile / Favorites | 🟡 code landed, unverified | All three screens built. Live-data wiring + auth-gated routes pending. |
+| M5 | Booking flow | 🟢 live-verified | A real signed-in user booked a listing → persisted to `bookings` (guest-insert RLS) → shows in `/trips`. Guest breakdown + fee breakdown (migration `0004`); cancel works. Payment still mocked. |
+| M6 | Trips / Profile / Favorites | 🟢 live-verified | `/trips` reads real bookings via RLS (verified); profile + favorites built; auth-gated routes live. |
 | — | Product specs | ✅ done | 14 UI-agnostic module docs (`docs/00-overview` + `docs/02`–`14`) + `docs/README.md` index + `docs/airbnb-reference.md` + `docs/branding.md` + this doc. |
 | M7 | Responsive polish + e2e | ⚪ queued | Tablet/desktop breakpoint pass + `frontend-design` skill critique against brand. |
 | — | Live verification | 🟠 partial | Supabase project live (ref `mtldmawenkdebtchnocs`), 20 listings seeded, dev env reads/writes real data. Still pending: magic-link + Google OAuth round-trip, booking happy path on iOS sim, and Vercel env vars (public deploy still on dummy data). Tracked as row 15 in [AGENTS_TODO](../AGENTS_TODO.md). |
