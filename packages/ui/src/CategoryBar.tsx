@@ -44,7 +44,13 @@ export function CategoryBar({ value, onChange, className }: CategoryBarProps) {
       horizontal
       showsHorizontalScrollIndicator={false}
       className={cn('border-b border-surface-border', className)}
-      contentContainerStyle={{ paddingHorizontal: 16, gap: 28, paddingVertical: 12 }}
+      contentContainerStyle={{
+        paddingHorizontal: 16,
+        gap: 28,
+        paddingVertical: 12,
+        flexGrow: 1,
+        justifyContent: 'center',
+      }}
     >
       {CATEGORIES.map((c) => {
         const Icon = ICONS[c.icon] ?? Compass;

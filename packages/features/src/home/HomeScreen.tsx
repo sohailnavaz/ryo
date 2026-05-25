@@ -41,7 +41,7 @@ function sortListings(rows: Listing[], key: SortKey): Listing[] {
 // evenly — never left-clustered with empty space on wide monitors.
 const CONTENT_MAX = 1600;
 const CARD_GAP = 24;
-const CARD_TARGET = 270; // ideal card width; column count is derived from it
+const CARD_TARGET = 240; // ideal card width; lower = denser grid (more cards/row)
 
 export function HomeScreen() {
   const { width } = useWindowDimensions();
