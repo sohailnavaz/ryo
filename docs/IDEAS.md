@@ -87,3 +87,27 @@ How to read the tags: **Effort** S (hours) · M (a day) · L (multi-day). **Need
 
 **Feasibility:** the `Map` primitive already exists (`packages/ui/src/Map.web.tsx` MapLibre / native) and listings have coordinates — so **city-wise pins + click→nearby homes is buildable now, no key**. **Free-text geocoding** (type any place → coords) needs a geocoding/tiles key (Mapbox/Nominatim); city-wise selection from our known cities needs none.
 **Effort:** **M** (city pins + nearby-homes + place panel) · **L** with full free-text geocoding + clustering. **Needs:** none for city-wise v1; a map/geocoding key for free-text search. **Touches:** `Map` primitive + search/home + a new map-discovery screen/route. **Status:** 💡 logged. **Pairs with:** City Guides (#2) + Stories + search.
+
+---
+
+## ⭐ MAIN-FEATURE cluster: Travel resilience (low-bandwidth, offline, multilingual) — _your pitch, 2026-05-25_
+> "Travelers may have slow internet — keep it from lagging/loading; build offline stay details + emergency numbers + help, a local-language translator, and a multi-language page (change all text to the selected language)." Flagged **build as main feature**.
+
+### 5. Performance / low-bandwidth — keep it fast on slow connections
+- **Quick wins (some now):** right-size images (request `w=` to the displayed size, not 1200 everywhere), lazy-load off-screen images, code-split heavy routes, shrink first-load JS (~367 kB), prefetch on hover.
+- **Bigger:** `next/image` + Supabase Storage CDN pipeline (TODO M17), blur-up placeholders, route-level skeletons (we have Skeleton already).
+- **Effort:** S (image sizing — doing now) → M (lazy/code-split) → L (full image pipeline). **Needs:** none for quick wins.
+
+### 6. Offline stay pack — booking details + emergency numbers + help, no signal
+- A **PWA** (service worker + manifest) so the app shell loads offline; cache the user's **upcoming trip** (address, check-in, host contact, receipt), **country emergency numbers**, and **help/FAQ** to IndexedDB/localStorage → an "Available offline" trip view. Add-to-home-screen.
+- **Effort:** M–L. **Needs:** service worker + offline store. **Pairs with:** City Guides emergency table (#2), trip itinerary, `/help`.
+
+### 7. Multi-language i18n — change all UI text to a selected language
+- `next-intl` (web) + `expo-localization` (mobile) + locale catalogues; extract every string to ICU keys; a locale picker (footer/account); RTL plumbing. (This is TODO **M13**.)
+- **Effort:** L (~5 days). **Needs:** none (string extraction is the work). Start langs: en-IN / en-US / hi-IN, then expand.
+
+### 8. Local-language translator / phrasebook
+- A **travel phrasebook** per destination (static common phrases + pronunciation) — no key, ships offline (pairs with #6). Optional **live translation** of guides/messages via a translation API (needs a key).
+- **Effort:** S–M (static phrasebook) · M+ (live translation). **Needs:** none for phrasebook; API key for live.
+
+**Sequencing note:** #5 image sizing is a fast win (starting now). #7 i18n is the backbone for #8's UI translation and is the biggest lift. #6 offline pack is high-value and self-contained. Good candidates to parallelize across agents once we commit.

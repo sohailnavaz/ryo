@@ -2,8 +2,10 @@
 // pattern as DUMMY_LISTINGS. Images reuse Unsplash slugs already proven to load
 // in the app. When a real content backend lands, this module is replaced.
 
-const img = (slug: string, w = 1200) =>
-  `https://images.unsplash.com/${slug}?w=${w}&q=80&auto=format&fit=crop`;
+// Right-sized for cards (~300–420px displayed). Lower w = far less data on
+// slow connections — a deliberate low-bandwidth choice for travelers.
+const img = (slug: string, w = 640) =>
+  `https://images.unsplash.com/${slug}?w=${w}&q=70&auto=format&fit=crop`;
 
 export type SeasonalPick = {
   city: string;
