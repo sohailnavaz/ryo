@@ -36,12 +36,12 @@ function sortListings(rows: Listing[], key: SortKey): Listing[] {
   }
 }
 
-// Cards are fixed-width inside the grid. They never stretch past CARD_MAX,
-// no matter how many results match the current filters. A single result
-// sits left-aligned at CARD_MAX rather than ballooning to fill the row.
-const CARD_MAX = 320;
+// Layout sits in a centered column capped at CONTENT_MAX (matching the
+// max-w-[1600px] mx-auto wrappers on every row), and cards FILL that column
+// evenly — never left-clustered with empty space on wide monitors.
+const CONTENT_MAX = 1600;
 const CARD_GAP = 24;
-const CARD_MIN = 220;
+const CARD_TARGET = 270; // ideal card width; column count is derived from it
 
 export function HomeScreen() {
   const { width } = useWindowDimensions();
@@ -57,24 +57,20 @@ export function HomeScreen() {
 
   const sortedData = useMemo(() => sortListings(data ?? [], sort), [data, sort]);
 
-  // Horizontal padding matches the SearchBar / CategoryBar wrappers below
-  // (px-4 mobile / md:px-10 desktop). Kept in sync so cards line up.
-  const PADDING_X = width >= 768 ? 40 : 16;
-  const innerWidth = Math.max(0, width - 2 * PADDING_X);
+  // Inner gutter (matches px-4 / md:px-10 on the rows). The content column is
+  // capped at CONTENT_MAX and centered; PADDING_X is the side space that
+  // centers it, so the grid lines up exactly with the hero/search/sort rows.
+  const GUTTER = width >= 768 ? 40 : 16;
+  const columnInner = Math.min(width - 2 * GUTTER, CONTENT_MAX - 2 * GUTTER);
+  const PADDING_X = Math.max(GUTTER, (width - columnInner) / 2);
 
-  // Determine how many cards fit naturally in the inner width given the
-  // CARD_MAX + CARD_GAP. Floor + clamp ≥ 1 so we never compute 0 columns.
-  const naturalCols = Math.max(
+  // Columns derived from the column width; cards then fill it exactly (no cap),
+  // so a full or partial row is always edge-to-edge within the column.
+  const columns = Math.max(
     1,
-    Math.floor((innerWidth + CARD_GAP) / (CARD_MAX + CARD_GAP)),
+    Math.min(5, Math.floor((columnInner + CARD_GAP) / (CARD_TARGET + CARD_GAP))),
   );
-  const columns = Math.min(naturalCols, 4);
-
-  // Per-card width: slot width derived from column count, capped at
-  // CARD_MAX (so cards don't grow on ultra-wide viewports) and floored at
-  // CARD_MIN (so they stay readable on narrow ones).
-  const rawSlot = (innerWidth - CARD_GAP * (columns - 1)) / Math.max(1, columns);
-  const cardWidth = Math.max(CARD_MIN, Math.min(CARD_MAX, rawSlot));
+  const cardWidth = (columnInner - CARD_GAP * (columns - 1)) / columns;
 
   const subLabel =
     [
@@ -90,7 +86,7 @@ export function HomeScreen() {
   return (
     <View className="flex-1 bg-surface">
       {/* Editorial hero — omotenashi, one idea, generous space (branding §7.0) */}
-      <View className="px-4 pt-6 pb-1 md:px-10 md:pt-12 md:pb-3">
+      <View className="w-full max-w-[1600px] mx-auto px-4 pt-6 pb-1 md:px-10 md:pt-12 md:pb-3">
         <Heading level={1} className="max-w-[680px] md:text-[52px]">
           Stay anywhere — and feel hosted.
         </Heading>
@@ -99,7 +95,7 @@ export function HomeScreen() {
           <Text className="text-brand-500 font-semibold">Just Ryo it.</Text>
         </Text>
       </View>
-      <View className="px-4 pt-3 md:px-10 md:pt-4 md:pb-2">
+      <View className="w-full max-w-[1600px] mx-auto px-4 pt-3 md:px-10 md:pt-4 md:pb-2">
         <SearchBar
           label={filters.destination || 'Anywhere'}
           subLabel={subLabel}
@@ -107,14 +103,16 @@ export function HomeScreen() {
           onOpenFilters={() => setFilterOpen(true)}
         />
       </View>
-      <CategoryBar
-        value={filters.category ?? 'All'}
-        onChange={(c) => setFilters({ category: c })}
-      />
+      <View className="w-full max-w-[1600px] mx-auto">
+        <CategoryBar
+          value={filters.category ?? 'All'}
+          onChange={(c) => setFilters({ category: c })}
+        />
+      </View>
 
       {/* Sort + result count */}
       <View
-        className="flex-row flex-wrap items-center gap-2 px-4 pt-3 md:px-10"
+        className="w-full max-w-[1600px] mx-auto flex-row flex-wrap items-center gap-2 px-4 pt-3 md:px-10"
         accessibilityRole="toolbar"
       >
         <Text variant="small" className="text-ink-soft mr-1">
@@ -148,7 +146,7 @@ export function HomeScreen() {
 
       {isLoading ? (
         <View
-          className="px-4 pt-4 pb-20 md:px-10 flex-row flex-wrap"
+          className="w-full max-w-[1600px] mx-auto px-4 pt-4 pb-20 md:px-10 flex-row flex-wrap"
           style={{ gap: CARD_GAP }}
         >
           {Array.from({ length: 8 }).map((_, i) => (
