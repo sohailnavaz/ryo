@@ -92,7 +92,7 @@ export function TripDetailScreen({ id }: TripDetailScreenProps) {
         {/* Back */}
         <HStack className="gap-2 items-center mb-4">
           <IconButton onPress={() => router.push('/trips')}>
-            <ArrowLeft size={16} color="#222" />
+            <ArrowLeft size={16} color="#0E1A2B" />
           </IconButton>
           <Text variant="small" className="text-ink-soft">
             All trips
@@ -182,7 +182,7 @@ export function TripDetailScreen({ id }: TripDetailScreenProps) {
               <Button
                 title="Message your host"
                 variant="outline"
-                leftIcon={<Mail size={16} color="#222" />}
+                leftIcon={<Mail size={16} color="#0E1A2B" />}
                 onPress={() =>
                   toast.success('Messaging is coming soon.', {
                     description: 'For anything urgent, concierge is available 24/7 below.',

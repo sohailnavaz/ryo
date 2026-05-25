@@ -59,7 +59,7 @@ export function CategoryBar({ value, onChange, className }: CategoryBarProps) {
             )}
           >
             <View className={cn('opacity-60', active && 'opacity-100')}>
-              <Icon size={22} color="#222" />
+              <Icon size={22} color="#0E1A2B" />
             </View>
             <Text
               variant="caption"

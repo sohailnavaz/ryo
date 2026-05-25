@@ -89,7 +89,7 @@ export function SignInScreen({ redirectTo }: SignInScreenProps) {
               autoComplete="email"
               value={email}
               onChangeText={setEmail}
-              leftIcon={<Mail size={16} color="#717171" />}
+              leftIcon={<Mail size={16} color="#5C5750" />}
               editable={supabaseConfigured}
             />
             <Button

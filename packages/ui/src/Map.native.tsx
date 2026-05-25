@@ -21,7 +21,7 @@ export function Map({ lat, lng, className }: MapProps) {
           longitudeDelta: 0.02,
         }}
       >
-        <Marker coordinate={{ latitude: lat, longitude: lng }} pinColor="#ff385c" />
+        <Marker coordinate={{ latitude: lat, longitude: lng }} pinColor="#C87156" />
       </MapView>
     </View>
   );

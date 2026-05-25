@@ -24,7 +24,7 @@ export function SearchBar({
         onPress={onPress}
         className="flex-1 flex-row items-center gap-3 rounded-full border border-surface-border bg-surface px-4 py-3 shadow-card"
       >
-        <Search size={16} color="#222" />
+        <Search size={16} color="#0E1A2B" />
         <View className="flex-1">
           <Text className="font-semibold" numberOfLines={1}>
             {label}
@@ -38,7 +38,7 @@ export function SearchBar({
         onPress={onOpenFilters}
         className="h-12 w-12 items-center justify-center rounded-full border border-surface-border bg-surface"
       >
-        <SlidersHorizontal size={16} color="#222" />
+        <SlidersHorizontal size={16} color="#0E1A2B" />
       </Pressable>
     </View>
   );

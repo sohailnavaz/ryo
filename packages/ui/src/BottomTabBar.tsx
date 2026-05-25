@@ -48,7 +48,7 @@ export function BottomTabBar({ tabs = DEFAULT_TABS, active, onChange, className 
             onPress={() => onChange(tab.key)}
             className="flex-1 items-center py-2 gap-1"
           >
-            <Icon size={22} color={isActive ? '#ff385c' : '#717171'} />
+            <Icon size={22} color={isActive ? '#C87156' : '#5C5750'} />
             <Text
               variant="caption"
               className={isActive ? 'text-brand-500 font-semibold' : 'text-ink-soft'}

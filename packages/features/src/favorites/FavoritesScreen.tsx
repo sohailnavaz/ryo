@@ -105,7 +105,7 @@ export function FavoritesScreen() {
             title="New list"
             variant="outline"
             size="sm"
-            leftIcon={<Plus size={16} color="#222" />}
+            leftIcon={<Plus size={16} color="#0E1A2B" />}
             onPress={() => setCreateOpen(true)}
           />
         </HStack>

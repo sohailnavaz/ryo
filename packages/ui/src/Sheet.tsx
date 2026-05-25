@@ -29,7 +29,7 @@ export function Sheet({ open, onClose, title, children, className }: SheetProps)
           <View className="flex-row items-center justify-between mb-2">
             {title ? <Heading level={3}>{title}</Heading> : <View />}
             <IconButton onPress={onClose} className="bg-surface-alt">
-              <X size={18} color="#222" />
+              <X size={18} color="#0E1A2B" />
             </IconButton>
           </View>
           {children}

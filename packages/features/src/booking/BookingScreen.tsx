@@ -151,7 +151,7 @@ export function BookingScreen({ id }: BookingScreenProps) {
     <ScrollView className="flex-1 bg-surface" contentContainerStyle={{ paddingBottom: 40 }}>
       <View className="px-4 py-4 flex-row items-center gap-3 md:px-10 md:mx-auto md:w-full md:max-w-[920px]">
         <IconButton onPress={() => router.back()} className="bg-surface border border-surface-border">
-          <ArrowLeft size={18} color="#222" />
+          <ArrowLeft size={18} color="#0E1A2B" />
         </IconButton>
         <Heading level={2}>Confirm and pay</Heading>
       </View>
@@ -313,7 +313,7 @@ function GuestRow({
           className="border border-surface-border"
           disabled={value <= min}
         >
-          <Minus size={16} color="#222" />
+          <Minus size={16} color="#0E1A2B" />
         </IconButton>
         <Text className="w-6 text-center font-semibold">{value}</Text>
         <IconButton
@@ -321,7 +321,7 @@ function GuestRow({
           className="border border-surface-border"
           disabled={!canIncrement}
         >
-          <Plus size={16} color="#222" />
+          <Plus size={16} color="#0E1A2B" />
         </IconButton>
       </HStack>
     </HStack>

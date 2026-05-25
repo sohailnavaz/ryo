@@ -28,7 +28,7 @@ export function Map({ lat, lng, zoom = 13, className, style }: MapProps) {
           zoom,
           attributionControl: false,
         });
-        new maplibre.Marker({ color: '#ff385c' }).setLngLat([lng, lat]).addTo(map);
+        new maplibre.Marker({ color: '#C87156' }).setLngLat([lng, lat]).addTo(map);
         cleanup = () => map.remove();
       } catch (err) {
         console.warn('[Map.web] failed to load maplibre-gl', err);
