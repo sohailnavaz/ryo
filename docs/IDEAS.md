@@ -148,3 +148,34 @@ How to read the tags: **Effort** S (hours) · M (a day) · L (multi-day). **Need
 
 **Feasibility:** **weather needs an API key** (OpenWeather / Open-Meteo — Open-Meteo is free/no-key!). **Events/festivals**: a **curated static calendar per city/season works now (no key)**; live events need an events API/key. So a solid v1 = Open-Meteo weather (free) + a curated festivals table.
 **Effort:** M. **Needs:** none if using Open-Meteo (keyless) + curated events; a key for richer event data. **Status:** 💡 logged. **Pairs with:** City Guides (#2 "what's on"), Map discovery (#4), Stories "good right now" (#5 seasonal).
+
+### 12. Stories page redesign — less "blog", more abstract/immersive + intro banner — _your pitch, 2026-05-25_
+**Raw idea:** the Stories page feels like blogs — not interesting for the current generation. Make it more **abstract/modern**; on entering the page show a **banner describing it, then continue** into the content.
+
+**Captured + expanded:** rework Stories from a tidy article grid into something more **editorial/immersive** (gen-Z-leaning):
+- **Intro banner / cover** on entry — a bold full-bleed hero (big Fraunces statement + image/gradient/grain) that "describes the page", with a **Continue / Enter** action that scrolls into the feed.
+- **More abstract layout:** asymmetric / masonry collage, overlapping cards, scroll-reveal motion, big imagery, snappy "reels-style" vertical story cards, bold type — vs. the current uniform grid.
+- Keep it on-brand (warm, Fraunces) but **higher energy**.
+
+**Feasibility:** pure UI/design pass on the existing Stories tab (synthetic content already there) — buildable now with the `frontend-design` skill. **Effort:** M. **Needs:** none. **Status:** 💡 logged (design pass). **Note:** this is a redesign of feature #Stories (already live).
+
+### 13. Booking → calendar / reminder (client + host) — _your pitch, 2026-05-25_
+**Raw idea:** a confirmed booking should drop into **Google Calendar / a reminder** automatically, for both the guest and the host.
+
+**Captured + expanded:**
+- **v1 (quick win, no key):** on booking confirm + on trip detail (and host bookings), an **"Add to calendar"** action — a **Google Calendar event-add URL** + a downloadable **.ics** file (works with Apple/Google/Outlook). Pre-filled with stay dates, listing title, address, confirmation code. Same for the host side (check-in/out events).
+- **v2 (real sync):** two-way Google Calendar sync via OAuth (needs a Google API key/consent) — auto-add + updates on change/cancel.
+
+**Feasibility:** the **.ics + Google-Calendar-link v1 is buildable now, no backend/key** (pure client-side generated from the booking). Real auto-sync needs Google Calendar OAuth.
+**Effort:** S (add-to-calendar v1) · L (real sync). **Needs:** none for v1; Google OAuth for sync. **Status:** 💡 logged — **quick win.** **Touches:** booking confirm + trip detail + host bookings.
+
+### 14. Geo-tagged posts — viewer sees the location + "what's famous here" — _your pitch, 2026-05-25_
+**Raw idea:** when someone posts, the viewer should see **where** it is on a map and **details** like what's famous about that place.
+
+**Captured + expanded:** every story/post carries a **location tag**; the viewer gets:
+- A **place chip + mini-map pin** (where this was).
+- A **"what's famous here"** panel — top sights, signature food, best time — pulled from the **City Guide** data (#2), with a "see homes near here" link into **Map discovery** (#4) and **live weather/what's-on** (#11).
+- Tapping the location → the city's guide / nearby stays.
+
+**Feasibility:** **near-term synthetic version is easy** — add a `location` (city) to the Stories traveler-story cards + a place panel sourced from a shared city-info module; **folds directly into the Stories redesign (#12)**. The *real* version (user-tagged posts) is part of the social layer (#9).
+**Effort:** S (synthetic, as part of #12) · part of #9 for real posts. **Needs:** none for synthetic. **Status:** 💡 logged. **Pairs with / folds into:** Stories redesign (#12), City Guides (#2), Map discovery (#4), Location context (#11), Social layer (#9).

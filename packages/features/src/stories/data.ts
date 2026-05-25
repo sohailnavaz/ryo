@@ -32,6 +32,18 @@ export type TravelerStory = {
   snippet: string;
   img: string;
   saves: number;
+  city: string; // where it was posted — drives the location chip + "known for"
+};
+
+/** Place context for geo-tagged posts (#14) — "what's famous here". */
+export type CityInfo = { knownFor: string; bestTime: string };
+export const CITY_INFO: Record<string, CityInfo> = {
+  'American Southwest': { knownFor: 'red-rock canyons, desert road trips, big skies', bestTime: 'Apr–May, Sep–Oct' },
+  'Amalfi Coast': { knownFor: 'cliffside villages, lemon groves, the Path of the Gods', bestTime: 'May–Jun, Sep' },
+  Asheville: { knownFor: 'Blue Ridge cabins, craft breweries, fall foliage', bestTime: 'Sep–Oct' },
+  Kyoto: { knownFor: 'temples & shrines, matcha, geisha district, autumn maples', bestTime: 'Mar–Apr, Nov' },
+  Santorini: { knownFor: 'caldera sunsets, white-washed villages, island-hopping', bestTime: 'May–Jun, Sep' },
+  Tulum: { knownFor: 'cenotes, Mayan ruins, beach clubs, jungle casitas', bestTime: 'Nov–Apr' },
 };
 
 export type PlanBlock = { title: string; blurb: string };
@@ -116,6 +128,7 @@ export const TRAVELER_STORIES: TravelerStory[] = [
     snippet: 'We let the weather pick the route. Best decision of the trip — here’s the loop we drove.',
     img: img('photo-1500382017468-9049fed747ef'),
     saves: 214,
+    city: 'American Southwest',
   },
   {
     id: 'st-2',
@@ -125,6 +138,7 @@ export const TRAVELER_STORIES: TravelerStory[] = [
     snippet: 'Skip Positano at noon. The villages above the road are where the real mornings happen.',
     img: img('photo-1571896349842-33c89424de2d'),
     saves: 188,
+    city: 'Amalfi Coast',
   },
   {
     id: 'st-3',
@@ -134,6 +148,7 @@ export const TRAVELER_STORIES: TravelerStory[] = [
     snippet: 'No signal, a wood stove, and the best sleep of the year. What I packed and what I’d skip.',
     img: img('photo-1449158743715-0a90ebb6d2d8'),
     saves: 156,
+    city: 'Asheville',
   },
   {
     id: 'st-4',
@@ -143,6 +158,7 @@ export const TRAVELER_STORIES: TravelerStory[] = [
     snippet: 'Five temples, one long walk, and the matcha that ruined all other matcha for me.',
     img: img('photo-1540541338287-41700207dee6'),
     saves: 142,
+    city: 'Kyoto',
   },
   {
     id: 'st-5',
@@ -152,6 +168,7 @@ export const TRAVELER_STORIES: TravelerStory[] = [
     snippet: 'Island-hopped on a whim. Here’s the ferry timing that actually worked.',
     img: img('photo-1469854523086-cc02fe5d8800'),
     saves: 131,
+    city: 'Santorini',
   },
   {
     id: 'st-6',
@@ -161,6 +178,7 @@ export const TRAVELER_STORIES: TravelerStory[] = [
     snippet: 'Cenotes before 9am, tacos away from the beach road, and a casita I’d go back to.',
     img: img('photo-1502920917128-1aa500764cbd'),
     saves: 119,
+    city: 'Tulum',
   },
 ];
 
