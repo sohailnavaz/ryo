@@ -204,3 +204,40 @@ How to read the tags: **Effort** S (hours) · M (a day) · L (multi-day). **Need
 - **Gamification tie-in:** stamps are the **visual collectible**; **badges/score (#1)** are the achievements — together they make a "traveler identity." Counts feed the Wayfarer score; "12 stamps · 5 countries".
 
 **Feasibility:** **v1 derivable now** — pull visited cities from the user's completed `bookings` (city/country) and render a stamp per city from a curated **city→landmark** map (glyph/illustration + label). No backend needed; custom per-landmark artwork is optional later polish. **Effort:** M (passport UI + curated landmark map + derive from trips). **Needs:** none for v1; an illustrator/SVG set for premium stamp art later. **Touches:** profile/account (coordinate with profile lane) + a `passport`/stamps module + bookings (read). **Status:** 💡 logged. **Pairs with / clusters into:** Badges & score (#1), Social profile (#9), City Guides (#2) — the "traveler identity" group.
+
+### 17. Rich profile cards (guest + host) — MUST — _your pitch, 2026-05-25_
+**Raw idea:** every profile (guest or host) has a **bio**; guests show **favourite things, languages spoken, reviews about them, # of trips**; hosts show **# of listings**, etc. Must-have for profile cards.
+
+**Captured + what already exists vs new:**
+- ✅ **Already built** (profile lane): **bio**, **languages spoken**, **about-you** (work/school/fun-fact), photo, city/country.
+- 🟢 **Derivable now:** **# of trips** (count of guest `bookings`), **# of listings** (host `useMyListings`), member-since.
+- 🟡 **Favourite things** (guest): add a "favourites/interests" field to the profile (chips) — small add.
+- 🟡 **Reviews about them** (two-way reviews): hosts review guests + guests review hosts → shown on the profile. Today reviews are listing-only; this needs a **two-way review** model (synthetic v1 possible, real needs backend + verified-stay gate per `docs/08`).
+- **The deliverable:** a reusable **ProfileCard** (avatar, name, role badge, bio, languages, trips/listings stat, top "reviews about them", verification badges) used on the public profile + surfaced anywhere a person appears (host on a listing, guest in messaging, traveler in Stories/social).
+
+**Feasibility:** **v1 buildable now** — ProfileCard from existing profile fields + derived trip/listing counts + a synthetic "reviews about them"; add a favourites field. Real two-way reviews + verification badges need backend. **Effort:** S–M (card + favourites field + derived stats) · L (real two-way reviews). **Needs:** none for v1. **Touches:** profile/account (**coordinate with profile lane**) + a shared `ProfileCard` + bookings/listings (read). **Status:** 💡 logged — **must-have.** **Pairs with:** Badges/Passport (#1/#16), Social (#9), reviews (`docs/08`).
+
+### 18. Trip Planner — "Plan your next big adventure" (travel-expert assistant) — _your pitch, 2026-05-25_
+**Raw idea:** a module/CTA ("Plan your next big adventure") that → a trip-planning flow: pick a location, then we show available stays, **to/from transport**, things that help build the trip, **facts, dos & don'ts, current weather, major updates** of that location. Think like a travel expert.
+
+**Captured + expanded:** a `/plan` flow — pick a destination → an assembled **trip kit**:
+- **Stays** there (from listings) + save to itinerary.
+- **Getting there & around** — to/from transport (flights/trains/transfers): curated "how to get there" v1; live options need APIs.
+- **Do / Don't & local etiquette**, **facts**, **what to pack**, **best time**.
+- **Current weather** (Open-Meteo, keyless) + **major updates/advisories** (curated v1; live = news/advisory API).
+- **Itinerary builder** — drop stays + activities onto days.
+- Ties together City Guides (#2), Location context (#11), Map (#4), Globe (#15), itinerary.
+
+**Feasibility:** **keyless v1 doable** (curated content + Open-Meteo + listings + a client itinerary store); transport options + live advisories need APIs. **Effort:** **L** (a whole planning surface). **Needs:** none for v1; APIs for live transport/advisories. **Status:** 💡 logged. **Note:** "pomudoru" read as *module/CTA block* — confirm if you meant a literal Pomodoro timer.
+
+### 19. Then & Now — old + latest photographs of a place — _your pitch, 2026-05-25_
+**Raw idea:** when showing a location's details/history, also show **old (archival) photographs** next to **latest** ones.
+
+**Captured:** a "Then & Now" gallery/slider on the City Guide / destination detail — historical/archival images beside modern shots, a lovely way to tell a place's story.
+**Feasibility:** modern photos we have (Unsplash); **archival photos need sourcing** — curated public-domain/archive images per city for v1 (no key, but manual sourcing + licensing care); a historical-photo API later. **Effort:** M (curated pairs + slider UI) + ongoing sourcing. **Needs:** archival image sources (licensing). **Status:** 💡 logged. **Pairs with:** City Guides (#2), destination detail (#15/#18).
+
+### 20. Member notes (staycation) — _your pitch, 2026-05-25_
+**Raw idea:** let a staycation member keep **notes**.
+
+**Captured (best guess):** private, per-member (and/or per-trip) **notes** — jot packing lists, plans, reminders, "remember this café"; attach to a trip or keep general. Private to the member.
+**Feasibility:** **v1 buildable now** — a client-side notes store (localStorage, like other v1s), surfaced on the trip detail + a "My notes" spot; works offline (pairs with the Offline pack). Real cross-device needs a `notes` table + auth. **Effort:** S–M. **Needs:** none for v1. **Status:** 💡 logged — quick win. **Pairs with:** trip itinerary, Offline pack (#6), Trip planner (#18). *(Confirm scope: personal travel notes? notes on a booking? host notes about a guest?)*
