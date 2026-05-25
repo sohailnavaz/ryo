@@ -16,6 +16,7 @@ export * from './review-drafts-store';
 export * from './filters';
 export * from './host';
 export * from './host-actions-store';
+export * from './host-verification-store';
 export * from './host-calendar-store';
 export * from './host-calendar';
 export * from './admin';

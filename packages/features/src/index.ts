@@ -27,6 +27,8 @@ export * from './host/HostInboxThreadScreen';
 export * from './host/HostReviewsScreen';
 export * from './host/HostSettingsScreen';
 export * from './host/HostInsightsScreen';
+export * from './host/HostPayoutsScreen';
+export * from './host/HostVerificationScreen';
 export * from './host/shell';
 
 export * from './admin/AdminDashboardScreen';
