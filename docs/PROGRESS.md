@@ -2,7 +2,7 @@
 doc: PROGRESS
 purpose: Human-readable living status doc. Safe to share with collaborators, investors, or friends.
 last_updated: 2026-05-23
-version: 0.11.0
+version: 0.11.1
 ---
 
 # Ryo — Progress
@@ -164,6 +164,13 @@ These are the calls I'd most like a second opinion on. If you're reviewing, skim
 ## 8. Changelog
 
 Append-only, newest first. One line per shipped thing. Version bumps follow branding.md convention (patch / minor / major).
+
+### `0.11.1` — 2026-05-25 — 🎉 first REAL persisted booking
+
+**The core spine is real.** End-to-end verified live: a user signs in with a real Supabase session (magic link) → books a listing → the booking **persists to the `bookings` table** (guest-insert RLS) → reads back in `/trips` (guest-read RLS). Migration `0004` (guest-breakdown + fee columns) applied; `useCreateBooking` no longer 400s. Auth (M2) + Booking (M5) + Trips (M6) are now **live-verified**, not just code-landed.
+
+- Added: email+password sign-in/sign-up + **forgot-password / set-password** flow (`/reset-password`) so magic-link-only accounts can set a password; friendly auth error messages.
+- Still client-side/synthetic (not yet real): admin/incidents/host actions, payments (mocked). Demo-role bypass still present — remove before public launch.
 
 ### `0.11.0` — 2026-05-25
 
