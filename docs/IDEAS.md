@@ -111,3 +111,40 @@ How to read the tags: **Effort** S (hours) · M (a day) · L (multi-day). **Need
 - **Effort:** S–M (static phrasebook) · M+ (live translation). **Needs:** none for phrasebook; API key for live.
 
 **Sequencing note:** #5 image sizing is a fast win (starting now). #7 i18n is the backbone for #8's UI translation and is the biggest lift. #6 offline pack is high-value and self-contained. Good candidates to parallelize across agents once we commit.
+
+### 9. Social layer — follow, like, comment + public/private profiles (FUTURE) — _your pitch, 2026-05-25_
+**Raw idea:** customers can **follow** each other, **like & comment** on the posts/images people share, and keep a **private profile** (only followers see their posts) — while **public** posts are visible to everyone. Snapchat/Instagram-style.
+
+**Captured + expanded:**
+- **Social graph:** follow / unfollow, follower & following counts, follow-requests for private accounts.
+- **Posts & media:** users post travel photos + notes; **likes + comments** (with their own report/moderation path → admin incidents).
+- **Privacy model:** **public** profile (anyone sees public posts) vs **private** (posts visible only to approved followers) — per-post visibility toggle too.
+- **Discovery feed:** public posts surface in the **Stories tab** (turns today's *synthetic* traveler-stories feed into a *real* user feed) and on traveler profiles.
+- **Moderation:** report post/comment → `/admin` queue; block/mute.
+
+**Feasibility:** a real **social network slice** — needs real auth, a backend (posts / follows / likes / comments tables + RLS enforcing the public/private rules), **media upload** (Supabase Storage), notifications, and moderation. So **future / post-launch**; a synthetic UI is possible sooner but privacy/follows aren't real without auth + RLS.
+**Effort:** **XL.** **Needs:** real auth + social backend + Storage + moderation. **Status:** 🔮 future. **Pairs with:** badges/score (#1, content = score + follower milestones), Stories (#discovery feed), Travel Groups (#3), notifications (already built).
+
+### 10. Trust & Safety — reporting, community guidelines, block & ban — _your pitch, 2026-05-25_
+**Raw idea:** anyone can report someone — host→user, user→host, user→follower; we need **community guidelines**, plus **block** (user) and **ban** (admin) features.
+
+**Captured + expanded** (aligns with `docs/11-trust-safety.md` + `docs/14-admin-ops.md`):
+- **Report flows everywhere:** report a listing / user / host / review / post / comment, with reason codes + optional detail → lands in the **admin moderation/incident queue** (the `/admin` console + `/help` loop already model this).
+- **Community Guidelines** — a clear public content page (the rules + what gets you removed). **Buildable now (static, no backend).**
+- **Block / Mute (user-level):** I don't see or interact with X (pairs with the social layer #9).
+- **Suspend / Ban (admin-level):** the admin console already has client-side "suspend user" + reason-code + audit — real ban needs backend + staff auth to persist + actually block sign-in.
+- **In-stay SOS** (already noted under brand/T&S) fits here.
+
+**Feasibility:** the **report UI + Community Guidelines page are buildable now** (reports → the existing client-side incident store, like `/help`). Real **block/ban persistence** + enforced sign-in blocking needs the backend + staff auth.
+**Effort:** S (guidelines page) · M (report flows on synthetic) · L (real block/ban + enforcement). **Needs:** none for guidelines/report-UI; real auth+backend for enforcement. **Status:** 💡 logged (guidelines page = quick win). **Pairs with:** admin (#moderation), social (#9), `/help` incidents.
+
+### 11. Location context on search — live weather + what's-on (festivals/events) — _your pitch, 2026-05-25_
+**Raw idea:** when a customer searches a location, show the **current situation** — weather, and any famous thing (festival/celebration) happening there around then.
+
+**Captured + expanded:** a **destination context panel** (on search results / a city pin / the City Guide / listing detail) showing:
+- **Weather** — current + a short forecast for the trip dates.
+- **What's on** — notable festivals/events/celebrations near the dates ("Día de los Muertos · Nov 1–2", "cherry-blossom season").
+- A "best time to visit" nudge — feeds the Stories tab's "good right now" too.
+
+**Feasibility:** **weather needs an API key** (OpenWeather / Open-Meteo — Open-Meteo is free/no-key!). **Events/festivals**: a **curated static calendar per city/season works now (no key)**; live events need an events API/key. So a solid v1 = Open-Meteo weather (free) + a curated festivals table.
+**Effort:** M. **Needs:** none if using Open-Meteo (keyless) + curated events; a key for richer event data. **Status:** 💡 logged. **Pairs with:** City Guides (#2 "what's on"), Map discovery (#4), Stories "good right now" (#5 seasonal).
