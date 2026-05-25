@@ -89,6 +89,7 @@ function AccountMenu({ open, onClose }: { open: boolean; onClose: () => void }) 
 
           <div className="my-1 h-px bg-surface-border" />
           <Item label="🛎️ Concierge" path="/concierge" accent />
+          <Item label="Get help" path="/help" />
 
           {isHost ? (
             <>
