@@ -16,7 +16,7 @@ export function IconButton({ onPress, children, className, disabled, testID }: I
       onPress={onPress}
       disabled={disabled}
       className={cn(
-        'h-10 w-10 items-center justify-center rounded-full bg-surface/80 active:bg-surface-alt',
+        'h-10 w-10 items-center justify-center rounded-full bg-surface/80 transition duration-150 hover:bg-surface-alt active:scale-90',
         disabled && 'opacity-50',
         className,
       )}

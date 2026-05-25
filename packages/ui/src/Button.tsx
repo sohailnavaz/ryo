@@ -19,14 +19,16 @@ export type ButtonProps = {
   testID?: string;
 };
 
-const base = 'flex-row items-center justify-center rounded-full';
+const base =
+  'flex-row items-center justify-center rounded-full transition duration-150 active:scale-[0.97]';
 
 const variantClass: Record<Variant, string> = {
-  primary: 'bg-brand-500 active:bg-brand-600',
-  secondary: 'bg-ink active:bg-ink/90',
-  ghost: 'bg-transparent active:bg-surface-alt',
-  outline: 'bg-transparent border border-surface-border active:bg-surface-alt',
-  danger: 'bg-brand-600 active:bg-brand-700',
+  primary: 'bg-brand-500 hover:bg-brand-600 active:bg-brand-700 shadow-soft hover:shadow-card',
+  secondary: 'bg-ink hover:bg-ink/90 active:bg-ink/80',
+  ghost: 'bg-transparent hover:bg-surface-alt active:bg-warm-100',
+  outline:
+    'bg-transparent border border-surface-border hover:border-ink/40 hover:bg-surface-alt active:bg-warm-100',
+  danger: 'bg-danger hover:opacity-90 active:opacity-80',
 };
 
 const variantText: Record<Variant, string> = {
@@ -79,7 +81,7 @@ export function Button({
       )}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'ghost' || variant === 'outline' ? '#222' : '#fff'} />
+        <ActivityIndicator color={variant === 'ghost' || variant === 'outline' ? '#0E1A2B' : '#FAF6F0'} />
       ) : (
         <>
           {leftIcon ? <View className="mr-2">{leftIcon}</View> : null}

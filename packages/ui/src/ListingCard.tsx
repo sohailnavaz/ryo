@@ -29,10 +29,17 @@ export function ListingCard({
   const next = () => setPhotoIdx((i) => (i + 1) % Math.max(1, photos.length));
 
   return (
-    <Pressable onPress={onPress} className={cn('w-full', className)}>
-      <View className="relative aspect-square w-full overflow-hidden rounded-2xl bg-surface-alt">
+    <Pressable
+      onPress={onPress}
+      className={cn('group w-full transition duration-200 hover:-translate-y-1', className)}
+    >
+      <View className="relative aspect-square w-full overflow-hidden rounded-2xl bg-surface-alt transition duration-200 group-hover:shadow-card">
         {current ? (
-          <Image source={{ uri: current }} className="h-full w-full" resizeMode="cover" />
+          <Image
+            source={{ uri: current }}
+            className="h-full w-full transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+            resizeMode="cover"
+          />
         ) : null}
         <View className="absolute top-3 right-3">
           <IconButton
@@ -42,8 +49,8 @@ export function ListingCard({
           >
             <Heart
               size={18}
-              color={isFavorite ? '#ff385c' : '#ffffff'}
-              fill={isFavorite ? '#ff385c' : 'transparent'}
+              color={isFavorite ? '#C87156' : '#ffffff'}
+              fill={isFavorite ? '#C87156' : 'transparent'}
             />
           </IconButton>
         </View>
@@ -51,12 +58,12 @@ export function ListingCard({
           <>
             <View className="absolute left-2 top-1/2 -mt-4">
               <IconButton onPress={prev} className="bg-white/90 h-8 w-8">
-                <ChevronLeft size={16} color="#222" />
+                <ChevronLeft size={16} color="#0E1A2B" />
               </IconButton>
             </View>
             <View className="absolute right-2 top-1/2 -mt-4">
               <IconButton onPress={next} className="bg-white/90 h-8 w-8">
-                <ChevronRight size={16} color="#222" />
+                <ChevronRight size={16} color="#0E1A2B" />
               </IconButton>
             </View>
             <View className="absolute bottom-3 left-0 right-0 flex-row justify-center gap-1">
@@ -80,7 +87,7 @@ export function ListingCard({
           </Text>
           {listing.rating_count > 0 ? (
             <View className="flex-row items-center gap-1">
-              <Star size={12} color="#222" fill="#222" />
+              <Star size={12} color="#0E1A2B" fill="#0E1A2B" />
               <Text variant="small">{listing.rating_avg.toFixed(2)}</Text>
             </View>
           ) : null}
