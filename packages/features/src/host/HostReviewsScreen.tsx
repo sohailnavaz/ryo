@@ -1,13 +1,22 @@
+import { useState } from 'react';
 import { View } from 'react-native';
-import { DEMO_HOST_ID, useHostReviews } from '@bnb/api';
+import {
+  DEMO_HOST_ID,
+  useHostReplyToReview,
+  useHostReviews,
+  type SyntheticReview,
+} from '@bnb/api';
 import {
   Avatar,
+  Button,
   Card,
   Divider,
   Heading,
   HStack,
+  Input,
   Skeleton,
   Text,
+  toast,
   VStack,
 } from '@bnb/ui';
 import { HostShell } from './shell';
@@ -42,33 +51,106 @@ export function HostReviewsScreen({ hostId = DEMO_HOST_ID }: { hostId?: string }
             <Heading level={2}>Reviews received</Heading>
             <VStack className="mt-3 gap-3">
               {data.reviews.map((r) => (
-                <Card key={r.id} className="p-4">
-                  <HStack className="gap-3 items-center">
-                    <Avatar src={r.guest_avatar} name={r.guest_name} size={36} />
-                    <VStack className="flex-1">
-                      <HStack className="gap-2 items-center">
-                        <Text className="font-semibold">{r.guest_name}</Text>
-                        <Text variant="small" className="text-ink-soft">
-                          · ★ {r.rating}/5
-                        </Text>
-                      </HStack>
-                      <Text variant="small" className="text-ink-soft" numberOfLines={1}>
-                        {r.listing_title}
-                      </Text>
-                    </VStack>
-                    <Text variant="caption" className="text-ink-soft">
-                      {r.created_at}
-                    </Text>
-                  </HStack>
-                  <Divider className="my-3" />
-                  <Text className="text-ink-soft">{r.body}</Text>
-                </Card>
+                <ReviewCard key={r.id} review={r} />
               ))}
             </VStack>
           </View>
         </>
       )}
     </HostShell>
+  );
+}
+
+function ReviewCard({ review: r }: { review: SyntheticReview }) {
+  const reply = useHostReplyToReview();
+  const [composing, setComposing] = useState(false);
+  const [body, setBody] = useState('');
+
+  const submit = () => {
+    const trimmed = body.trim();
+    if (!trimmed) return;
+    reply.mutate(
+      { reviewId: r.id, body: trimmed },
+      {
+        onSuccess: () => {
+          setComposing(false);
+          setBody('');
+          toast.success('Reply posted.');
+        },
+        onError: () => toast.error('Could not post reply. Try again.'),
+      },
+    );
+  };
+
+  return (
+    <Card className="p-4">
+      <HStack className="gap-3 items-center">
+        <Avatar src={r.guest_avatar} name={r.guest_name} size={36} />
+        <VStack className="flex-1">
+          <HStack className="gap-2 items-center">
+            <Text className="font-semibold">{r.guest_name}</Text>
+            <Text variant="small" className="text-ink-soft">
+              · ★ {r.rating}/5
+            </Text>
+          </HStack>
+          <Text variant="small" className="text-ink-soft" numberOfLines={1}>
+            {r.listing_title}
+          </Text>
+        </VStack>
+        <Text variant="caption" className="text-ink-soft">
+          {r.created_at}
+        </Text>
+      </HStack>
+      <Divider className="my-3" />
+      <Text className="text-ink-soft">{r.body}</Text>
+
+      {r.reply ? (
+        <View className="mt-3 rounded-2xl bg-surface-alt px-3 py-2.5">
+          <Text variant="small" className="font-semibold">Your reply</Text>
+          <Text variant="small" className="text-ink-soft mt-0.5">{r.reply.body}</Text>
+          <Text variant="caption" className="text-ink-muted mt-1">{r.reply.created_at}</Text>
+        </View>
+      ) : composing ? (
+        <View className="mt-3">
+          <Input
+            label="Public reply"
+            value={body}
+            onChangeText={setBody}
+            placeholder="Thank the guest, address their points — this is public and one-time."
+            multiline
+            numberOfLines={3}
+            className="min-h-[64px]"
+            style={{ textAlignVertical: 'top' }}
+          />
+          <HStack className="mt-2 justify-end gap-2">
+            <Button
+              variant="ghost"
+              onPress={() => {
+                setComposing(false);
+                setBody('');
+              }}
+              disabled={reply.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onPress={submit}
+              disabled={!body.trim() || reply.isPending}
+              loading={reply.isPending}
+            >
+              Post reply
+            </Button>
+          </HStack>
+        </View>
+      ) : (
+        <View className="mt-3 flex-row">
+          <Button variant="secondary" onPress={() => setComposing(true)}>
+            Reply
+          </Button>
+        </View>
+      )}
+    </Card>
   );
 }
 

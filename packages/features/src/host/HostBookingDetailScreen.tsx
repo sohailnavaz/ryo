@@ -1,13 +1,21 @@
+import { useState } from 'react';
 import { View } from 'react-native';
-import { DEMO_HOST_ID, useHostBooking } from '@bnb/api';
+import {
+  DEMO_HOST_ID,
+  useHostBooking,
+  useHostCancelBooking,
+  useHostDecideBooking,
+} from '@bnb/api';
 import {
   Avatar,
   Badge,
   Button,
   Card,
+  ConfirmModal,
   Divider,
   HStack,
   Pressable,
+  ReasonCodeModal,
   Skeleton,
   Text,
   toast,
@@ -16,6 +24,22 @@ import {
 import { useRouter } from '@bnb/ui/nav';
 import { formatDateRange, formatPrice } from '@bnb/utils';
 import { HostShell } from './shell';
+
+const DECLINE_REASONS = [
+  { code: 'dates_unavailable', label: 'Dates no longer available' },
+  { code: 'guest_fit', label: 'Not a fit for the home' },
+  { code: 'maintenance', label: 'Maintenance / repairs' },
+  { code: 'pricing', label: 'Pricing / length of stay' },
+  { code: 'other', label: 'Other' },
+];
+
+const CANCEL_REASONS = [
+  { code: 'maintenance', label: 'Urgent maintenance' },
+  { code: 'double_booking', label: 'Double booking' },
+  { code: 'personal', label: 'Personal emergency' },
+  { code: 'guest_request', label: 'Guest asked to cancel' },
+  { code: 'other', label: 'Other' },
+];
 
 export function HostBookingDetailScreen({
   bookingId,
@@ -26,6 +50,11 @@ export function HostBookingDetailScreen({
 }) {
   const { data, isLoading } = useHostBooking(hostId, bookingId);
   const router = useRouter();
+  const decide = useHostDecideBooking();
+  const cancel = useHostCancelBooking();
+  const [acceptOpen, setAcceptOpen] = useState(false);
+  const [declineOpen, setDeclineOpen] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -47,15 +76,96 @@ export function HostBookingDetailScreen({
     );
   }
 
+  const isPendingRequest = data.is_request && data.request_state === 'pending';
+  const isCancelled = data.status === 'cancelled';
+  // A confirmed, not-yet-finished booking can be host-cancelled.
+  const canHostCancel = !isCancelled && !isPendingRequest && data.status !== 'completed';
+
   return (
     <HostShell
       title={data.listing_title}
       subtitle={`${data.listing_city}, ${data.listing_country} · ${formatDateRange(data.start_date, data.end_date)}`}
     >
+      <ConfirmModal
+        open={acceptOpen}
+        onClose={() => setAcceptOpen(false)}
+        title={`Accept ${data.guest_name.split(' ')[0]}'s request?`}
+        message={`Confirms the stay for ${formatDateRange(data.start_date, data.end_date)} and authorises payment. The guest is notified immediately.`}
+        confirmLabel="Accept request"
+        loading={decide.isPending}
+        onConfirm={() =>
+          decide.mutate(
+            { bookingId: data.id, decision: 'accepted', reason_code: 'host_accept' },
+            {
+              onSuccess: () => {
+                setAcceptOpen(false);
+                toast.success('Request accepted.');
+              },
+              onError: () => toast.error('Could not accept. Try again.'),
+            },
+          )
+        }
+      />
+      <ReasonCodeModal
+        open={declineOpen}
+        onClose={() => setDeclineOpen(false)}
+        title={`Decline ${data.guest_name.split(' ')[0]}'s request?`}
+        message="The guest is notified and not charged. Declining too often can affect placement."
+        reasonCodes={DECLINE_REASONS}
+        confirmLabel="Decline request"
+        destructive
+        loading={decide.isPending}
+        onSubmit={({ reason_code, note }) =>
+          decide.mutate(
+            { bookingId: data.id, decision: 'declined', reason_code, note: note || undefined },
+            {
+              onSuccess: () => {
+                setDeclineOpen(false);
+                toast.success('Request declined.');
+              },
+              onError: () => toast.error('Could not decline. Try again.'),
+            },
+          )
+        }
+      />
+      <ReasonCodeModal
+        open={cancelOpen}
+        onClose={() => setCancelOpen(false)}
+        title="Cancel this booking?"
+        message={`Host cancellations carry a penalty. Estimated charge to you: ${formatPrice(data.host_penalty_cents, data.currency)}, the guest is fully refunded, and the dates reopen. This is logged.`}
+        reasonCodes={CANCEL_REASONS}
+        requireNote
+        notePlaceholder="Explain the cancellation for the guest + record…"
+        confirmLabel="Cancel booking"
+        destructive
+        loading={cancel.isPending}
+        onSubmit={({ reason_code, note }) =>
+          cancel.mutate(
+            {
+              bookingId: data.id,
+              penalty_cents: data.host_penalty_cents,
+              reason_code,
+              note: note || undefined,
+            },
+            {
+              onSuccess: () => {
+                setCancelOpen(false);
+                toast.success('Booking cancelled. Guest refunded.');
+              },
+              onError: () => toast.error('Could not cancel. Try again.'),
+            },
+          )
+        }
+      />
+
       <HStack className="mt-2 gap-2 flex-wrap">
-        <Badge variant={data.status === 'in_stay' ? 'brand' : data.status === 'upcoming' ? 'dark' : 'neutral'}>
-          {data.status === 'in_stay' ? 'in stay' : data.status}
-        </Badge>
+        {isPendingRequest ? (
+          <Badge variant="brand">request · action needed</Badge>
+        ) : (
+          <Badge variant={data.status === 'in_stay' ? 'brand' : data.status === 'upcoming' ? 'dark' : 'neutral'}>
+            {data.status === 'in_stay' ? 'in stay' : data.status}
+          </Badge>
+        )}
         <Badge variant="neutral">{data.nights} {data.nights === 1 ? 'night' : 'nights'}</Badge>
       </HStack>
 
@@ -115,21 +225,39 @@ export function HostBookingDetailScreen({
           <Card className="p-5">
             <Text className="font-semibold">Actions</Text>
             <VStack className="mt-3 gap-2">
+              {isPendingRequest ? (
+                <>
+                  <Button variant="primary" onPress={() => setAcceptOpen(true)}>
+                    Accept request
+                  </Button>
+                  <Button variant="danger" onPress={() => setDeclineOpen(true)}>
+                    Decline request
+                  </Button>
+                </>
+              ) : null}
               <Button
                 variant="secondary"
                 onPress={() => toast.info('Preview only — message would route to inbox.')}
               >
                 Message {data.guest_name.split(' ')[0]}
               </Button>
-              <Button
-                variant="secondary"
-                onPress={() => toast.info('Preview only — opens cancellation flow with reason code.')}
-              >
-                Cancel booking
-              </Button>
+              {canHostCancel ? (
+                <Button variant="outline" onPress={() => setCancelOpen(true)}>
+                  Cancel booking
+                </Button>
+              ) : null}
             </VStack>
+            {data.cancellation ? (
+              <View className="mt-3 rounded-2xl bg-surface-alt px-3 py-2">
+                <Text variant="small" className="font-semibold">Cancelled by you</Text>
+                <Text variant="caption" className="text-ink-soft mt-0.5">
+                  {data.cancellation.reason_code.replace(/_/g, ' ')} · penalty{' '}
+                  {formatPrice(data.cancellation.penalty_cents, data.currency)} · {data.cancellation.cancelled_at}
+                </Text>
+              </View>
+            ) : null}
             <Text variant="caption" className="mt-3 text-ink-soft">
-              All host actions are reversible within 1 hour and logged to the audit trail.
+              Every host action is logged to the audit trail. Host cancellations carry a penalty.
             </Text>
           </Card>
         </View>

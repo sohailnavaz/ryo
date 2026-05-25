@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import {
   DEMO_HOST_ID,
   useHostBookings,
+  useHostBookingRequests,
   type HostBookingsFilter,
   type SyntheticBooking,
 } from '@bnb/api';
@@ -31,6 +32,7 @@ const FILTERS: Array<{ key: HostBookingsFilter; label: string }> = [
 export function HostBookingsScreen({ hostId = DEMO_HOST_ID }: { hostId?: string }) {
   const [filter, setFilter] = useState<HostBookingsFilter>('all');
   const { data, isLoading } = useHostBookings(hostId, filter);
+  const { data: requests } = useHostBookingRequests(hostId);
   const router = useRouter();
 
   return (
@@ -38,6 +40,40 @@ export function HostBookingsScreen({ hostId = DEMO_HOST_ID }: { hostId?: string 
       title="Bookings"
       subtitle="Every reservation across every home. Filter, then click into one."
     >
+      {requests && requests.length > 0 ? (
+        <Card className="mt-6 p-4 border border-brand-500/40">
+          <HStack className="items-center justify-between flex-wrap gap-2">
+            <VStack className="gap-0.5">
+              <Text className="font-semibold">
+                {requests.length} booking {requests.length === 1 ? 'request' : 'requests'} awaiting you
+              </Text>
+              <Text variant="small" className="text-ink-soft">
+                Accept or decline to confirm the stay. Open one to respond.
+              </Text>
+            </VStack>
+            <Badge variant="brand">action needed</Badge>
+          </HStack>
+          <VStack className="mt-3 gap-2">
+            {requests.map((b) => (
+              <Pressable key={b.id} onPress={() => router.push(`/host/bookings/${b.id}`)}>
+                <HStack className="items-center gap-3 rounded-2xl bg-surface-alt px-3 py-2">
+                  <Avatar src={b.guest_avatar} name={b.guest_name} size={32} />
+                  <VStack className="flex-1 gap-0.5">
+                    <Text variant="small" className="font-semibold" numberOfLines={1}>
+                      {b.guest_name} · {b.listing_title}
+                    </Text>
+                    <Text variant="caption" className="text-ink-soft">
+                      {formatDateRange(b.start_date, b.end_date)} · {formatPrice(b.total_cents, b.currency)}
+                    </Text>
+                  </VStack>
+                  <Text variant="small" className="text-brand-500 font-semibold">Respond →</Text>
+                </HStack>
+              </Pressable>
+            ))}
+          </VStack>
+        </Card>
+      ) : null}
+
       <View className="mt-6 flex-row flex-wrap gap-2">
         {FILTERS.map((f) => {
           const count = data?.totals?.[f.key] ?? 0;
@@ -109,7 +145,11 @@ function BookingsList({
               </Text>
             </View>
             <HStack className="mt-3 md:mt-0 gap-3 justify-between md:justify-end md:gap-4">
-              <Badge variant={statusVariant(b.status)}>{statusLabel(b.status)}</Badge>
+              {b.is_request && b.request_state === 'pending' ? (
+                <Badge variant="brand">request · action needed</Badge>
+              ) : (
+                <Badge variant={statusVariant(b.status)}>{statusLabel(b.status)}</Badge>
+              )}
               <Text className="font-semibold">{formatPrice(b.total_cents, b.currency)}</Text>
             </HStack>
           </Card>

@@ -22,8 +22,30 @@ export function HostDashboardScreen({ hostId = DEMO_HOST_ID }: { hostId?: string
   const router = useRouter();
   const { data, isLoading } = useHostDashboard(hostId);
 
+  const pendingRequests = (data?.bookings ?? []).filter(
+    (b) => b.is_request && b.request_state === 'pending',
+  );
+
   return (
     <HostShell title="Welcome back, Mira." subtitle="Here's how your homes are doing this week.">
+      {pendingRequests.length > 0 ? (
+        <Pressable onPress={() => router.push('/host/bookings')}>
+          <Card className="mb-4 p-4 border border-brand-500/40">
+            <HStack className="items-center justify-between gap-2 flex-wrap">
+              <VStack className="gap-0.5">
+                <Text className="font-semibold">
+                  {pendingRequests.length} booking {pendingRequests.length === 1 ? 'request' : 'requests'} awaiting you
+                </Text>
+                <Text variant="small" className="text-ink-soft">
+                  Accept or decline to confirm the stay →
+                </Text>
+              </VStack>
+              <Badge variant="brand">action needed</Badge>
+            </HStack>
+          </Card>
+        </Pressable>
+      ) : null}
+
       {isLoading || !data ? (
         <KpiSkeletons />
       ) : (
@@ -150,9 +172,13 @@ function UpcomingList({
                 <Text className="font-semibold flex-1" numberOfLines={1}>
                   {b.listing_title}
                 </Text>
-                <Badge variant={b.status === 'in_stay' ? 'brand' : 'dark'}>
-                  {b.status === 'in_stay' ? 'in stay' : 'upcoming'}
-                </Badge>
+                {b.is_request && b.request_state === 'pending' ? (
+                  <Badge variant="brand">request</Badge>
+                ) : (
+                  <Badge variant={b.status === 'in_stay' ? 'brand' : 'dark'}>
+                    {b.status === 'in_stay' ? 'in stay' : 'upcoming'}
+                  </Badge>
+                )}
               </HStack>
               <Text variant="small" className="text-ink-soft">
                 {b.listing_city}, {b.listing_country} · {formatDateRange(b.start_date, b.end_date)} · {b.nights} {b.nights === 1 ? 'night' : 'nights'}

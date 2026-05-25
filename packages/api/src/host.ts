@@ -3,10 +3,17 @@
 // Until then, these hooks derive plausible bookings/earnings/reviews deterministically from listing IDs
 // so the dashboard works for any anon visitor without auth or schema changes.
 
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Listing } from '@bnb/db';
 import { fetchListings } from './listings';
 import { tryGetSupabase } from './client';
+import {
+  cancelBookingAsHost,
+  getHostActionOverrides,
+  replyToReview,
+  setBookingDecision,
+  type BookingDecision,
+} from './host-actions-store';
 
 export const DEMO_HOST_ID = '11111111-1111-1111-1111-111111111111';
 
@@ -26,6 +33,15 @@ export type SyntheticBooking = {
   currency: string;
   status: 'upcoming' | 'in_stay' | 'completed' | 'cancelled';
   created_at: string;
+  /**
+   * Request lifecycle for bookings that arrived as *requests* (not instant-book).
+   * `pending` → awaiting the host's accept/decline. Resolved to `accepted`
+   * (becomes a normal upcoming booking) or `declined` (treated as cancelled).
+   * `undefined` → an instant-book / already-confirmed reservation.
+   */
+  request_state?: 'pending' | BookingDecision;
+  /** Convenience flag: this row is (or was) a host-actionable request. */
+  is_request?: boolean;
 };
 
 export type SyntheticReview = {
@@ -37,6 +53,8 @@ export type SyntheticReview = {
   rating: number;
   body: string;
   created_at: string;
+  /** The host's public reply (one per review), overlaid from the host-actions store. */
+  reply?: { body: string; created_at: string };
 };
 
 export type HostStats = {
@@ -127,6 +145,10 @@ function bookingsForListing(l: Listing, today: string): SyntheticBooking[] {
     const start = addDays(today, offset);
     const end = addDays(start, nights);
     const guest = pick(GUESTS, r);
+    // ~45% of upcoming bookings arrived as a *request* (not instant-book) and
+    // are awaiting the host's accept/decline. The decision is overlaid from the
+    // host-actions store (see applyHostOverrides) so it survives a refresh.
+    const isRequest = r() < 0.45;
     out.push({
       id: `${l.id}-up-${i}`,
       listing_id: l.id,
@@ -143,6 +165,7 @@ function bookingsForListing(l: Listing, today: string): SyntheticBooking[] {
       currency: l.currency,
       status: 'upcoming',
       created_at: addDays(today, -Math.floor(r() * 14)),
+      ...(isRequest ? { request_state: 'pending' as const, is_request: true } : {}),
     });
   }
 
@@ -439,14 +462,57 @@ function syntheticHostDashboard(listings: Listing[], hostId: string): HostDashbo
   return { hostId, listings, bookings, reviews, stats: statsFor(listings, bookings), isPreview: true };
 }
 
+/**
+ * Overlay the client-side host-actions store (./host-actions-store.ts) onto a
+ * dashboard: booking accept/decline, host cancellations, and review replies.
+ * Applied to both the real and synthetic paths so host actions reflect
+ * optimistically everywhere and survive a refresh. Replaced by Supabase writes
+ * once host auth + RLS land.
+ */
+function applyHostOverrides(d: HostDashboard): HostDashboard {
+  const ov = getHostActionOverrides();
+  const hasOverrides =
+    Object.keys(ov.bookingDecision).length > 0 ||
+    Object.keys(ov.bookingCancellation).length > 0 ||
+    Object.keys(ov.reviewReplies).length > 0;
+  if (!hasOverrides) return d;
+
+  const bookings = d.bookings.map((b) => {
+    const decision = ov.bookingDecision[b.id];
+    const cancellation = ov.bookingCancellation[b.id];
+    let next = b;
+    if (decision) {
+      next = {
+        ...next,
+        request_state: decision,
+        is_request: true,
+        // A declined request is treated as cancelled; accepted stays as-is
+        // (its date-derived status already says upcoming/in_stay/etc.).
+        status: decision === 'declined' ? 'cancelled' : next.status,
+      };
+    }
+    if (cancellation) {
+      next = { ...next, status: 'cancelled' };
+    }
+    return next;
+  });
+
+  const reviews = d.reviews.map((rv) => {
+    const reply = ov.reviewReplies[rv.id];
+    return reply ? { ...rv, reply } : rv;
+  });
+
+  return { ...d, bookings, reviews, stats: statsFor(d.listings, bookings) };
+}
+
 export async function fetchHostDashboard(hostId: string): Promise<HostDashboard> {
   // Prefer the signed-in host's real data; fall back to the synthetic preview.
   const real = await tryFetchRealHostDashboard();
-  if (real) return real;
+  if (real) return applyHostOverrides(real);
 
   const all = await fetchListings();
   const listings = all.filter((l) => l.host_id === hostId);
-  return syntheticHostDashboard(listings, hostId);
+  return applyHostOverrides(syntheticHostDashboard(listings, hostId));
 }
 
 export function useHostDashboard(hostId: string = DEMO_HOST_ID) {
@@ -507,7 +573,18 @@ export type HostBookingDetail = SyntheticBooking & {
   cleaning_fee_cents: number;
   service_fee_cents: number;
   events: Array<{ at: string; label: string; actor: string }>;
+  /** Estimated host penalty if the host cancels this confirmed booking now (cents). */
+  host_penalty_cents: number;
+  /** The host-initiated cancellation on record, if any (from the host-actions store). */
+  cancellation?: { reason_code: string; note?: string; penalty_cents: number; cancelled_at: string };
 };
+
+/** Estimated host-cancellation penalty: stiffer the closer to check-in (docs/13). */
+export function estimateHostPenaltyCents(b: Pick<SyntheticBooking, 'total_cents' | 'start_date'>): number {
+  const days = Math.round((+new Date(b.start_date) - +new Date(todayIso())) / 86_400_000);
+  const rate = days <= 2 ? 0.5 : days <= 7 ? 0.25 : days <= 30 ? 0.1 : 0.05;
+  return Math.round(b.total_cents * rate);
+}
 
 export function useHostBooking(
   hostId: string = DEMO_HOST_ID,
@@ -520,19 +597,35 @@ export function useHostBooking(
       const d = await fetchHostDashboard(hostId);
       const b = d.bookings.find((x) => x.id === bookingId);
       if (!b) return null;
+      const ov = getHostActionOverrides();
+      const decision = ov.bookingDecision[b.id];
+      const cancellation = ov.bookingCancellation[b.id];
       const r = rng(hash(b.id));
       const cleaning = Math.round(b.total_cents * 0.08);
       const service = Math.round(b.total_cents * 0.04);
       const payout = Math.round(b.total_cents * 0.85);
+
       const events: HostBookingDetail['events'] = [
         { at: b.created_at, label: 'Reservation requested', actor: b.guest_name },
-        { at: addDays(b.created_at, 0), label: 'Auto-accepted (instant book)', actor: 'system' },
-        { at: addDays(b.created_at, 1), label: 'Payment authorised', actor: 'system' },
       ];
-      if (b.status === 'in_stay' || b.status === 'completed') {
+      if (b.is_request) {
+        // Request-to-book lifecycle (host must accept/decline).
+        if (decision === 'accepted') {
+          events.push({ at: b.created_at, label: 'Request accepted', actor: 'host' });
+          events.push({ at: addDays(b.created_at, 0), label: 'Payment authorised', actor: 'system' });
+        } else if (decision === 'declined') {
+          events.push({ at: b.created_at, label: 'Request declined', actor: 'host' });
+        }
+        // pending → no further events yet.
+      } else {
+        events.push({ at: addDays(b.created_at, 0), label: 'Auto-accepted (instant book)', actor: 'system' });
+        events.push({ at: addDays(b.created_at, 1), label: 'Payment authorised', actor: 'system' });
+      }
+
+      if (!cancellation && decision !== 'declined' && (b.status === 'in_stay' || b.status === 'completed')) {
         events.push({ at: b.start_date, label: 'Guest checked in', actor: b.guest_name });
       }
-      if (b.status === 'completed') {
+      if (!cancellation && decision !== 'declined' && b.status === 'completed') {
         events.push({ at: b.end_date, label: 'Guest checked out', actor: b.guest_name });
         events.push({
           at: addDays(b.end_date, 1),
@@ -540,9 +633,19 @@ export function useHostBooking(
           actor: 'system',
         });
       }
-      if (b.status === 'cancelled') {
+      if (cancellation) {
+        events.push({
+          at: cancellation.cancelled_at,
+          label:
+            cancellation.penalty_cents > 0
+              ? `Cancelled by host (penalty ${formatPayout(cancellation.penalty_cents, b.currency)})`
+              : 'Cancelled by host',
+          actor: 'host',
+        });
+      } else if (b.status === 'cancelled' && decision !== 'declined') {
         events.push({ at: b.created_at, label: 'Booking cancelled', actor: 'guest' });
       }
+
       const detail: HostBookingDetail = {
         ...b,
         guest_email: `${b.guest_name.split(' ')[0]?.toLowerCase()}@example.com`,
@@ -552,6 +655,8 @@ export function useHostBooking(
         cleaning_fee_cents: cleaning,
         service_fee_cents: service,
         events,
+        host_penalty_cents: estimateHostPenaltyCents(b),
+        cancellation,
       };
       return detail;
     },
@@ -894,5 +999,85 @@ export function useHostCalendar(hostId: string = DEMO_HOST_ID, days = 60) {
       return { listings: d.listings, days: out };
     },
     staleTime: 60_000,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Phase L3b — host actions (accept/decline requests, reply to reviews,
+// host-initiated cancellation). All writes go through ./host-actions-store.ts
+// (client-side override layer) until host auth + RLS land; the read hooks above
+// already merge those overrides via applyHostOverrides.
+// ---------------------------------------------------------------------------
+
+/** Pending booking requests awaiting the host's accept/decline. */
+export function useHostBookingRequests(hostId: string = DEMO_HOST_ID) {
+  return useQuery({
+    queryKey: ['host-requests', hostId],
+    queryFn: async () => {
+      const d = await fetchHostDashboard(hostId);
+      return d.bookings.filter((b) => b.is_request && b.request_state === 'pending');
+    },
+    staleTime: 60_000,
+  });
+}
+
+/** Invalidate every host read so an action reflects across all host screens. */
+const HOST_QUERY_KEYS = [
+  'host-dashboard',
+  'host-bookings',
+  'host-booking',
+  'host-requests',
+  'host-earnings',
+  'host-inbox',
+  'host-reviews',
+  'host-listings',
+  'host-listing',
+  'host-calendar',
+];
+
+function invalidateHost(qc: ReturnType<typeof useQueryClient>) {
+  for (const key of HOST_QUERY_KEYS) qc.invalidateQueries({ queryKey: [key] });
+}
+
+/** Accept or decline a pending booking request. */
+export function useHostDecideBooking() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (v: {
+      bookingId: string;
+      decision: BookingDecision;
+      reason_code: string;
+      note?: string;
+    }) => {
+      setBookingDecision(v.bookingId, v.decision, v.reason_code, v.note);
+    },
+    onSuccess: () => invalidateHost(qc),
+  });
+}
+
+/** Host-initiated cancellation of a confirmed booking (with penalty disclosure). */
+export function useHostCancelBooking() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (v: {
+      bookingId: string;
+      penalty_cents: number;
+      reason_code: string;
+      note?: string;
+    }) => {
+      cancelBookingAsHost(v.bookingId, v.penalty_cents, v.reason_code, v.note);
+    },
+    onSuccess: () => invalidateHost(qc),
+  });
+}
+
+/** Post (or replace) the host's single public reply to a guest review. */
+export function useHostReplyToReview() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (v: { reviewId: string; body: string }) => {
+      replyToReview(v.reviewId, v.body);
+    },
+    onSuccess: () => invalidateHost(qc),
   });
 }

@@ -13,6 +13,7 @@ export * from './auth';
 export * from './reviews';
 export * from './filters';
 export * from './host';
+export * from './host-actions-store';
 export * from './host-calendar-store';
 export * from './host-calendar';
 export * from './admin';
