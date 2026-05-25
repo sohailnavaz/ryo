@@ -52,3 +52,5 @@ export * from './shared/dashboard-shell';
 
 export * from './concierge/ConciergeScreen';
 export * from './concierge/useConcierge';
+
+export * from './notifications/NotificationsScreen';

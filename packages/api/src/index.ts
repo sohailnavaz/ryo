@@ -20,6 +20,7 @@ export * from './host-calendar-store';
 export * from './host-calendar';
 export * from './admin';
 export * from './admin-store';
+export * from './notifications-store';
 export * from './incidents';
 export * from './incident-store';
 export * from './audit';
