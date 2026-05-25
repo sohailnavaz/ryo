@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Fraunces, Inter } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
+import { ServiceWorkerRegister } from './ServiceWorkerRegister';
 
 // Body — Inter (clean, multilingual). Display — Fraunces (soft editorial serif
 // that carries the brand character). Per docs/branding.md §7.3.
@@ -21,6 +22,16 @@ export const metadata: Metadata = {
   title: 'Ryo — stay anywhere',
   description:
     'Vetted hosts, a 24/7 concierge, and honest pricing — find and book places to stay around the world. Just Ryo it.',
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Ryo',
+  },
+  icons: {
+    icon: '/icon.svg',
+    apple: '/icon.svg',
+  },
 };
 
 export const viewport: Viewport = {
@@ -34,6 +45,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${inter.variable} ${fraunces.variable}`}>
       <body className="bg-surface text-ink antialiased">
+        <ServiceWorkerRegister />
         <Providers>{children}</Providers>
       </body>
     </html>

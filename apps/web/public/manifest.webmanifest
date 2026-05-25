@@ -1,0 +1,39 @@
+{
+  "name": "Ryo — stay anywhere",
+  "short_name": "Ryo",
+  "description": "Vetted hosts, a 24/7 concierge, and honest pricing. Your trip, emergency numbers and help — even offline.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FAF6F0",
+  "theme_color": "#FAF6F0",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Offline stay pack",
+      "short_name": "Offline pack",
+      "description": "Your trip, emergency numbers and help — available offline.",
+      "url": "/offline"
+    }
+  ]
+}
