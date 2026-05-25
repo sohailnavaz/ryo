@@ -70,13 +70,13 @@ export function GlobeExplorer() {
       height: width * 2,
       phi: 0,
       theta: 0.25,
-      dark: 0,
-      diffuse: 1.1,
-      mapSamples: 16000,
-      mapBrightness: 5.4,
-      baseColor: [0.93, 0.89, 0.82], // warm sand
-      markerColor: [0.78, 0.44, 0.34], // terracotta
-      glowColor: [0.98, 0.95, 0.9],
+      dark: 1,
+      diffuse: 1.25,
+      mapSamples: 22000,
+      mapBrightness: 7,
+      baseColor: [0.07, 0.11, 0.18], // ink navy sphere — continents glow against it
+      markerColor: [0.86, 0.48, 0.37], // terracotta
+      glowColor: [0.42, 0.5, 0.62], // soft cool atmosphere halo
       markers: DESTINATIONS.map((d) => ({ location: [d.lat, d.lng] as [number, number], size: 0.055 })),
       // onRender is valid at runtime but missing from cobe's option types
       onRender: (state: Record<string, number>) => {
@@ -105,24 +105,14 @@ export function GlobeExplorer() {
 
   return (
     <section className="border-b border-surface-border bg-surface">
-      <div className="mx-auto w-full max-w-[1280px] px-4 py-10 md:px-10 md:py-16">
-        <div className="max-w-[680px]">
-          <p className="text-[13px] font-semibold uppercase tracking-[3px] text-brand-500">Where to next</p>
-          <h2 className="mt-2 font-display text-[30px] font-semibold leading-[1.08] tracking-[-0.02em] text-ink md:text-[44px]">
-            Spin the globe. Pick a place.
-          </h2>
-          <p className="mt-3 max-w-[520px] text-ink-soft md:text-[17px]">
-            Tap a destination to see what it’s known for — history, things to do, when to go — then the homes waiting there.
-          </p>
-        </div>
-
-        <div className="mt-8 grid items-center gap-8 lg:grid-cols-[minmax(0,1fr)_420px]">
-          {/* Globe + destination chips */}
-          <div>
-            <div className="relative mx-auto aspect-square w-full max-w-[480px]">
+      <div className="mx-auto w-full max-w-[1280px] px-4 py-6 md:px-10 md:py-8">
+        <div className="flex flex-col items-center gap-6 md:flex-row md:items-center md:gap-10">
+          {/* Compact globe + chips */}
+          <div className="flex-shrink-0">
+            <div className="relative mx-auto aspect-square w-full max-w-[260px]">
               <canvas ref={canvasRef} className="h-full w-full" style={{ contain: 'layout paint size' }} />
             </div>
-            <div className="mt-5 flex flex-wrap justify-center gap-2">
+            <div className="mt-3 flex max-w-[300px] flex-wrap justify-center gap-1.5">
               {DESTINATIONS.map((d) => {
                 const active = d.id === selected.id;
                 return (
@@ -130,10 +120,8 @@ export function GlobeExplorer() {
                     key={d.id}
                     type="button"
                     onClick={() => pick(d)}
-                    className={`rounded-full border px-3.5 py-1.5 text-[13px] font-semibold transition active:scale-95 ${
-                      active
-                        ? 'border-ink bg-ink text-white'
-                        : 'border-surface-border text-ink hover:bg-surface-alt'
+                    className={`rounded-full border px-2.5 py-1 text-[12px] font-semibold transition active:scale-95 ${
+                      active ? 'border-ink bg-ink text-white' : 'border-surface-border text-ink-soft hover:bg-surface-alt'
                     }`}
                   >
                     {d.name}
@@ -143,34 +131,27 @@ export function GlobeExplorer() {
             </div>
           </div>
 
-          {/* Detail panel */}
-          <div className="rounded-3xl border border-surface-border bg-surface p-6 shadow-card">
-            <p className="text-[13px] font-semibold uppercase tracking-wider text-brand-600">
-              {selected.country} · {selected.landmark}
+          {/* Compact detail */}
+          <div className="min-w-0 flex-1">
+            <p className="text-[12px] font-semibold uppercase tracking-[2px] text-brand-500">
+              Where to next — {selected.country} · {selected.landmark}
             </p>
-            <h3 className="mt-1 font-display text-[28px] font-semibold tracking-[-0.02em] text-ink">
+            <h2 className="mt-1 font-display text-[24px] font-semibold leading-[1.1] tracking-[-0.02em] text-ink md:text-[32px]">
               {selected.name}
-            </h3>
-            <p className="mt-3 text-[15px] leading-[23px] text-ink-soft">{selected.history}</p>
-
-            <p className="mt-5 text-[12px] font-semibold uppercase tracking-wider text-ink-muted">Things to do</p>
-            <div className="mt-2 flex flex-wrap gap-2">
+            </h2>
+            <p className="mt-2 max-w-[560px] text-[14px] leading-[21px] text-ink-soft md:text-[15px]">
+              {selected.history}
+            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-1.5">
               {selected.activities.map((a) => (
-                <span key={a} className="rounded-full bg-surface-alt px-3 py-1 text-[13px] text-ink">
-                  {a}
-                </span>
+                <span key={a} className="rounded-full bg-surface-alt px-2.5 py-1 text-[12px] text-ink">{a}</span>
               ))}
+              <span className="ml-1 text-[12px] text-ink-muted">· Best time {selected.bestTime}</span>
             </div>
-
-            <div className="mt-5 flex items-center justify-between rounded-xl bg-surface-alt px-4 py-3">
-              <span className="text-[13px] text-ink-soft">Best time to visit</span>
-              <span className="text-[14px] font-semibold text-ink">{selected.bestTime}</span>
-            </div>
-
             <button
               type="button"
               onClick={() => router.push('/discover')}
-              className="mt-5 w-full rounded-full bg-brand-500 py-3 text-[15px] font-semibold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.98]"
+              className="mt-4 rounded-full bg-brand-500 px-5 py-2.5 text-[14px] font-semibold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.98]"
             >
               View stays in {selected.name}
             </button>
