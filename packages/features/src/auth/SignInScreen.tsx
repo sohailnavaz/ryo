@@ -46,7 +46,13 @@ export function SignInScreen({ redirectTo }: SignInScreenProps) {
       else await signUpWithPassword(email, password);
       router.replace(redirectTo ?? '/account');
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Something went wrong. Try again.';
+      const raw = e instanceof Error ? e.message.toLowerCase() : '';
+      let msg = e instanceof Error ? e.message : 'Something went wrong. Try again.';
+      if (raw.includes('already registered') || raw.includes('already exists')) {
+        msg = 'That email already has an account. Use “Sign in”, or “Email me a magic link” if you signed up that way (no password set).';
+      } else if (raw.includes('invalid login') || raw.includes('invalid credentials')) {
+        msg = 'Wrong email or password. If you first signed in with a magic link, that account has no password — use “Email me a magic link”.';
+      }
       setError(msg);
     } finally {
       setBusy(false);
