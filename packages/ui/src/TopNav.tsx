@@ -23,45 +23,48 @@ export function TopNav({ active, onChange, onOpenAccount, className }: TopNavPro
   return (
     <View
       className={cn(
-        'hidden md:flex md:flex-row md:items-center md:justify-between md:px-10 md:py-4 md:border-b md:border-surface-border md:bg-surface',
+        'hidden md:flex md:border-b md:border-surface-border md:bg-surface',
         className,
       )}
     >
-      <Pressable onPress={() => onChange('explore')} className="flex-row items-center gap-1">
-        <Text className="font-display text-[26px] font-semibold tracking-tightest text-brand-500">Ryo</Text>
-      </Pressable>
-      <View className="flex-row items-center gap-6">
-        {WEB_TABS.map((t) => (
-          <Pressable
-            key={t.key}
-            onPress={() => !t.disabled && onChange(t.key)}
-            disabled={t.disabled}
-          >
-            <Text
-              className={cn(
-                'text-[15px]',
-                active === t.key ? 'font-semibold text-ink' : 'text-ink-soft',
-                t.disabled && 'opacity-50',
-              )}
+      {/* Inner row contained to the same centered 1600px column as page content */}
+      <View className="w-full max-w-[1600px] mx-auto flex-row items-center justify-between px-10 py-4">
+        <Pressable onPress={() => onChange('explore')} className="flex-row items-center gap-1">
+          <Text className="font-display text-[26px] font-semibold tracking-tightest text-brand-500">Ryo</Text>
+        </Pressable>
+        <View className="flex-row items-center gap-6">
+          {WEB_TABS.map((t) => (
+            <Pressable
+              key={t.key}
+              onPress={() => !t.disabled && onChange(t.key)}
+              disabled={t.disabled}
             >
-              {t.label}
-            </Text>
+              <Text
+                className={cn(
+                  'text-[15px]',
+                  active === t.key ? 'font-semibold text-ink' : 'text-ink-soft',
+                  t.disabled && 'opacity-50',
+                )}
+              >
+                {t.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+        <View className="flex-row items-center gap-2">
+          <Pressable className="rounded-full p-2.5 hover:bg-surface-alt transition">
+            <Globe size={16} color="#0E1A2B" />
           </Pressable>
-        ))}
-      </View>
-      <View className="flex-row items-center gap-2">
-        <Pressable className="rounded-full p-2.5 active:bg-surface-alt">
-          <Globe size={16} color="#222" />
-        </Pressable>
-        <Pressable
-          onPress={onOpenAccount}
-          className="flex-row items-center gap-2 rounded-full border border-surface-border px-3 py-1.5 active:bg-surface-alt"
-        >
-          <Menu size={14} color="#222" />
-          <View className="h-7 w-7 items-center justify-center rounded-full bg-ink">
-            <User size={14} color="#fff" />
-          </View>
-        </Pressable>
+          <Pressable
+            onPress={onOpenAccount}
+            className="flex-row items-center gap-2 rounded-full border border-surface-border px-3 py-1.5 hover:shadow-soft active:scale-95 transition"
+          >
+            <Menu size={14} color="#0E1A2B" />
+            <View className="h-7 w-7 items-center justify-center rounded-full bg-ink">
+              <User size={14} color="#FAF6F0" />
+            </View>
+          </Pressable>
+        </View>
       </View>
     </View>
   );

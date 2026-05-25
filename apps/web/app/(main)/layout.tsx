@@ -69,7 +69,9 @@ function AccountMenu({ open, onClose }: { open: boolean; onClose: () => void }) 
         onClick={onClose}
         className="fixed inset-0 z-40 hidden md:block cursor-default"
       />
-      <div className="absolute right-10 top-[68px] z-50 hidden md:block w-64 overflow-hidden rounded-2xl border border-surface-border bg-surface shadow-card">
+      <div className="pointer-events-none fixed inset-x-0 top-[64px] z-50 hidden md:flex md:justify-center">
+        <div className="flex w-full max-w-[1600px] justify-end px-10">
+          <div className="pointer-events-auto w-64 overflow-hidden rounded-2xl border border-surface-border bg-surface shadow-card">
         {user ? (
           <div className="border-b border-surface-border px-4 py-3">
             <p className="text-[14px] font-semibold text-ink">{name ?? 'Signed in'}</p>
@@ -115,6 +117,8 @@ function AccountMenu({ open, onClose }: { open: boolean; onClose: () => void }) 
           ) : (
             <Item label="Sign in" path="/sign-in" accent />
           )}
+          </div>
+          </div>
         </div>
       </div>
     </>
