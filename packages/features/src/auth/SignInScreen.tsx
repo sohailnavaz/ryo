@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 import {
+  requestPasswordReset,
   signInAsRole,
   signInWithPassword,
   signUpWithPassword,
@@ -68,6 +69,25 @@ export function SignInScreen({ redirectTo }: SignInScreenProps) {
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Sign-in failed. Please try again.';
       setError(msg);
+    }
+  };
+
+  const [resetSent, setResetSent] = useState(false);
+  const forgotPassword = async () => {
+    if (!email.includes('@')) {
+      setError('Enter your email first, then tap “Forgot password”.');
+      return;
+    }
+    setError(null);
+    setBusy(true);
+    try {
+      const redirect = typeof window !== 'undefined' ? `${window.location.origin}/reset-password` : undefined;
+      await requestPasswordReset(email, redirect);
+      setResetSent(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not send the reset email.');
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -149,6 +169,20 @@ export function SignInScreen({ redirectTo }: SignInScreenProps) {
                 className="flex-1"
               />
             </View>
+
+            {resetSent ? (
+              <Text variant="small" className="text-center text-success">
+                Check your inbox — we sent a link to set a new password.
+              </Text>
+            ) : (
+              <Button
+                title="Forgot password?"
+                variant="ghost"
+                size="sm"
+                onPress={forgotPassword}
+                disabled={!supabaseConfigured || busy}
+              />
+            )}
 
             <Divider className="my-1" />
 

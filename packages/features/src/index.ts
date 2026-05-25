@@ -12,6 +12,7 @@ export * from './reviews/ReviewCard';
 export * from './auth/SignInScreen';
 export * from './auth/AuthGate';
 export * from './auth/StaffGate';
+export * from './auth/ResetPasswordScreen';
 export * from './state/filtersStore';
 
 export * from './host/HostDashboardScreen';

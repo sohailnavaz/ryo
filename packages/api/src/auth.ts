@@ -142,3 +142,17 @@ export async function signUpWithPassword(email: string, password: string, fullNa
   if (error) throw error;
   return data;
 }
+
+/** Send a password-reset email. The link returns to `redirectTo` (a page that
+ *  sets the new password). Works for magic-link accounts too — it's how they
+ *  set a password for the first time. */
+export async function requestPasswordReset(email: string, redirectTo?: string) {
+  const { error } = await getSupabase().auth.resetPasswordForEmail(email, { redirectTo });
+  if (error) throw error;
+}
+
+/** Set a new password for the currently-authenticated (incl. recovery) session. */
+export async function updatePassword(password: string) {
+  const { error } = await getSupabase().auth.updateUser({ password });
+  if (error) throw error;
+}
