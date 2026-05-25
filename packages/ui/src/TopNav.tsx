@@ -17,8 +17,8 @@ type TopNavTab = { key: string; label: string; disabled?: boolean };
 
 const WEB_TABS: TopNavTab[] = [
   { key: 'explore', label: 'Stays' },
+  { key: 'stories', label: 'Stories' },
   { key: 'experiences', label: 'Experiences', disabled: true },
-  { key: 'online', label: 'Online Experiences', disabled: true },
 ];
 
 export function TopNav({

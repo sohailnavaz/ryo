@@ -74,3 +74,16 @@ How to read the tags: **Effort** S (hours) · M (a day) · L (multi-day). **Need
 
 **Feasibility:** this is a real **social feature** — the 1-year gate needs real account-age data, and posts/membership/chat need a real backend + moderation. So genuinely **future / post-launch**; a synthetic UI mockup is possible sooner but the trust gate isn't real without auth.
 **Effort:** **L** (large). **Needs:** real auth (account age) + a groups/posts backend + moderation. **Touches:** new groups feature + api + admin moderation. **Status:** 🔮 future. **Pairs with:** badges/score (tier-gated hosting) + Stories (discovery) + admin (moderation).
+
+### 4. Map-based discovery — world map + location search → nearby homes + place info — _your pitch, 2026-05-25_
+**Raw idea:** a world map with city-wise selection + a search bar; the user types or drops a pin on where they're going, and we show the homes we have near it plus info about the place (ties into the Stories tab).
+
+**Captured + expanded:**
+- **Interactive map** (pan/zoom): city pins / clusters showing listing counts; click a pin → that city's homes.
+- **Search + pin:** an autocomplete search ("type a city") **or** drop a pin on the map; we snap to it and surface listings within a radius.
+- **Nearby homes panel:** filtered listings near the selected point (we already store `lat`/`lng` on every listing → proximity filter is client-side).
+- **"About this place" panel:** short blurb + deep-link into the **City Guide** (idea #2) and **Stories** for that city.
+- **Map-first mode** on the home/explore page (a list ⇄ map toggle — Airbnb-style, but Ryo commits to one default).
+
+**Feasibility:** the `Map` primitive already exists (`packages/ui/src/Map.web.tsx` MapLibre / native) and listings have coordinates — so **city-wise pins + click→nearby homes is buildable now, no key**. **Free-text geocoding** (type any place → coords) needs a geocoding/tiles key (Mapbox/Nominatim); city-wise selection from our known cities needs none.
+**Effort:** **M** (city pins + nearby-homes + place panel) · **L** with full free-text geocoding + clustering. **Needs:** none for city-wise v1; a map/geocoding key for free-text search. **Touches:** `Map` primitive + search/home + a new map-discovery screen/route. **Status:** 💡 logged. **Pairs with:** City Guides (#2) + Stories + search.

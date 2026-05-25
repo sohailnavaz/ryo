@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { ReactNode, useState } from 'react';
 
 const pathToKey = (p: string) => {
+  if (p.startsWith('/stories')) return 'stories';
   if (p.startsWith('/trips')) return 'trips';
   if (p.startsWith('/wishlists')) return 'wishlists';
   if (p.startsWith('/profile')) return 'profile';
