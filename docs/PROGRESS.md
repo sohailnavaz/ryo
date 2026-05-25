@@ -2,7 +2,7 @@
 doc: PROGRESS
 purpose: Human-readable living status doc. Safe to share with collaborators, investors, or friends.
 last_updated: 2026-05-23
-version: 0.10.0
+version: 0.11.0
 ---
 
 # Ryo — Progress
@@ -164,6 +164,20 @@ These are the calls I'd most like a second opinion on. If you're reviewing, skim
 ## 8. Changelog
 
 Append-only, newest first. One line per shipped thing. Version bumps follow branding.md convention (patch / minor / major).
+
+### `0.11.0` — 2026-05-25
+
+**Public deploy + a wave of product surfaces + design overhaul.** The app is now live at **https://ryo-web.vercel.app** (real Supabase data) with a large batch shipped this session:
+
+- **Design system → real Ryo brand.** Replaced the Airbnb-clone tokens (pink `#ff385c`, white surfaces, "Cereal" font) with the doc-driven brand (`docs/branding.md`): terracotta/cream/ink palette, **Fraunces + Inter** via `next/font`, warm shadows. Swept all hardcoded legacy colors across ~14 files. Tactile interactions (press-scale, hover-lift, image zoom). Centered max-width layout (home grid no longer left-clusters).
+- **Auth foundation:** `profiles.role` + `is_staff()` (migration `0003`), `useRole`, `StaffGate`, hardened OAuth callback, **3 one-click demo accounts** (guest/host/admin) + role-aware account menu. Host/admin chrome separated from the guest app.
+- **New surfaces:** **Stories** tab (immersive, geo-tagged posts), **Map discovery** (`/discover`, city pins → nearby homes), **interactive globe** home hero (`cobe`), **Notifications** inbox, **Offline Stay Pack** (installable PWA + emergency numbers + offline trip), **Phrasebook** (6 langs), **/help** support→incident loop.
+- **Host:** real listings/calendar/earnings, **actions** (accept/decline, review replies, host cancel), **payouts + KYC**, address autocomplete.
+- **Guest:** write-a-review, named wishlists, richer trip itinerary, **add-to-calendar** (Google + .ics) on bookings.
+- **Perf:** `sizeImage()` right-sizing for low bandwidth.
+- **Security:** production headers (HSTS, nosniff, frame-options, referrer/permissions policy).
+- **Process:** parallel sub-agent builds in isolated worktrees; `docs/IDEAS.md` backlog (17 triaged ideas).
+- **Honest status:** most new host/admin/social surfaces persist **client-side** (localStorage override stores) until real auth + Supabase tables land; payments still mocked; the demo-role bypass must be removed before public launch.
 
 ### `0.10.0` — 2026-05-23
 
