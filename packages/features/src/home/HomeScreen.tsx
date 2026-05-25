@@ -4,6 +4,7 @@ import { useFavoriteIds, useListings, useToggleFavorite } from '@bnb/api';
 import type { Listing } from '@bnb/db';
 import {
   CategoryBar,
+  Heading,
   ListingCard,
   Pressable,
   SearchBar,
@@ -88,6 +89,16 @@ export function HomeScreen() {
 
   return (
     <View className="flex-1 bg-surface">
+      {/* Editorial hero — omotenashi, one idea, generous space (branding §7.0) */}
+      <View className="px-4 pt-6 pb-1 md:px-10 md:pt-12 md:pb-3">
+        <Heading level={1} className="max-w-[680px] md:text-[52px]">
+          Stay anywhere — and feel hosted.
+        </Heading>
+        <Text className="mt-3 max-w-[560px] text-ink-soft md:text-[17px] md:leading-[26px]">
+          Vetted homes, a 24/7 concierge, and honest all-in pricing.{' '}
+          <Text className="text-brand-500 font-semibold">Just Ryo it.</Text>
+        </Text>
+      </View>
       <View className="px-4 pt-3 md:px-10 md:pt-4 md:pb-2">
         <SearchBar
           label={filters.destination || 'Anywhere'}
@@ -162,8 +173,11 @@ export function HomeScreen() {
             gap: CARD_GAP,
           }}
           ListEmptyComponent={
-            <View className="py-20 items-center">
-              <Text className="text-ink-soft">No listings match your filters.</Text>
+            <View className="py-20 items-center px-6">
+              <Heading level={3} className="text-center">Nothing matches just yet</Heading>
+              <Text className="mt-2 text-center text-ink-soft max-w-[360px]">
+                Try widening your dates or clearing a filter — there’s a place out there prepared for you.
+              </Text>
             </View>
           }
           renderItem={({ item }) => (
