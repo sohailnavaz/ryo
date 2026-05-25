@@ -8,9 +8,11 @@ export type HeadingProps = RNTextProps & {
   className?: string;
 };
 
+// H1–H2 carry the brand in Fraunces (editorial serif); H3–H4 stay in Inter
+// for clean UI hierarchy. Per docs/branding.md §7.3.
 const levelClass: Record<Level, string> = {
-  1: 'text-[28px] leading-[34px] font-bold text-ink md:text-[36px] md:leading-[42px]',
-  2: 'text-[22px] leading-[28px] font-bold text-ink md:text-[26px] md:leading-[32px]',
+  1: 'font-display tracking-tightest text-[30px] leading-[1.08] font-semibold text-ink md:text-[44px]',
+  2: 'font-display tracking-tight text-[23px] leading-[1.15] font-semibold text-ink md:text-[30px]',
   3: 'text-[18px] leading-[24px] font-semibold text-ink',
   4: 'text-[16px] leading-[22px] font-semibold text-ink',
 };
