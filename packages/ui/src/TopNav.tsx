@@ -2,12 +2,14 @@ import { View } from 'react-native';
 import { cn } from '@bnb/utils';
 import { Pressable } from './Pressable';
 import { Text } from './Text';
-import { Globe, Menu, User } from './icons';
+import { Bell, Globe, Menu, User } from './icons';
 
 export type TopNavProps = {
   active: string;
   onChange: (key: string) => void;
   onOpenAccount?: () => void;
+  onOpenNotifications?: () => void;
+  notificationCount?: number;
   className?: string;
 };
 
@@ -19,7 +21,14 @@ const WEB_TABS: TopNavTab[] = [
   { key: 'online', label: 'Online Experiences', disabled: true },
 ];
 
-export function TopNav({ active, onChange, onOpenAccount, className }: TopNavProps) {
+export function TopNav({
+  active,
+  onChange,
+  onOpenAccount,
+  onOpenNotifications,
+  notificationCount = 0,
+  className,
+}: TopNavProps) {
   return (
     <View
       className={cn(
@@ -54,6 +63,16 @@ export function TopNav({ active, onChange, onOpenAccount, className }: TopNavPro
         <View className="flex-row items-center gap-2">
           <Pressable className="rounded-full p-2.5 hover:bg-surface-alt transition">
             <Globe size={16} color="#0E1A2B" />
+          </Pressable>
+          <Pressable
+            onPress={onOpenNotifications}
+            accessibilityLabel="Notifications"
+            className="relative rounded-full p-2.5 hover:bg-surface-alt active:scale-95 transition"
+          >
+            <Bell size={16} color="#0E1A2B" />
+            {notificationCount > 0 ? (
+              <View className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-brand-500" />
+            ) : null}
           </Pressable>
           <Pressable
             onPress={onOpenAccount}

@@ -1,6 +1,6 @@
 'use client';
 import { ErrorBoundary, ToastViewport, TopNav } from '@bnb/ui';
-import { useRole, useSignOut, useUser } from '@bnb/api';
+import { useRole, useSignOut, useUnreadCount, useUser } from '@bnb/api';
 import { usePathname, useRouter } from 'next/navigation';
 import { ReactNode, useState } from 'react';
 
@@ -15,12 +15,15 @@ export default function MainLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const unread = useUnreadCount();
   return (
     <div className="flex min-h-screen flex-col relative">
       <TopNav
         active={pathToKey(pathname ?? '/')}
         onChange={(k) => router.push(k === 'explore' ? '/' : `/${k}`)}
         onOpenAccount={() => setMenuOpen((v) => !v)}
+        onOpenNotifications={() => router.push('/notifications')}
+        notificationCount={unread}
       />
       <AccountMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
       <div className="flex-1 flex flex-col">
@@ -37,6 +40,7 @@ function AccountMenu({ open, onClose }: { open: boolean; onClose: () => void }) 
   const user = useUser();
   const { role } = useRole();
   const signOut = useSignOut();
+  const unread = useUnreadCount();
   if (!open) return null;
 
   const go = (path: string) => {
@@ -85,6 +89,7 @@ function AccountMenu({ open, onClose }: { open: boolean; onClose: () => void }) 
               <Item label="Account" path="/account" accent />
               <Item label="Trips" path="/trips" />
               <Item label="Wishlists" path="/wishlists" />
+              <Item label={unread > 0 ? `Notifications (${unread})` : 'Notifications'} path="/notifications" />
               <Item label="Profile" path="/profile" />
             </>
           ) : null}

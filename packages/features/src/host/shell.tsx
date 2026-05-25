@@ -8,9 +8,11 @@ export const HOST_NAV = [
   { key: 'bookings',  label: 'Bookings',   path: '/host/bookings' },
   { key: 'listings',  label: 'Listings',   path: '/host/listings' },
   { key: 'earnings',  label: 'Earnings',   path: '/host/earnings' },
+  { key: 'payouts',   label: 'Payouts',    path: '/host/payouts' },
   { key: 'inbox',     label: 'Inbox',      path: '/host/inbox' },
   { key: 'reviews',   label: 'Reviews',    path: '/host/reviews' },
   { key: 'insights',  label: 'Insights',   path: '/host/insights' },
+  { key: 'verification', label: 'Verification', path: '/host/verification' },
   { key: 'settings',  label: 'Settings',   path: '/host/settings' },
 ] as const;
 

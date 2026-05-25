@@ -41,4 +41,5 @@ export {
   Globe,
   Bed,
   Bath,
+  Bell,
 } from 'lucide-react-native';
