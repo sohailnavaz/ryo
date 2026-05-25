@@ -10,6 +10,10 @@ export type TopNavProps = {
   onOpenAccount?: () => void;
   onOpenNotifications?: () => void;
   notificationCount?: number;
+  /** Show the guest browse tabs (Stays/Stories). Off for host/admin chrome. */
+  showTabs?: boolean;
+  /** Context label shown in place of tabs (e.g. "Hosting", "Operations"). */
+  context?: string;
   className?: string;
 };
 
@@ -27,6 +31,8 @@ export function TopNav({
   onOpenAccount,
   onOpenNotifications,
   notificationCount = 0,
+  showTabs = true,
+  context,
   className,
 }: TopNavProps) {
   return (
@@ -42,23 +48,27 @@ export function TopNav({
           <Text className="font-display text-[26px] font-semibold tracking-tightest text-brand-500">Ryo</Text>
         </Pressable>
         <View className="flex-row items-center gap-6">
-          {WEB_TABS.map((t) => (
-            <Pressable
-              key={t.key}
-              onPress={() => !t.disabled && onChange(t.key)}
-              disabled={t.disabled}
-            >
-              <Text
-                className={cn(
-                  'text-[15px]',
-                  active === t.key ? 'font-semibold text-ink' : 'text-ink-soft',
-                  t.disabled && 'opacity-50',
-                )}
+          {showTabs ? (
+            WEB_TABS.map((t) => (
+              <Pressable
+                key={t.key}
+                onPress={() => !t.disabled && onChange(t.key)}
+                disabled={t.disabled}
               >
-                {t.label}
-              </Text>
-            </Pressable>
-          ))}
+                <Text
+                  className={cn(
+                    'text-[15px]',
+                    active === t.key ? 'font-semibold text-ink' : 'text-ink-soft',
+                    t.disabled && 'opacity-50',
+                  )}
+                >
+                  {t.label}
+                </Text>
+              </Pressable>
+            ))
+          ) : context ? (
+            <Text className="text-[15px] font-semibold text-ink-soft">{context}</Text>
+          ) : null}
         </View>
         <View className="flex-row items-center gap-2">
           <Pressable className="rounded-full p-2.5 hover:bg-surface-alt transition">

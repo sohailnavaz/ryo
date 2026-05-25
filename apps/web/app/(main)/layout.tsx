@@ -17,20 +17,28 @@ export default function MainLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const unread = useUnreadCount();
+  // Host & admin are their own apps (they have their own sidebar shell). Don't
+  // bleed the guest browse-nav into them — hide the Stays/Stories tabs + the
+  // guest bottom tabs, and show a clear context label instead.
+  const path = pathname ?? '/';
+  const isDashboard = path.startsWith('/host') || path.startsWith('/admin');
+  const context = path.startsWith('/admin') ? 'Operations' : 'Hosting';
   return (
     <div className="flex min-h-screen flex-col relative">
       <TopNav
-        active={pathToKey(pathname ?? '/')}
+        active={pathToKey(path)}
         onChange={(k) => router.push(k === 'explore' ? '/' : `/${k}`)}
         onOpenAccount={() => setMenuOpen((v) => !v)}
         onOpenNotifications={() => router.push('/notifications')}
         notificationCount={unread}
+        showTabs={!isDashboard}
+        context={isDashboard ? context : undefined}
       />
       <AccountMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
       <div className="flex-1 flex flex-col">
         <ErrorBoundary>{children}</ErrorBoundary>
       </div>
-      <MobileTabs />
+      {!isDashboard ? <MobileTabs /> : null}
       <ToastViewport />
     </div>
   );
