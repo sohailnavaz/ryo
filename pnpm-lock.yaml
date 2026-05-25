@@ -159,6 +159,9 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.62.11
         version: 5.99.2(react@18.3.1)
+      cobe:
+        specifier: ^2.0.1
+        version: 2.0.1
       expo-router:
         specifier: ~4.0.11
         version: 4.0.22(4a4c7ea77c55093d950a080ea4b7a559)
@@ -2209,6 +2212,9 @@ packages:
   clone@1.0.4:
     resolution: {integrity: sha512-JQHZ2QMW6l3aH/j6xCqQThY/9OH4D/9ls34cgkUBiEeocRTU04tHfKPBsUK1PqZCUQM7GiA0IIXJSuXHI64Kbg==}
     engines: {node: '>=0.8'}
+
+  cobe@2.0.1:
+    resolution: {integrity: sha512-aaa6vcIlaC8C1SF50LDH0Anybo/EAXnrxqe+bwvr4+YUtZydqjeBjTTD7ziCCkbRrRGSns3I3F6cZsf3W+L+ag==}
 
   color-convert@1.9.3:
     resolution: {integrity: sha512-QfAUtd+vFdAtFQcC8CCyYt1fYWxSqAiK2cSD6zDB8N3cpsEBAvRxp9zOGg6G/SHHJYAT88/az/IuDGALsNVbGg==}
@@ -7351,6 +7357,8 @@ snapshots:
       shallow-clone: 3.0.1
 
   clone@1.0.4: {}
+
+  cobe@2.0.1: {}
 
   color-convert@1.9.3:
     dependencies:

@@ -1,6 +1,12 @@
 'use client';
 import { HomeScreen } from '@bnb/features';
+import { GlobeExplorer } from './GlobeExplorer';
 
 export default function Page() {
-  return <HomeScreen />;
+  return (
+    <>
+      <GlobeExplorer />
+      <HomeScreen />
+    </>
+  );
 }

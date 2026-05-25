@@ -179,3 +179,28 @@ How to read the tags: **Effort** S (hours) · M (a day) · L (multi-day). **Need
 
 **Feasibility:** **near-term synthetic version is easy** — add a `location` (city) to the Stories traveler-story cards + a place panel sourced from a shared city-info module; **folds directly into the Stories redesign (#12)**. The *real* version (user-tagged posts) is part of the social layer (#9).
 **Effort:** S (synthetic, as part of #12) · part of #9 for real posts. **Needs:** none for synthetic. **Status:** 💡 logged. **Pairs with / folds into:** Stories redesign (#12), City Guides (#2), Map discovery (#4), Location context (#11), Social layer (#9).
+
+### 15. ⭐ Globe destination explorer (home hero) — spin, pin, dive into a place — _your pitch, 2026-05-25_
+**Raw idea:** put an interactive **globe on the home page** with a spinning animation; **pin/select a location** → get a rich destination panel: popular destinations, **treks, dive spots, sports activities, history, best time to visit**, then the **places to stay** there. Whole app should feel **clean and Gen-Z**.
+
+**Captured + expanded:** a flagship "where to next?" experience.
+- **The globe (animation options):**
+  1. **`cobe`** — tiny (~5 kB) WebGL globe (the Stripe/Vercel-style one): auto-spins, drag to rotate, glowing destination dots. Gorgeous + lightweight + very Gen-Z. Best for the **home hero**. *(my pick for the wow)*
+  2. **MapLibre globe projection** — our `Map` primitive already uses MapLibre, which has a 3D globe projection; fully interactive (real clickable pins). Best for the **/discover** deep experience. Pairs with the globe hero.
+  3. **`react-globe.gl` (three.js)** — arcs/points/labels, richest but heaviest.
+  → Suggested: **cobe hero on home** (featured glowing destinations) → click → **destination detail**; full free-roam globe lives on `/discover`.
+- **Destination detail panel** (on select): hero + history blurb, **popular spots**, **activities** (treks / dives / water-sports / etc.), **best time to visit** (+ live weather via #11), then **"Stays here"** → filtered homes. This = City Guides (#2) + Location context (#11) + activities, surfaced beautifully.
+- **Clean / Gen-Z polish:** the Stories redesign (#12, shipped) set the tone — high-energy, immersive, big type, motion. Apply the same across hero surfaces.
+
+**Feasibility:** `cobe` is **keyless**, tiny; destination content is curated (like Stories/City-Guide data). MapLibre globe needs no key. So a real v1 is buildable now. **Effort:** **M–L** (globe hero + destination detail + curated content for ~8–12 destinations). **Needs:** add `cobe` dep (tiny); no API key. **Status:** 💡 logged — **flagship candidate.** **Pairs with:** Map discovery (#4, already built), City Guides (#2), Location context (#11), Stories (#12).
+
+### 16. Ryo Passport — collectible landmark stamps for places visited — _your pitch, 2026-05-25_
+**Raw idea:** when a customer visits a place (e.g. Hyderabad) we award a **stamp of a landmark** (Charminar) and add it to their **passport / "passboard" of places visited**.
+
+**Captured + expanded:** a **digital travel passport** on the profile.
+- **Auto-stamp on a completed stay:** finishing a trip in a city earns a **landmark stamp** (Charminar = Hyderabad, Eiffel = Paris, Torii = Kyoto…), dated, like a real passport stamp.
+- **The passboard:** a wall/grid of all stamps collected — a beautiful, screenshot-worthy "places I've been" page. Tap a stamp → that City Guide (#2).
+- **Stamp styling:** ornate postmark frame (rotated, ink/terracotta), city + date + a landmark glyph; rare/seasonal stamps for special trips.
+- **Gamification tie-in:** stamps are the **visual collectible**; **badges/score (#1)** are the achievements — together they make a "traveler identity." Counts feed the Wayfarer score; "12 stamps · 5 countries".
+
+**Feasibility:** **v1 derivable now** — pull visited cities from the user's completed `bookings` (city/country) and render a stamp per city from a curated **city→landmark** map (glyph/illustration + label). No backend needed; custom per-landmark artwork is optional later polish. **Effort:** M (passport UI + curated landmark map + derive from trips). **Needs:** none for v1; an illustrator/SVG set for premium stamp art later. **Touches:** profile/account (coordinate with profile lane) + a `passport`/stamps module + bookings (read). **Status:** 💡 logged. **Pairs with / clusters into:** Badges & score (#1), Social profile (#9), City Guides (#2) — the "traveler identity" group.
