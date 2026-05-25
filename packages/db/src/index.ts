@@ -39,6 +39,16 @@ export type Booking = {
   total_cents: number;
   status: 'confirmed' | 'cancelled';
   created_at: string;
+  // Guest party + price breakdown (migration 0004).
+  adults: number;
+  children: number;
+  infants: number;
+  pets: number;
+  subtotal_cents: number;
+  cleaning_fee_cents: number;
+  service_fee_cents: number;
+  taxes_cents: number;
+  discount_cents: number;
 };
 
 export type Review = {

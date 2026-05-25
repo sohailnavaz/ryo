@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { View } from 'react-native';
 import {
   signInAsRole,
+  signInWithPassword,
+  signUpWithPassword,
   tryGetSupabase,
   useSignInWithEmail,
   useSignInWithGoogle,
@@ -12,6 +14,7 @@ import {
   Divider,
   Heading,
   Input,
+  Lock,
   Mail,
   Text,
   VStack,
@@ -22,12 +25,33 @@ export type SignInScreenProps = { redirectTo?: string };
 
 export function SignInScreen({ redirectTo }: SignInScreenProps) {
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const signIn = useSignInWithEmail();
   const signInGoogle = useSignInWithGoogle();
   const router = useRouter();
   const supabaseConfigured = tryGetSupabase() !== null;
+
+  const withPassword = async (mode: 'in' | 'up') => {
+    if (!email.includes('@') || password.length < 6) {
+      setError('Enter an email and a password of at least 6 characters.');
+      return;
+    }
+    setError(null);
+    setBusy(true);
+    try {
+      if (mode === 'in') await signInWithPassword(email, password);
+      else await signUpWithPassword(email, password);
+      router.replace(redirectTo ?? '/account');
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Something went wrong. Try again.';
+      setError(msg);
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const submit = async () => {
     if (!email.includes('@')) return;
@@ -92,8 +116,39 @@ export function SignInScreen({ redirectTo }: SignInScreenProps) {
               leftIcon={<Mail size={16} color="#5C5750" />}
               editable={supabaseConfigured}
             />
+            <Input
+              label="Password"
+              placeholder="••••••••"
+              secureTextEntry
+              autoCapitalize="none"
+              autoComplete="password"
+              value={password}
+              onChangeText={setPassword}
+              leftIcon={<Lock size={16} color="#5C5750" />}
+              editable={supabaseConfigured}
+            />
+            <View className="flex-row gap-2">
+              <Button
+                title="Sign in"
+                onPress={() => withPassword('in')}
+                loading={busy}
+                disabled={!supabaseConfigured || busy}
+                className="flex-1"
+              />
+              <Button
+                title="Create account"
+                variant="outline"
+                onPress={() => withPassword('up')}
+                disabled={!supabaseConfigured || busy}
+                className="flex-1"
+              />
+            </View>
+
+            <Divider className="my-1" />
+
             <Button
-              title={signIn.isPending ? 'Sending…' : 'Continue with email'}
+              title={signIn.isPending ? 'Sending…' : 'Email me a magic link'}
+              variant="ghost"
               onPress={submit}
               loading={signIn.isPending}
               disabled={!supabaseConfigured}

@@ -1,4 +1,4 @@
-import { View } from 'react-native';
+import { View, type StyleProp, type ViewStyle } from 'react-native';
 import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 
 export type MapMarker = {
@@ -25,9 +25,11 @@ export type MapProps = {
   onMarkerPress?: (id: string) => void;
   /** Optional id to highlight (rendered in terracotta). */
   selectedId?: string;
+  /** Optional container style override (e.g. custom height). */
+  style?: StyleProp<ViewStyle>;
 };
 
-export function Map({ lat, lng, className, markers, onMarkerPress, selectedId }: MapProps) {
+export function Map({ lat, lng, className, markers, onMarkerPress, selectedId, style }: MapProps) {
   const list = markers && markers.length > 0 ? markers : null;
 
   // Widen the region when showing multiple markers so the cluster is visible.
@@ -36,7 +38,7 @@ export function Map({ lat, lng, className, markers, onMarkerPress, selectedId }:
   return (
     <View
       className={className}
-      style={{ width: '100%', height: 240, borderRadius: 16, overflow: 'hidden' }}
+      style={[{ width: '100%', height: 240, borderRadius: 16, overflow: 'hidden' }, style]}
     >
       <MapView
         provider={PROVIDER_DEFAULT}
