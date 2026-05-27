@@ -115,6 +115,16 @@ export function useSignInWithEmail() {
   });
 }
 
+/** Whether to show the "Continue with Google" button. Off by default — flip it
+ *  on with NEXT_PUBLIC_RYO_GOOGLE_AUTH=1 only after the Google provider is
+ *  actually enabled in the Supabase dashboard, otherwise the OAuth call returns
+ *  a 400 "provider is not enabled". */
+export function isGoogleAuthEnabled(): boolean {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const env = (globalThis as any)?.process?.env;
+  return env?.NEXT_PUBLIC_RYO_GOOGLE_AUTH === '1' || env?.NEXT_PUBLIC_RYO_GOOGLE_AUTH === 'true';
+}
+
 export function useSignInWithGoogle() {
   return useMutation({
     mutationFn: async ({ redirectTo }: { redirectTo?: string } = {}) => {
