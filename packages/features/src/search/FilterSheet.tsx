@@ -13,6 +13,7 @@ import {
   Text,
 } from '@bnb/ui';
 import { useFiltersStore } from '../state/filtersStore';
+import { useT } from '../i18n';
 
 const PROPERTY_TYPES = ['House', 'Apartment', 'Cabin', 'Villa', 'Treehouse', 'Cottage'];
 
@@ -22,6 +23,7 @@ export type FilterSheetProps = {
 };
 
 export function FilterSheet({ open, onClose }: FilterSheetProps) {
+  const t = useT();
   const filters = useFiltersStore((s) => s.filters);
   const setFilters = useFiltersStore((s) => s.setFilters);
   const reset = useFiltersStore((s) => s.reset);
@@ -34,8 +36,8 @@ export function FilterSheet({ open, onClose }: FilterSheetProps) {
   // don't fire a lookup on every keystroke.
   const [debounced, setDebounced] = useState('');
   useEffect(() => {
-    const t = setTimeout(() => setDebounced(destination.trim()), 200);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setDebounced(destination.trim()), 200);
+    return () => clearTimeout(timer);
   }, [destination]);
 
   // Worldwide destination search: live exhaustive results from Supabase when
@@ -82,13 +84,13 @@ export function FilterSheet({ open, onClose }: FilterSheetProps) {
   };
 
   return (
-    <Sheet open={open} onClose={onClose} title="Filters">
+    <Sheet open={open} onClose={onClose} title={t('search.filters')}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View className="gap-5 pb-4">
           <View className="gap-3">
-            <Heading level={4}>Where</Heading>
+            <Heading level={4}>{t('search.where')}</Heading>
             <Input
-              placeholder="e.g. Lisbon, Japan, Amalfi"
+              placeholder={t('search.placeholder')}
               value={destination}
               onChangeText={setDestination}
               onFocus={() => setDestFocused(true)}
@@ -117,9 +119,9 @@ export function FilterSheet({ open, onClose }: FilterSheetProps) {
           </View>
           <Divider className="my-0" />
           <View className="gap-3">
-            <Heading level={4}>Guests</Heading>
+            <Heading level={4}>{t('search.guests')}</Heading>
             <Input
-              placeholder="Number of guests"
+              placeholder={t('search.guestsPlaceholder')}
               keyboardType="number-pad"
               value={guests}
               onChangeText={setGuests}
@@ -127,17 +129,17 @@ export function FilterSheet({ open, onClose }: FilterSheetProps) {
           </View>
           <Divider className="my-0" />
           <View className="gap-3">
-            <Heading level={4}>Price per night</Heading>
+            <Heading level={4}>{t('search.pricePerNight')}</Heading>
             <View className="flex-row gap-3">
               <Input
-                placeholder="Min"
+                placeholder={t('search.min')}
                 keyboardType="number-pad"
                 value={minPrice}
                 onChangeText={setMinPrice}
                 containerClassName="flex-1"
               />
               <Input
-                placeholder="Max"
+                placeholder={t('search.max')}
                 keyboardType="number-pad"
                 value={maxPrice}
                 onChangeText={setMaxPrice}
@@ -147,18 +149,18 @@ export function FilterSheet({ open, onClose }: FilterSheetProps) {
           </View>
           <Divider className="my-0" />
           <View className="gap-3">
-            <Heading level={4}>Property type</Heading>
+            <Heading level={4}>{t('search.propertyType')}</Heading>
             <View className="flex-row flex-wrap gap-2">
-              {PROPERTY_TYPES.map((t) => {
-                const on = propertyTypes.includes(t);
+              {PROPERTY_TYPES.map((pt) => {
+                const on = propertyTypes.includes(pt);
                 return (
-                  <Pressable key={t} onPress={() => toggle(propertyTypes, t, setPropertyTypes)}>
+                  <Pressable key={pt} onPress={() => toggle(propertyTypes, pt, setPropertyTypes)}>
                     <View
                       className={`rounded-full border px-3 py-2 ${
                         on ? 'border-ink bg-surface-alt' : 'border-surface-border'
                       }`}
                     >
-                      <Text variant="small">{t}</Text>
+                      <Text variant="small">{pt}</Text>
                     </View>
                   </Pressable>
                 );
@@ -167,7 +169,7 @@ export function FilterSheet({ open, onClose }: FilterSheetProps) {
           </View>
           <Divider className="my-0" />
           <View className="gap-3">
-            <Heading level={4}>Amenities</Heading>
+            <Heading level={4}>{t('search.amenities')}</Heading>
             <View className="flex-row flex-wrap gap-2">
               {AMENITIES.map((a) => {
                 const on = amenities.includes(a);
@@ -189,9 +191,9 @@ export function FilterSheet({ open, onClose }: FilterSheetProps) {
       </ScrollView>
       <View className="flex-row items-center justify-between pt-2">
         <Pressable onPress={clear}>
-          <Text className="underline font-semibold">Clear all</Text>
+          <Text className="underline font-semibold">{t('search.clearAll')}</Text>
         </Pressable>
-        <Button title="Show stays" onPress={apply} size="md" />
+        <Button title={t('search.showStays')} onPress={apply} size="md" />
       </View>
     </Sheet>
   );
