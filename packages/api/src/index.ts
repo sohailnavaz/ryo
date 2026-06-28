@@ -16,6 +16,7 @@ export * from './reviews';
 export * from './review-drafts-store';
 export * from './filters';
 export * from './host';
+export * from './host-applications';
 export * from './messaging';
 export * from './host-actions-store';
 export * from './host-verification-store';

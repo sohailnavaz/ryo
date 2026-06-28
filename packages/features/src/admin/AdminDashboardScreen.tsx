@@ -1,5 +1,14 @@
 import { View } from 'react-native';
-import { useAdminDashboard } from '@bnb/api';
+import {
+  incidentSla,
+  useAdminDashboard,
+  useAdminIncidents,
+  useAdminOverrides,
+  // useAdminHostApplications is built by the host-application agent and
+  // re-exported from @bnb/api. Until the index.ts export lands this name won't
+  // resolve under typecheck — expected, noted in the handoff.
+  useAdminHostApplications,
+} from '@bnb/api';
 import {
   Avatar,
   Badge,
@@ -17,20 +26,108 @@ import { formatDateRange, formatPrice } from '@bnb/utils';
 import { SectionHeader } from '../shared/dashboard-chrome';
 import { AdminShell } from './shell';
 
+// Flagged-review queue is currently seeded inside the moderation screen (2 items).
+// Mirror that here so the "needs attention" count is honest until reviews move
+// behind a hook.
+const SEEDED_FLAGGED_REVIEW_IDS = ['r-101', 'r-102'];
+
 export function AdminDashboardScreen() {
   const router = useRouter();
   const { data, isLoading } = useAdminDashboard();
+  const { data: incidents } = useAdminIncidents();
+  const pendingApps = useAdminHostApplications('pending');
+  const overrides = useAdminOverrides();
+
+  const flaggedReviews = SEEDED_FLAGGED_REVIEW_IDS.filter(
+    (id) => !overrides.reviewModeration[id],
+  ).length;
+
+  // Incident SLA roll-up. AdminIncident carries only `opened_at`; anchor the
+  // clock at 09:00 on that day, matching the incidents screen.
+  const openIncidents = (incidents ?? []).filter((i) => i.state !== 'resolved');
+  const breachedIncidents = openIncidents.filter(
+    (i) =>
+      incidentSla({
+        tier: i.tier,
+        created_at: `${i.opened_at}T09:00:00Z`,
+        status: i.state,
+      }).state === 'breached',
+  ).length;
+
+  const pendingAppsCount = pendingApps.data?.length ?? 0;
+  const moderationCount = data?.moderation.length ?? 0;
 
   return (
     <AdminShell
       title="Platform overview"
-      subtitle="What's moving across Ryo right now. All numbers refresh on page load."
+      subtitle="What's moving across Ryo right now, and what needs a human. All numbers refresh on page load."
     >
       {isLoading || !data ? (
         <KpiSkeletons />
       ) : (
-        <KpiRow stats={data.stats} />
+        <KpiBand
+          stats={data.stats}
+          openIncidents={openIncidents.length}
+          breachedIncidents={breachedIncidents}
+          pendingApps={pendingAppsCount}
+          flaggedReviews={flaggedReviews}
+        />
       )}
+
+      <View className="mt-10">
+        <SectionHeader
+          title="Needs attention"
+          subtitle="Actionable queues, highest urgency first. Click through to act."
+        />
+        {isLoading || !data ? (
+          <View className="mt-3 flex-row flex-wrap gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-32 flex-1 min-w-[240px]" />
+            ))}
+          </View>
+        ) : (
+          <View className="mt-3 flex-row flex-wrap gap-4">
+            <AttentionCard
+              label="Incidents due / breached"
+              count={openIncidents.length}
+              detail={
+                breachedIncidents > 0
+                  ? `${breachedIncidents} past SLA — act now`
+                  : 'All open incidents on track'
+              }
+              urgent={breachedIncidents > 0}
+              onPress={() => router.push('/admin/incidents')}
+            />
+            <AttentionCard
+              label="Host applications"
+              count={pendingAppsCount}
+              detail={
+                pendingApps.isError
+                  ? 'Service unavailable'
+                  : pendingAppsCount > 0
+                    ? 'Awaiting your review'
+                    : 'Queue is clear'
+              }
+              urgent={pendingAppsCount > 0}
+              onPress={() => router.push('/admin/host-applications')}
+            />
+            <AttentionCard
+              label="Listings awaiting moderation"
+              count={moderationCount}
+              detail={moderationCount > 0 ? 'Pending a decision' : 'Inbox zero'}
+              urgent={false}
+              onPress={() => router.push('/admin/moderation')}
+            />
+            <AttentionCard
+              label="Flagged reviews"
+              count={flaggedReviews}
+              detail={flaggedReviews > 0 ? 'Reported by guests/hosts' : 'Nothing flagged'}
+              urgent={false}
+              onPress={() => router.push('/admin/moderation')}
+            />
+          </View>
+        )}
+      </View>
 
       <View className="mt-10 flex-col md:flex-row gap-6">
         <View className="flex-1 md:max-w-[680px] gap-6">
@@ -52,7 +149,7 @@ export function AdminDashboardScreen() {
           <View>
             <SectionHeader
               title="Moderation queue"
-              subtitle={`${data?.moderation.length ?? 0} listings awaiting decision`}
+              subtitle={`${moderationCount} listings awaiting decision`}
             />
             {isLoading || !data ? (
               <ListSkeleton rows={3} />
@@ -97,42 +194,92 @@ export function AdminDashboardScreen() {
 }
 
 // ---------------------------------------------------------------------------
+// KPI band — meaningful numbers with context.
+// ---------------------------------------------------------------------------
 
-function KpiRow({
+function KpiBand({
   stats,
+  openIncidents,
+  breachedIncidents,
+  pendingApps,
+  flaggedReviews,
 }: {
   stats: NonNullable<ReturnType<typeof useAdminDashboard>['data']>['stats'];
+  openIncidents: number;
+  breachedIncidents: number;
+  pendingApps: number;
+  flaggedReviews: number;
 }) {
   return (
     <View className="mt-6 flex-row flex-wrap gap-4">
-      <KpiCard label="Users" value={String(stats.total_users)} hint={`${stats.total_hosts} hosts`} />
-      <KpiCard label="Active listings" value={String(stats.total_listings)} hint="published" />
-      <KpiCard label="Bookings (30d)" value={String(stats.bookings_30d)} hint="confirmed + completed" />
       <KpiCard
-        label="GMV (30d)"
+        label="GMV · 30d"
         value={formatPrice(stats.gmv_30d_cents, stats.gmv_currency)}
-        hint="gross"
+        hint={`${stats.bookings_30d} bookings`}
       />
       <KpiCard
-        label="Avg rating"
-        value={stats.avg_rating.toFixed(2)}
-        hint="across all stays"
+        label="Bookings · 30d"
+        value={String(stats.bookings_30d)}
+        hint="confirmed + completed"
+      />
+      <KpiCard
+        label="Active listings"
+        value={String(stats.total_listings)}
+        hint={`${stats.total_hosts} hosts · ${stats.total_users} users`}
+      />
+      <KpiCard
+        label="Host applications"
+        value={String(pendingApps)}
+        hint="pending review"
+        tone={pendingApps > 0 ? 'warn' : 'ok'}
       />
       <KpiCard
         label="Open incidents"
-        value={String(stats.active_incidents)}
-        hint={`${stats.pending_moderation} mod queue`}
+        value={String(openIncidents)}
+        hint={
+          breachedIncidents > 0
+            ? `${breachedIncidents} past SLA`
+            : 'all on track'
+        }
+        tone={breachedIncidents > 0 ? 'alert' : openIncidents > 0 ? 'warn' : 'ok'}
+      />
+      <KpiCard
+        label="Flagged reviews"
+        value={String(flaggedReviews)}
+        hint={`${stats.pending_moderation} listings in mod`}
+        tone={flaggedReviews > 0 ? 'warn' : 'ok'}
       />
     </View>
   );
 }
 
-function KpiCard({ label, value, hint }: { label: string; value: string; hint: string }) {
+function KpiCard({
+  label,
+  value,
+  hint,
+  tone = 'neutral',
+}: {
+  label: string;
+  value: string;
+  hint: string;
+  tone?: 'neutral' | 'ok' | 'warn' | 'alert';
+}) {
+  const dot =
+    tone === 'alert'
+      ? 'bg-[#B4432F]'
+      : tone === 'warn'
+        ? 'bg-brand-500'
+        : tone === 'ok'
+          ? 'bg-[#2E7D5B]'
+          : 'bg-transparent';
   return (
     <Card className="flex-1 min-w-[180px] p-5">
-      <Text variant="small" className="text-ink-soft">
-        {label}
-      </Text>
+      <HStack className="items-center gap-2">
+        {tone !== 'neutral' ? <View className={`h-2 w-2 rounded-full ${dot}`} /> : null}
+        <Text variant="small" className="text-ink-soft">
+          {label}
+        </Text>
+      </HStack>
       <Heading level={2} className="mt-2">
         {value}
       </Heading>
@@ -140,6 +287,43 @@ function KpiCard({ label, value, hint }: { label: string; value: string; hint: s
         {hint}
       </Text>
     </Card>
+  );
+}
+
+// ---------------------------------------------------------------------------
+
+function AttentionCard({
+  label,
+  count,
+  detail,
+  urgent,
+  onPress,
+}: {
+  label: string;
+  count: number;
+  detail: string;
+  urgent: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable onPress={onPress} className="flex-1 min-w-[240px]">
+      <Card className={`p-5 ${urgent ? 'border-2 border-brand-500' : ''}`}>
+        <HStack className="items-start justify-between gap-3">
+          <VStack className="flex-1 gap-1">
+            <Text className="font-semibold">{label}</Text>
+            <Text variant="small" className="text-ink-soft">
+              {detail}
+            </Text>
+          </VStack>
+          <Badge variant={urgent ? 'brand' : count > 0 ? 'dark' : 'neutral'}>
+            {count}
+          </Badge>
+        </HStack>
+        <Text variant="small" className="text-ink-soft mt-3 underline">
+          Open queue →
+        </Text>
+      </Card>
+    </Pressable>
   );
 }
 

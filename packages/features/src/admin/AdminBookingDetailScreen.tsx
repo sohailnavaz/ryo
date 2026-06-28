@@ -43,10 +43,18 @@ export function AdminBookingDetailScreen({ bookingId }: { bookingId: string }) {
   }
   if (!data) {
     return (
-      <AdminShell title="Booking not found" subtitle="Check the id.">
-        <Card className="mt-6 p-6">
-          <Button variant="secondary" onPress={() => router.push('/admin/bookings')}>
-            Back to bookings
+      <AdminShell title="Reservation not found" subtitle="This booking id doesn’t resolve to a record.">
+        <Card className="mt-6 p-8 items-center">
+          <Text className="font-semibold">No reservation with that id.</Text>
+          <Text variant="small" className="text-ink-soft mt-1 text-center">
+            It may have been removed, or the link is stale.
+          </Text>
+          <Button
+            variant="secondary"
+            className="mt-4"
+            onPress={() => router.push('/admin/bookings')}
+          >
+            Back to reservations
           </Button>
         </Card>
       </AdminShell>
@@ -102,18 +110,24 @@ export function AdminBookingDetailScreen({ bookingId }: { bookingId: string }) {
       <View className="mt-6 flex-col md:flex-row gap-6">
         <View className="flex-1 gap-6">
           <Card className="p-5">
-            <Text className="font-semibold">Guest</Text>
+            <Text className="font-semibold">Guest &amp; stay</Text>
             <HStack className="mt-3 gap-3 items-center">
               <Avatar src={data.guest_avatar} name={data.guest_name} size={48} />
               <VStack className="flex-1 gap-0.5">
                 <Text className="font-semibold">{data.guest_name}</Text>
-                <Text variant="small" className="text-ink-soft">{data.nights} nights · {data.listing_city}</Text>
+                <Text variant="small" className="text-ink-soft">
+                  {data.nights} nights · {data.listing_city}, {data.listing_country}
+                </Text>
               </VStack>
             </HStack>
+            <Divider className="my-3" />
+            <Row label="Listing" value={data.listing_title} />
+            <Row label="Dates" value={formatDateRange(data.start_date, data.end_date)} />
+            <Row label="Booked on" value={data.created_at.slice(0, 10)} />
           </Card>
 
           <Card className="p-5">
-            <Text className="font-semibold">Activity</Text>
+            <Text className="font-semibold">Timeline</Text>
             <VStack className="mt-3 gap-3">
               {data.events.map((e, i) => (
                 <HStack key={i} className="gap-3 items-start">
@@ -147,7 +161,10 @@ export function AdminBookingDetailScreen({ bookingId }: { bookingId: string }) {
           </Card>
 
           <Card className="p-5">
-            <Text className="font-semibold">Privileged actions</Text>
+            <Text className="font-semibold">Dispute &amp; refund</Text>
+            <Text variant="small" className="text-ink-soft mt-1">
+              Resolve a guest or host dispute on this reservation.
+            </Text>
             <VStack className="mt-3 gap-2">
               <Button
                 variant={data.status === 'cancelled' ? 'outline' : 'danger'}

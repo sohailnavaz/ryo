@@ -1,6 +1,11 @@
 import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
-import { tryGetSupabase, useCreateListing, type ListingInput } from '@bnb/api';
+import {
+  tryGetSupabase,
+  useCanPublishListings,
+  useCreateListing,
+  type ListingInput,
+} from '@bnb/api';
 import { AMENITIES } from '@bnb/db';
 import {
   Button,
@@ -23,6 +28,7 @@ export function HostListingCreateScreen() {
   const router = useRouter();
   const create = useCreateListing();
   const supabaseConfigured = tryGetSupabase() !== null;
+  const canPublish = useCanPublishListings();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -88,6 +94,36 @@ export function HostListingCreateScreen() {
         }),
     });
   };
+
+  if (!canPublish) {
+    return (
+      <ScrollView className="flex-1 bg-surface">
+        <View className="md:mx-auto md:w-full md:max-w-[560px] px-4 pt-10 pb-24 md:px-10 gap-6">
+          <VStack className="gap-2">
+            <Text variant="small" className="text-ink-soft uppercase tracking-wider">
+              Host · new listing
+            </Text>
+            <Heading level={1}>Become a host first</Heading>
+            <Text className="text-ink-soft">
+              Publishing a listing is for welcomed Ryo hosts. Apply once — our team reviews
+              every application personally — and you’ll be ready to list.
+            </Text>
+          </VStack>
+          <Card className="p-5 gap-3">
+            <Heading level={3}>What happens next</Heading>
+            <Divider />
+            <Text className="text-ink-soft">1. Tell us about you and your place (about 3 minutes).</Text>
+            <Text className="text-ink-soft">2. Our team reviews and welcomes you aboard.</Text>
+            <Text className="text-ink-soft">3. Publish your first listing.</Text>
+          </Card>
+          <HStack className="gap-2">
+            <Button title="Become a host — apply" onPress={() => router.push('/host/apply')} />
+            <Button title="Back" variant="ghost" onPress={() => router.push('/host')} />
+          </HStack>
+        </View>
+      </ScrollView>
+    );
+  }
 
   return (
     <ScrollView className="flex-1 bg-surface">
