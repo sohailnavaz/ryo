@@ -19,6 +19,30 @@ export const fr: Messages = {
   'nav.help': 'Obtenir de l’aide',
   'nav.signIn': 'Se connecter',
   'nav.signOut': 'Se déconnecter',
+  'nav.helpCenter': 'Centre d’aide et FAQ',
+  'nav.offlinePack': 'Pack hors ligne',
+  'nav.phrasebook': 'Guide de conversation',
+  'nav.hostDashboard': 'Tableau de bord hôte',
+  'nav.adminConsole': 'Console d’administration',
+
+  // Home / explore
+  'home.heroTitle': 'Séjournez partout et sentez-vous accueilli.',
+  'home.heroSubtitle': 'Des logements vérifiés, une conciergerie 24h/24 et 7j/7 et des prix honnêtes tout compris.',
+  'home.anyWeek': 'N’importe quelle semaine · Ajouter des voyageurs',
+  'home.guestsCount': '{count} voyageurs',
+  'home.loading': 'Chargement…',
+  'home.homeCount': '{count} logement',
+  'home.homesCount': '{count} logements',
+  'home.emptyTitle': 'Aucun résultat pour le moment',
+  'home.emptyBody':
+    'Essayez d’élargir vos dates ou de retirer un filtre : un logement préparé rien que pour vous vous attend.',
+
+  // Sort options
+  'sort.recommended': 'Recommandés',
+  'sort.priceAsc': 'Prix ↑',
+  'sort.priceDesc': 'Prix ↓',
+  'sort.topRated': 'Les mieux notés',
+  'sort.newest': 'Les plus récents',
 
   // Search / filters
   'search.where': 'Où',

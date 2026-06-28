@@ -19,6 +19,30 @@ export const zh: Messages = {
   'nav.help': '获取帮助',
   'nav.signIn': '登录',
   'nav.signOut': '退出登录',
+  'nav.helpCenter': '帮助中心和常见问题',
+  'nav.offlinePack': '离线包',
+  'nav.phrasebook': '常用语手册',
+  'nav.hostDashboard': '房东面板',
+  'nav.adminConsole': '管理控制台',
+
+  // Home / explore
+  'home.heroTitle': '入住何处，皆有归家之感。',
+  'home.heroSubtitle': '经过甄选的房源、全天候管家服务，以及诚实透明的全包价格。',
+  'home.anyWeek': '任意一周 · 添加房客',
+  'home.guestsCount': '{count} 位房客',
+  'home.loading': '加载中…',
+  'home.homeCount': '{count} 处房源',
+  'home.homesCount': '{count} 处房源',
+  'home.emptyTitle': '暂时没有匹配的结果',
+  'home.emptyBody':
+    '试试放宽日期或清除某个筛选条件——总有一处为你准备的住宿在等待着你。',
+
+  // Sort options
+  'sort.recommended': '推荐',
+  'sort.priceAsc': '价格 ↑',
+  'sort.priceDesc': '价格 ↓',
+  'sort.topRated': '评分最高',
+  'sort.newest': '最新',
 
   // Search / filters
   'search.where': '目的地',

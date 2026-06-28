@@ -19,6 +19,30 @@ export const ja: Messages = {
   'nav.help': 'ヘルプを見る',
   'nav.signIn': 'ログイン',
   'nav.signOut': 'ログアウト',
+  'nav.helpCenter': 'ヘルプセンターとFAQ',
+  'nav.offlinePack': 'オフラインパック',
+  'nav.phrasebook': 'フレーズ集',
+  'nav.hostDashboard': 'ホストダッシュボード',
+  'nav.adminConsole': '管理コンソール',
+
+  // Home / explore
+  'home.heroTitle': 'どこに泊まっても、おもてなしを感じて。',
+  'home.heroSubtitle': '審査を通過した宿泊先、24時間365日のコンシェルジュ、そして正直な総額表示の料金。',
+  'home.anyWeek': 'いつでも · ゲストを追加',
+  'home.guestsCount': 'ゲスト{count}名',
+  'home.loading': '読み込み中…',
+  'home.homeCount': '{count}件の宿泊先',
+  'home.homesCount': '{count}件の宿泊先',
+  'home.emptyTitle': '今のところ条件に合う宿泊先はありません',
+  'home.emptyBody':
+    '日程を広げるか、絞り込み条件を解除してみてください。きっとあなたのために用意された宿が見つかります。',
+
+  // Sort options
+  'sort.recommended': 'おすすめ',
+  'sort.priceAsc': '料金 ↑',
+  'sort.priceDesc': '料金 ↓',
+  'sort.topRated': '高評価順',
+  'sort.newest': '新着順',
 
   // Search / filters
   'search.where': 'どこへ',

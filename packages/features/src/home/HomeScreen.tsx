@@ -14,15 +14,17 @@ import {
 import { useRouter } from '@bnb/ui/nav';
 import { FilterSheet } from '../search/FilterSheet';
 import { useFiltersStore } from '../state/filtersStore';
+import { useT } from '../i18n';
+import type { MessageKey } from '../i18n';
 
 type SortKey = 'recommended' | 'price_asc' | 'price_desc' | 'top_rated' | 'newest';
 
-const SORTS: ReadonlyArray<{ key: SortKey; label: string }> = [
-  { key: 'recommended', label: 'Recommended' },
-  { key: 'price_asc',   label: 'Price ↑' },
-  { key: 'price_desc',  label: 'Price ↓' },
-  { key: 'top_rated',   label: 'Top-rated' },
-  { key: 'newest',      label: 'Newest' },
+const SORTS: ReadonlyArray<{ key: SortKey; labelKey: MessageKey }> = [
+  { key: 'recommended', labelKey: 'sort.recommended' },
+  { key: 'price_asc',   labelKey: 'sort.priceAsc' },
+  { key: 'price_desc',  labelKey: 'sort.priceDesc' },
+  { key: 'top_rated',   labelKey: 'sort.topRated' },
+  { key: 'newest',      labelKey: 'sort.newest' },
 ];
 
 function sortListings(rows: Listing[], key: SortKey): Listing[] {
@@ -46,6 +48,7 @@ const CARD_TARGET = 240; // ideal card width; lower = denser grid (more cards/ro
 export function HomeScreen() {
   const { width } = useWindowDimensions();
   const router = useRouter();
+  const t = useT();
   const filters = useFiltersStore((s) => s.filters);
   const setFilters = useFiltersStore((s) => s.setFilters);
   const [filterOpen, setFilterOpen] = useState(false);
@@ -78,26 +81,26 @@ export function HomeScreen() {
       filters.startDate && filters.endDate
         ? `${filters.startDate} → ${filters.endDate}`
         : undefined,
-      filters.guests ? `${filters.guests} guests` : undefined,
+      filters.guests ? t('home.guestsCount', { count: filters.guests }) : undefined,
     ]
       .filter(Boolean)
-      .join(' · ') || 'Any week · Add guests';
+      .join(' · ') || t('home.anyWeek');
 
   return (
     <View className="flex-1 bg-surface">
       {/* Editorial hero — omotenashi, one idea, generous space (branding §7.0) */}
       <View className="w-full max-w-[1600px] mx-auto px-4 pt-6 pb-1 md:px-10 md:pt-12 md:pb-3">
         <Heading level={1} className="max-w-[680px] md:text-[52px]">
-          Stay anywhere — and feel hosted.
+          {t('home.heroTitle')}
         </Heading>
         <Text className="mt-3 max-w-[560px] text-ink-soft md:text-[17px] md:leading-[26px]">
-          Vetted homes, a 24/7 concierge, and honest all-in pricing.{' '}
-          <Text className="text-brand-500 font-semibold">Just Ryo it.</Text>
+          {t('home.heroSubtitle')}{' '}
+          <Text className="text-brand-500 font-semibold">{t('brand.tagline')}</Text>
         </Text>
       </View>
       <View className="w-full max-w-[1600px] mx-auto px-4 pt-3 md:px-10 md:pt-4 md:pb-2">
         <SearchBar
-          label={filters.destination || 'Anywhere'}
+          label={filters.destination || t('search.anywhere')}
           subLabel={subLabel}
           onPress={() => setFilterOpen(true)}
           onOpenFilters={() => setFilterOpen(true)}
@@ -117,8 +120,10 @@ export function HomeScreen() {
       >
         <Text variant="small" className="text-ink-soft mr-1">
           {isLoading
-            ? 'Loading…'
-            : `${sortedData.length} ${sortedData.length === 1 ? 'home' : 'homes'}`}
+            ? t('home.loading')
+            : sortedData.length === 1
+              ? t('home.homeCount', { count: 1 })
+              : t('home.homesCount', { count: sortedData.length })}
         </Text>
         <Text variant="small" className="text-ink-soft mr-1">
           ·
@@ -137,7 +142,7 @@ export function HomeScreen() {
                 variant="small"
                 className={`font-semibold ${selected ? 'text-white' : 'text-ink'}`}
               >
-                {s.label}
+                {t(s.labelKey)}
               </Text>
             </Pressable>
           );
@@ -172,9 +177,9 @@ export function HomeScreen() {
           }}
           ListEmptyComponent={
             <View className="py-20 items-center px-6">
-              <Heading level={3} className="text-center">Nothing matches just yet</Heading>
+              <Heading level={3} className="text-center">{t('home.emptyTitle')}</Heading>
               <Text className="mt-2 text-center text-ink-soft max-w-[360px]">
-                Try widening your dates or clearing a filter — there’s a place out there prepared for you.
+                {t('home.emptyBody')}
               </Text>
             </View>
           }

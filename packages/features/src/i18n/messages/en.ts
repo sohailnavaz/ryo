@@ -20,6 +20,30 @@ export const en = {
   'nav.help': 'Get help',
   'nav.signIn': 'Sign in',
   'nav.signOut': 'Sign out',
+  'nav.helpCenter': 'Help center & FAQ',
+  'nav.offlinePack': 'Offline pack',
+  'nav.phrasebook': 'Phrasebook',
+  'nav.hostDashboard': 'Host dashboard',
+  'nav.adminConsole': 'Admin console',
+
+  // Home / explore
+  'home.heroTitle': 'Stay anywhere — and feel hosted.',
+  'home.heroSubtitle': 'Vetted homes, a 24/7 concierge, and honest all-in pricing.',
+  'home.anyWeek': 'Any week · Add guests',
+  'home.guestsCount': '{count} guests',
+  'home.loading': 'Loading…',
+  'home.homeCount': '{count} home',
+  'home.homesCount': '{count} homes',
+  'home.emptyTitle': 'Nothing matches just yet',
+  'home.emptyBody':
+    'Try widening your dates or clearing a filter — there’s a place out there prepared for you.',
+
+  // Sort options
+  'sort.recommended': 'Recommended',
+  'sort.priceAsc': 'Price ↑',
+  'sort.priceDesc': 'Price ↓',
+  'sort.topRated': 'Top-rated',
+  'sort.newest': 'Newest',
 
   // Search / filters
   'search.where': 'Where',
