@@ -72,11 +72,16 @@ export function TopNav({
           ) : null}
         </View>
         <View className="flex-row items-center gap-2">
-          <Pressable className="rounded-full p-2.5 hover:bg-surface-alt transition">
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Language"
+            className="rounded-full p-2.5 hover:bg-surface-alt transition"
+          >
             <Globe size={16} color="#0E1A2B" />
           </Pressable>
           <Pressable
             onPress={onOpenNotifications}
+            accessibilityRole="button"
             accessibilityLabel="Notifications"
             className="relative rounded-full p-2.5 hover:bg-surface-alt active:scale-95 transition"
           >
@@ -87,6 +92,8 @@ export function TopNav({
           </Pressable>
           <Pressable
             onPress={onOpenAccount}
+            accessibilityRole="button"
+            accessibilityLabel="Account menu"
             className="flex-row items-center gap-2 rounded-full border border-surface-border px-3 py-1.5 hover:shadow-soft active:scale-95 transition"
           >
             <Menu size={14} color="#0E1A2B" />

@@ -31,12 +31,15 @@ export function ListingCard({
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole="link"
+      accessibilityLabel={`${listing.title} — ${listing.city}, ${listing.country}`}
       className={cn('group w-full transition duration-200 hover:-translate-y-1', className)}
     >
       <View className="relative aspect-square w-full overflow-hidden rounded-2xl bg-surface-alt transition duration-200 group-hover:shadow-card">
         {current ? (
           <Image
             source={{ uri: sizeImage(current, 320) }}
+            accessibilityLabel={`${listing.title}, ${listing.city}, ${listing.country}`}
             className="h-full w-full transition-transform duration-500 ease-out group-hover:scale-[1.04]"
             resizeMode="cover"
           />
@@ -44,6 +47,7 @@ export function ListingCard({
         <View className="absolute top-3 right-3">
           <IconButton
             onPress={onToggleFavorite}
+            accessibilityLabel={isFavorite ? 'Remove from wishlist' : 'Save to wishlist'}
             className="bg-black/30"
             testID={`fav-${listing.id}`}
           >
@@ -57,12 +61,12 @@ export function ListingCard({
         {photos.length > 1 ? (
           <>
             <View className="absolute left-2 top-1/2 -mt-4">
-              <IconButton onPress={prev} className="bg-white/90 h-8 w-8">
+              <IconButton onPress={prev} accessibilityLabel="Previous photo" className="bg-white/90 h-8 w-8">
                 <ChevronLeft size={16} color="#0E1A2B" />
               </IconButton>
             </View>
             <View className="absolute right-2 top-1/2 -mt-4">
-              <IconButton onPress={next} className="bg-white/90 h-8 w-8">
+              <IconButton onPress={next} accessibilityLabel="Next photo" className="bg-white/90 h-8 w-8">
                 <ChevronRight size={16} color="#0E1A2B" />
               </IconButton>
             </View>

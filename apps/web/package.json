@@ -36,6 +36,7 @@
     "react-native-web": "~0.19.13"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.10.1",
     "@bnb/config": "workspace:*",
     "@playwright/test": "^1.49.1",
     "@types/node": "^22.10.2",

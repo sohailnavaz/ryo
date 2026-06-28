@@ -15,6 +15,7 @@ export function Avatar({ src, name, size = 40, className }: AvatarProps) {
     return (
       <Image
         source={{ uri: src }}
+        accessibilityLabel={name ? `${name}'s profile photo` : 'Profile photo'}
         style={{ width: size, height: size, borderRadius: size / 2 }}
         className={cn('bg-surface-alt', className)}
       />

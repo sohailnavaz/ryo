@@ -22,6 +22,8 @@ export function SearchBar({
     <View className={`flex-row items-center gap-3 ${className ?? ''}`}>
       <Pressable
         onPress={onPress}
+        accessibilityRole="search"
+        accessibilityLabel={`Search destinations. ${label}, ${subLabel}`}
         className="flex-1 flex-row items-center gap-3 rounded-full border border-surface-border bg-surface px-4 py-3 shadow-card"
       >
         <Search size={16} color="#0E1A2B" />
@@ -36,6 +38,8 @@ export function SearchBar({
       </Pressable>
       <Pressable
         onPress={onOpenFilters}
+        accessibilityRole="button"
+        accessibilityLabel="Filters"
         className="h-12 w-12 items-center justify-center rounded-full border border-surface-border bg-surface"
       >
         <SlidersHorizontal size={16} color="#0E1A2B" />
