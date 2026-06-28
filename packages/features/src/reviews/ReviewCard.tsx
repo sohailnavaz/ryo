@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { View } from 'react-native';
 import {
-  deleteReviewDraft,
-  saveReviewDraft,
-  useReviewDraft,
+  useMyReview,
+  useRemoveReview,
+  useSubmitReview,
   type GuestBooking,
 } from '@bnb/api';
 import {
@@ -27,12 +26,19 @@ export type ReviewCardProps = {
  * Write-a-review-after-stay card for a completed trip.
  *
  * - Gated to stays whose `end_date` is in the past (renders nothing otherwise).
- * - If the guest has already left a review (in the client review-draft store)
- *   it shows "Your review" with an edit affordance.
+ * - If the guest has already left a review (persisted in Supabase when signed in,
+ *   or the local demo draft store otherwise) it shows "Your review" with an edit
+ *   affordance.
  * - Otherwise it shows a star rating + text composer.
  */
 export function ReviewCard({ booking }: ReviewCardProps) {
-  const existing = useReviewDraft(booking.id);
+  const { data: existing } = useMyReview({
+    bookingId: booking.id,
+    listingId: booking.listing_id,
+    listingTitle: booking.listing_title,
+  });
+  const submitReview = useSubmitReview();
+  const removeReview = useRemoveReview();
   const today = new Date().toISOString().slice(0, 10);
   const isPastStay = booking.end_date < today;
 
@@ -54,25 +60,49 @@ export function ReviewCard({ booking }: ReviewCardProps) {
       toast.error('Add a star rating before posting.');
       return;
     }
-    saveReviewDraft({
-      booking_id: booking.id,
-      listing_id: booking.listing_id,
-      listing_title: booking.listing_title,
-      rating,
-      body,
-    });
-    setEditing(false);
-    toast.success('Thanks for your review.', {
-      description: 'Saved on this device — it syncs once reviews go live.',
-    });
+    submitReview.mutate(
+      {
+        booking_id: booking.id,
+        listing_id: booking.listing_id,
+        listing_title: booking.listing_title,
+        rating,
+        body,
+      },
+      {
+        onSuccess: (result) => {
+          setEditing(false);
+          if (result.persisted) {
+            toast.success('Thanks for your review.', {
+              description: 'Your review is posted.',
+            });
+          } else {
+            toast.success('Thanks for your review.', {
+              description: 'Saved on this device — it syncs once you sign in.',
+            });
+          }
+        },
+        onError: () => {
+          toast.error("We couldn't post your review. Please try again.");
+        },
+      },
+    );
   };
 
   const remove = () => {
-    deleteReviewDraft(booking.id);
-    setEditing(false);
-    setRating(0);
-    setBody('');
-    toast.success('Review removed.');
+    removeReview.mutate(
+      { booking_id: booking.id, listing_id: booking.listing_id },
+      {
+        onSuccess: () => {
+          setEditing(false);
+          setRating(0);
+          setBody('');
+          toast.success('Review removed.');
+        },
+        onError: () => {
+          toast.error("We couldn't remove your review. Please try again.");
+        },
+      },
+    );
   };
 
   // --- Already reviewed (and not editing) → "Your review" -------------------
@@ -93,9 +123,26 @@ export function ReviewCard({ booking }: ReviewCardProps) {
           </Text>
         )}
         <HStack className="gap-2">
-          <Button title="Edit" variant="outline" size="sm" onPress={startEditing} />
-          <Button title="Delete" variant="ghost" size="sm" onPress={remove} />
+          <Button
+            title="Edit"
+            variant="outline"
+            size="sm"
+            onPress={startEditing}
+            disabled={submitReview.isPending || removeReview.isPending}
+          />
+          <Button
+            title="Delete"
+            variant="ghost"
+            size="sm"
+            onPress={remove}
+            disabled={removeReview.isPending}
+          />
         </HStack>
+        {!existing.isDraft ? null : (
+          <Text variant="caption">
+            Saved on this device — it syncs once you sign in.
+          </Text>
+        )}
       </Card>
     );
   }
@@ -123,14 +170,15 @@ export function ReviewCard({ booking }: ReviewCardProps) {
         style={{ textAlignVertical: 'top' }}
       />
       <HStack className="gap-2">
-        <Button title={existing ? 'Save changes' : 'Post review'} onPress={submit} />
+        <Button
+          title={existing ? 'Save changes' : 'Post review'}
+          onPress={submit}
+          disabled={submitReview.isPending}
+        />
         {existing ? (
           <Button title="Cancel" variant="ghost" onPress={() => setEditing(false)} />
         ) : null}
       </HStack>
-      <Text variant="caption">
-        Demo mode · your review is saved on this device until reviews go live.
-      </Text>
     </Card>
   );
 }

@@ -82,6 +82,9 @@ export async function fetchRemoteOverrides(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
+  // Demo identities have no real listings to scope calendar rows to → fall back
+  // to the localStorage override store.
+  if ((user.app_metadata as { demo?: boolean } | undefined)?.demo === true) return null;
 
   const { data, error } = await supabase
     .from(LISTING_CALENDAR_TABLE)

@@ -1,6 +1,6 @@
 'use client';
 import { ErrorBoundary, ToastViewport, TopNav } from '@bnb/ui';
-import { useRole, useSignOut, useUnreadCount, useUser } from '@bnb/api';
+import { useRole, useSignOut, useInboxUnreadCount, useUser } from '@bnb/api';
 import { usePathname, useRouter } from 'next/navigation';
 import { ReactNode, useState } from 'react';
 
@@ -17,7 +17,7 @@ export default function MainLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
-  const unread = useUnreadCount();
+  const unread = useInboxUnreadCount();
   // Host & admin are their own apps (they have their own sidebar shell). Don't
   // bleed the guest browse-nav into them — hide the Stays/Stories tabs + the
   // guest bottom tabs, and show a clear context label instead.
@@ -50,7 +50,7 @@ function AccountMenu({ open, onClose }: { open: boolean; onClose: () => void }) 
   const user = useUser();
   const { role } = useRole();
   const signOut = useSignOut();
-  const unread = useUnreadCount();
+  const unread = useInboxUnreadCount();
   if (!open) return null;
 
   const go = (path: string) => {

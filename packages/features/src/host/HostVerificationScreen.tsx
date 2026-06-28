@@ -54,6 +54,7 @@ const STATUS_LABEL: Record<KycStatus, string> = {
   not_started: 'not started',
   pending: 'in review',
   verified: 'verified',
+  rejected: 'rejected',
 };
 
 function statusBadgeVariant(status: KycStatus): 'neutral' | 'dark' | 'brand' {

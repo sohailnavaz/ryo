@@ -1,10 +1,6 @@
 import { ScrollView, View } from 'react-native';
 import {
-  clearAll,
-  markAllRead,
-  markRead,
-  useNotifications,
-  useUnreadCount,
+  useNotificationsInbox,
   type Notification,
   type NotificationKind,
 } from '@bnb/api';
@@ -66,8 +62,7 @@ function relativeTime(iso: string): string {
  * by the client-side notifications-store (no backend yet) — see that file.
  */
 export function NotificationsScreen() {
-  const items = useNotifications();
-  const unread = useUnreadCount();
+  const { items, unread, markRead, markAllRead, clearAll } = useNotificationsInbox();
 
   const today = items.filter((n) => isToday(n.created_at));
   const earlier = items.filter((n) => !isToday(n.created_at));
@@ -107,10 +102,10 @@ export function NotificationsScreen() {
         ) : (
           <VStack className="mt-8 gap-8">
             {today.length > 0 ? (
-              <Group label="Today" notifications={today} />
+              <Group label="Today" notifications={today} onRead={markRead} />
             ) : null}
             {earlier.length > 0 ? (
-              <Group label="Earlier" notifications={earlier} />
+              <Group label="Earlier" notifications={earlier} onRead={markRead} />
             ) : null}
           </VStack>
         )}
@@ -119,7 +114,15 @@ export function NotificationsScreen() {
   );
 }
 
-function Group({ label, notifications }: { label: string; notifications: Notification[] }) {
+function Group({
+  label,
+  notifications,
+  onRead,
+}: {
+  label: string;
+  notifications: Notification[];
+  onRead: (id: string) => void;
+}) {
   return (
     <VStack className="gap-3">
       <Text variant="label" className="text-ink-soft uppercase tracking-wide">
@@ -127,17 +130,23 @@ function Group({ label, notifications }: { label: string; notifications: Notific
       </Text>
       <VStack className="gap-3">
         {notifications.map((n) => (
-          <NotificationRow key={n.id} notification={n} />
+          <NotificationRow key={n.id} notification={n} onRead={onRead} />
         ))}
       </VStack>
     </VStack>
   );
 }
 
-function NotificationRow({ notification: n }: { notification: Notification }) {
+function NotificationRow({
+  notification: n,
+  onRead,
+}: {
+  notification: Notification;
+  onRead: (id: string) => void;
+}) {
   const Icon = KIND_ICON[n.kind];
   return (
-    <Pressable onPress={() => markRead(n.id)} disabled={n.read}>
+    <Pressable onPress={() => onRead(n.id)} disabled={n.read}>
       <Card className={n.read ? 'p-4' : 'p-4 border-brand-200 bg-warm-50'}>
         <HStack className="gap-3 items-start">
           <View className="h-10 w-10 rounded-full bg-surface-alt items-center justify-center">
