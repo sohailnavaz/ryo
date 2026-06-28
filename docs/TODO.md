@@ -1,12 +1,35 @@
 ---
 doc: TODO
 purpose: Punchy, prioritised list of what's left to ship Ryo to a public web launch. Distilled from the production plan at ~/.claude/plans/lets-check-the-developement-crispy-nygaard.md
-last_updated: 2026-05-13
+last_updated: 2026-06-28
 ---
 
 # Ryo — TODO to production
 
 > *Status at a glance:* code for the v1 guest flow has landed (M0–M6), three dashboards exist (`/`, `/account`, `/host`, `/admin`), the site styles correctly, dummy data renders out-of-the-box, and the repo is on GitHub. **What's left is everything around the code: live backend, domain, email, legal, observability, and the few remaining code blockers.**
+
+---
+
+## ✅ Status update — 2026-06-28 (read this first; the sections below predate it)
+
+Much of the 2026-05-13 plan has since shipped. **What changed since this doc was written:**
+
+- **All 8 client-side `*-store.ts` mocks → real Supabase tables + RLS** (migrations `0005`–`0016`): messaging, notifications, named wishlists, review-write (verified-stay gated), host calendar/payouts/KYC, incidents, admin moderation/audit/feature-flags, storage buckets, payments schema. Each hook uses real Supabase when signed in, store as the demo fallback. **Validated locally (`db reset` clean, typecheck + build green); migration `0015` independently validated against a throwaway Postgres.**
+- **Worldwide search backend** — `places` table + `pg_trgm` `search_places()` RPC + GeoNames importer (`pnpm db:places`); curated 195-country / 861-city in-bundle fallback. (was 🟡 "client-side filter over dummy")
+- **i18n — now real** (was 🟡 "strings hardcoded"): 7 languages (EN/ES/FR/DE/AR-RTL/ZH/JA), persisted locale + switcher, `<html lang/dir>`, wired into explore/search/account/footer/cookie/onboarding chrome.
+- **SEO** — per-route metadata, dynamic listing metadata + `LodgingBusiness` JSON-LD, Organization/WebSite JSON-LD, OG image, sitemap/robots. (M13 SEO portion ✅)
+- **Legal + consent** — `/legal/{privacy,terms,cookies,security}` + `/.well-known/security.txt` + granular cookie banner. (M10 legal + M18 security.txt ✅; copy still needs a legal review)
+- **Misc done:** booking double-book lock, error/toast layer, sort controls, destination autocomplete, booking detail screen, account hub, host create/edit listing.
+
+### The real remaining critical path (supersedes the sequencing further down)
+1. 🔴 **Go live** — apply `0001`–`0016` to the live Supabase project + set Vercel env + drop preview mode. *Blocked on founder credentials.* Unblocks verifying everything.
+2. 🔴 **Payments** — Stripe + Razorpay (checkout, webhooks, payouts, refunds). *Needs processor accounts.* Longest pole.
+3. 🟡 **Make host/admin actions real-and-verified** + remove the `demo`-role bypass.
+4. 🟡 **Transactional email** (Resend/SES) · **file-upload UI** (buckets exist) · **observability** (Sentry/PostHog) · **CI/CD + tests** (in progress) · **CSP**.
+5. 🟡 **Guest profile/booking depth** (photo upload, real availability calendar, adults/children/pets, full price calc).
+6. ⏳ **External:** domains · email provider · Apple/Google accounts · legal review · logo → `bnb→ryo` rename · mobile EAS build + store submit.
+
+**Revised estimate:** ~4–6 engineering weeks to launchable + ~2 weeks external waits. Per-section detail below is from 2026-05-13 — cross-check against this block before trusting a checkbox.
 
 ---
 

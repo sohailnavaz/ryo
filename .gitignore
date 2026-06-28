@@ -47,3 +47,7 @@ pnpm-debug.log*
 .claude/scheduled_tasks.lock
 .claude/.local/
 .claude/*.local.json
+
+# Playwright
+apps/web/playwright-report/
+apps/web/test-results/
