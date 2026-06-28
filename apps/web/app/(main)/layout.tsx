@@ -57,6 +57,7 @@ function AccountMenu({ open, onClose }: { open: boolean; onClose: () => void }) 
   const { role } = useRole();
   const signOut = useSignOut();
   const unread = useInboxUnreadCount();
+  const t = useT();
   if (!open) return null;
 
   const go = (path: string) => {
@@ -102,20 +103,20 @@ function AccountMenu({ open, onClose }: { open: boolean; onClose: () => void }) 
         <div className="py-1">
           {user ? (
             <>
-              <Item label="Account" path="/account" accent />
-              <Item label="Trips" path="/trips" />
-              <Item label="Wishlists" path="/wishlists" />
-              <Item label={unread > 0 ? `Notifications (${unread})` : 'Notifications'} path="/notifications" />
-              <Item label="Profile" path="/profile" />
+              <Item label={t('nav.account')} path="/account" accent />
+              <Item label={t('nav.trips')} path="/trips" />
+              <Item label={t('nav.wishlists')} path="/wishlists" />
+              <Item label={unread > 0 ? `${t('nav.notifications')} (${unread})` : t('nav.notifications')} path="/notifications" />
+              <Item label={t('nav.profile')} path="/profile" />
             </>
           ) : null}
 
           <div className="my-1 h-px bg-surface-border" />
-          <Item label="🛎️ Concierge" path="/concierge" accent />
-          <Item label="Help center & FAQ" path="/faq" />
-          <Item label="Get help" path="/help" />
-          <Item label="Offline pack" path="/offline" />
-          <Item label="Phrasebook" path="/phrasebook" />
+          <Item label={`🛎️ ${t('nav.concierge')}`} path="/concierge" accent />
+          <Item label={t('nav.helpCenter')} path="/faq" />
+          <Item label={t('nav.help')} path="/help" />
+          <Item label={t('nav.offlinePack')} path="/offline" />
+          <Item label={t('nav.phrasebook')} path="/phrasebook" />
 
           <div className="my-1 h-px bg-surface-border" />
           <div className="px-3 py-2">
@@ -125,11 +126,11 @@ function AccountMenu({ open, onClose }: { open: boolean; onClose: () => void }) 
           {isHost ? (
             <>
               <div className="my-1 h-px bg-surface-border" />
-              <Item label="Host dashboard" path="/host" accent />
+              <Item label={t('nav.hostDashboard')} path="/host" accent />
             </>
           ) : null}
 
-          {isStaff ? <Item label="Admin console" path="/admin" accent /> : null}
+          {isStaff ? <Item label={t('nav.adminConsole')} path="/admin" accent /> : null}
 
           <div className="my-1 h-px bg-surface-border" />
           {user ? (

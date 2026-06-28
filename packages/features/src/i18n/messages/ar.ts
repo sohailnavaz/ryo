@@ -20,6 +20,30 @@ export const ar: Messages = {
   'nav.help': 'الحصول على مساعدة',
   'nav.signIn': 'تسجيل الدخول',
   'nav.signOut': 'تسجيل الخروج',
+  'nav.helpCenter': 'مركز المساعدة والأسئلة الشائعة',
+  'nav.offlinePack': 'حزمة بلا اتصال',
+  'nav.phrasebook': 'دليل العبارات',
+  'nav.hostDashboard': 'لوحة تحكم المضيف',
+  'nav.adminConsole': 'وحدة تحكم المشرف',
+
+  // Home / explore
+  'home.heroTitle': 'أقِم في أي مكان واشعر بحفاوة الاستقبال.',
+  'home.heroSubtitle': 'أماكن إقامة موثوقة، وكونسيرج على مدار الساعة، وأسعار صادقة وشاملة.',
+  'home.anyWeek': 'أي أسبوع · إضافة ضيوف',
+  'home.guestsCount': '{count} ضيوف',
+  'home.loading': 'جارٍ التحميل…',
+  'home.homeCount': '{count} مكان إقامة',
+  'home.homesCount': '{count} أماكن إقامة',
+  'home.emptyTitle': 'لا توجد نتائج مطابقة بعد',
+  'home.emptyBody':
+    'جرّب توسيع نطاق تواريخك أو إزالة أحد عوامل التصفية — فهناك مكان في انتظارك أُعِدّ من أجلك.',
+
+  // Sort options
+  'sort.recommended': 'موصى به',
+  'sort.priceAsc': 'السعر ↑',
+  'sort.priceDesc': 'السعر ↓',
+  'sort.topRated': 'الأعلى تقييمًا',
+  'sort.newest': 'الأحدث',
 
   // Search / filters
   'search.where': 'إلى أين',
