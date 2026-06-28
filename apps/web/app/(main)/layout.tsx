@@ -1,6 +1,7 @@
 'use client';
 import { ErrorBoundary, ToastViewport, TopNav } from '@bnb/ui';
 import { useRole, useSignOut, useInboxUnreadCount, useUser } from '@bnb/api';
+import { useT, type MessageKey } from '@bnb/features';
 import { usePathname, useRouter } from 'next/navigation';
 import { ReactNode, useState } from 'react';
 import { SiteFooter } from '../_components/SiteFooter';
@@ -156,26 +157,27 @@ function AccountMenu({ open, onClose }: { open: boolean; onClose: () => void }) 
 function MobileTabs() {
   const router = useRouter();
   const pathname = usePathname();
+  const t = useT();
   const key = pathToKey(pathname ?? '/');
-  const tabs: Array<{ key: string; label: string; path: string }> = [
-    { key: 'explore', label: 'Explore', path: '/' },
-    { key: 'wishlists', label: 'Wishlists', path: '/wishlists' },
-    { key: 'trips', label: 'Trips', path: '/trips' },
-    { key: 'concierge', label: 'Concierge', path: '/concierge' },
-    { key: 'profile', label: 'Profile', path: '/profile' },
+  const tabs: Array<{ key: string; label: MessageKey; path: string }> = [
+    { key: 'explore', label: 'nav.explore', path: '/' },
+    { key: 'wishlists', label: 'nav.wishlists', path: '/wishlists' },
+    { key: 'trips', label: 'nav.trips', path: '/trips' },
+    { key: 'concierge', label: 'nav.concierge', path: '/concierge' },
+    { key: 'profile', label: 'nav.profile', path: '/profile' },
   ];
   return (
     <nav className="md:hidden sticky bottom-0 left-0 right-0 border-t border-surface-border bg-surface flex">
-      {tabs.map((t) => (
+      {tabs.map((tab) => (
         <button
-          key={t.key}
+          key={tab.key}
           type="button"
-          onClick={() => router.push(t.path)}
+          onClick={() => router.push(tab.path)}
           className={`flex-1 py-2.5 text-[11px] font-semibold ${
-            key === t.key ? 'text-brand-500' : 'text-ink-soft'
+            key === tab.key ? 'text-brand-500' : 'text-ink-soft'
           }`}
         >
-          {t.label}
+          {t(tab.label)}
         </button>
       ))}
     </nav>
