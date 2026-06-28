@@ -65,3 +65,7 @@ export * from './discover/DiscoverScreen';
 export * from './offline/OfflinePackScreen';
 export * from './phrasebook/PhrasebookScreen';
 export * from './phrasebook/data';
+
+export * from './i18n';
+export * from './help/faq-data';
+export * from './help/FaqScreen';

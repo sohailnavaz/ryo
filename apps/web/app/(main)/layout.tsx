@@ -3,6 +3,9 @@ import { ErrorBoundary, ToastViewport, TopNav } from '@bnb/ui';
 import { useRole, useSignOut, useInboxUnreadCount, useUser } from '@bnb/api';
 import { usePathname, useRouter } from 'next/navigation';
 import { ReactNode, useState } from 'react';
+import { SiteFooter } from '../_components/SiteFooter';
+import { Onboarding } from '../_components/Onboarding';
+import { LanguageSwitcher } from '../_components/LanguageSwitcher';
 
 const pathToKey = (p: string) => {
   if (p.startsWith('/stories')) return 'stories';
@@ -39,8 +42,10 @@ export default function MainLayout({ children }: { children: ReactNode }) {
       <div className="flex-1 flex flex-col">
         <ErrorBoundary>{children}</ErrorBoundary>
       </div>
+      {!isDashboard ? <SiteFooter /> : null}
       {!isDashboard ? <MobileTabs /> : null}
       <ToastViewport />
+      {!isDashboard ? <Onboarding /> : null}
     </div>
   );
 }
@@ -106,9 +111,15 @@ function AccountMenu({ open, onClose }: { open: boolean; onClose: () => void }) 
 
           <div className="my-1 h-px bg-surface-border" />
           <Item label="🛎️ Concierge" path="/concierge" accent />
+          <Item label="Help center & FAQ" path="/faq" />
           <Item label="Get help" path="/help" />
           <Item label="Offline pack" path="/offline" />
           <Item label="Phrasebook" path="/phrasebook" />
+
+          <div className="my-1 h-px bg-surface-border" />
+          <div className="px-3 py-2">
+            <LanguageSwitcher variant="block" direction="down" />
+          </div>
 
           {isHost ? (
             <>

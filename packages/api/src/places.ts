@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { tryGetSupabase } from './client';
-import { searchPlacesLocal, type PlaceOption } from './places-data';
+import { PLACE_OPTIONS, searchPlacesLocal, type PlaceOption } from './places-data';
 
 /**
  * Destination search for the explore/filter UI.
@@ -73,13 +73,9 @@ export async function searchPlaces(query: string, limit = 8): Promise<PlaceOptio
  * something to show instantly, no round-trip required.
  */
 export function popularPlaces(limit = 6): PlaceOption[] {
-  // searchPlacesLocal with a broad seed won't help here; instead surface the
-  // highest-ranked options directly from the curated list via a cheap pass.
-  return searchPlacesLocal('a', 100)
-    .concat(searchPlacesLocal('e', 100))
-    .filter((p) => p.rank <= 1)
-    .filter((p, i, arr) => arr.findIndex((x) => x.label === p.label) === i)
-    .slice(0, limit);
+  // Highest-ranked cities straight from the curated list (PLACE_OPTIONS is
+  // already ordered cities-first by rank, then name).
+  return PLACE_OPTIONS.filter((p) => p.kind === 'city').slice(0, limit);
 }
 
 /**

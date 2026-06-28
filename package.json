@@ -14,7 +14,8 @@
     "db:types": "supabase gen types typescript --local > packages/db/supabase.types.ts",
     "db:reset": "supabase db reset",
     "db:push": "supabase db push",
-    "db:seed": "psql \"$SUPABASE_DB_URL\" -f supabase/seed.sql"
+    "db:seed": "psql \"$SUPABASE_DB_URL\" -f supabase/seed.sql",
+    "db:places": "node scripts/import-places.mjs"
   },
   "devDependencies": {
     "turbo": "^2.3.3",

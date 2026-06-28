@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
-import { DUMMY_LISTINGS } from '@bnb/api';
+import { popularPlaces, usePlacesSearch } from '@bnb/api';
 import { AMENITIES } from '@bnb/db';
 import {
   Badge,
@@ -16,29 +16,6 @@ import { useFiltersStore } from '../state/filtersStore';
 
 const PROPERTY_TYPES = ['House', 'Apartment', 'Cabin', 'Villa', 'Treehouse', 'Cottage'];
 
-// Destinations are derived from the catalogue (dummy in dev / preview, real
-// listings once Supabase is wired — same shape). Cities first, then unique
-// countries; users get both granularities.
-const DESTINATION_OPTIONS: ReadonlyArray<{ label: string; key: string }> = (() => {
-  const seen = new Set<string>();
-  const out: { label: string; key: string }[] = [];
-  for (const l of DUMMY_LISTINGS) {
-    const label = `${l.city}, ${l.country}`;
-    if (!seen.has(label)) {
-      seen.add(label);
-      out.push({ label, key: l.city });
-    }
-  }
-  const countries: string[] = Array.from(new Set<string>(DUMMY_LISTINGS.map((l) => l.country)));
-  for (const country of countries) {
-    if (!seen.has(country)) {
-      seen.add(country);
-      out.push({ label: country, key: country });
-    }
-  }
-  return out;
-})();
-
 export type FilterSheetProps = {
   open: boolean;
   onClose: () => void;
@@ -53,17 +30,26 @@ export function FilterSheet({ open, onClose }: FilterSheetProps) {
   const [destFocused, setDestFocused] = useState(false);
   const [guests, setGuests] = useState(String(filters.guests ?? ''));
 
-  // Autocomplete: show up to 8 suggestions matching the typed prefix.
-  // When the field is empty AND focused, show a popular-destinations list
-  // (the first 6 in the catalogue order).
+  // Debounce the typed query (200ms) before hitting the place search, so we
+  // don't fire a lookup on every keystroke.
+  const [debounced, setDebounced] = useState('');
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(destination.trim()), 200);
+    return () => clearTimeout(t);
+  }, [destination]);
+
+  // Worldwide destination search: live exhaustive results from Supabase when
+  // wired, curated in-bundle fallback otherwise (handled inside usePlacesSearch).
+  const { data: results } = usePlacesSearch(debounced, 8);
+  const popular = useMemo(() => popularPlaces(6), []);
+
+  // When the field is empty AND focused, show popular destinations; otherwise
+  // show the (debounced) search results.
   const suggestions = useMemo(() => {
     if (!destFocused) return [];
-    const q = destination.trim().toLowerCase();
-    if (q.length === 0) return DESTINATION_OPTIONS.slice(0, 6);
-    return DESTINATION_OPTIONS
-      .filter((o) => o.label.toLowerCase().includes(q))
-      .slice(0, 8);
-  }, [destination, destFocused]);
+    if (destination.trim().length === 0) return popular;
+    return results ?? [];
+  }, [destination, destFocused, results, popular]);
   const [minPrice, setMinPrice] = useState(String(filters.minPrice ?? ''));
   const [maxPrice, setMaxPrice] = useState(String(filters.maxPrice ?? ''));
   const [propertyTypes, setPropertyTypes] = useState<string[]>(filters.propertyTypes ?? []);
