@@ -30,10 +30,6 @@ for (const p of PAGES) {
 
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa'])
-      // color-contrast is a brand-palette / design concern (docs/branding.md is
-      // the source of truth for tokens) — tracked separately, not gated here so
-      // this suite stays a guard on *structural* a11y (labels, alt, roles, ARIA).
-      .disableRules(['color-contrast'])
       .analyze();
 
     const blocking = results.violations.filter(

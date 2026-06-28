@@ -20,7 +20,7 @@ export function FaqScreen() {
       <View className="w-full max-w-[900px] mx-auto px-4 md:px-8">
         {/* Hero */}
         <View className="pt-8 pb-2 md:pt-14 md:pb-4">
-          <Text variant="small" className="text-brand-500 font-semibold uppercase tracking-wider">
+          <Text variant="small" className="text-brand-700 font-semibold uppercase tracking-wider">
             Help center
           </Text>
           <Heading level={1} className="mt-2 max-w-[640px] md:text-[48px]">
@@ -48,7 +48,7 @@ export function FaqScreen() {
             <VStack className="mt-3 gap-3">
               {hits.map((hit, i) => (
                 <Card key={`hit-${i}`} className="p-4 md:p-5">
-                  <Text variant="small" className="text-brand-500">
+                  <Text variant="small" className="text-brand-700">
                     {hit.category}
                   </Text>
                   <Text className="mt-1 font-display text-[17px] font-semibold text-ink">

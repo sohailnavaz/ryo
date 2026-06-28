@@ -26,7 +26,7 @@ export default function LegalLayout({ children }: { children: ReactNode }) {
         <div className="mb-8">
           <Link
             href="/legal"
-            className="text-xs font-semibold uppercase tracking-widest text-brand-500"
+            className="text-xs font-semibold uppercase tracking-widest text-brand-700"
           >
             Legal
           </Link>

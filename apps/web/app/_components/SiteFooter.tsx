@@ -33,7 +33,7 @@ export function SiteFooter() {
           <div className="max-w-[280px]">
             <p className="font-display text-[24px] font-semibold text-ink">{t('footer.company')}</p>
             <p className="mt-2 text-[14px] leading-[21px] text-ink-soft">{t('footer.tagline')}</p>
-            <p className="mt-3 text-[13px] font-semibold text-brand-500">{t('brand.tagline')}</p>
+            <p className="mt-3 text-[13px] font-semibold text-brand-700">{t('brand.tagline')}</p>
           </div>
 
           <Col title={t('footer.explore')}>

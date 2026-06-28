@@ -318,6 +318,7 @@ Hero accent is **not yet locked** — §0 open question. All other tokens are dr
 - Never use cold grey — all neutrals are warm-biased.
 - Terracotta is reserved for genuine brand moments and primary CTAs. Using it everywhere kills its signal.
 - Every foreground/background pair must meet WCAG AA (4.5:1 for body, 3:1 for large text).
+- **Terracotta as text:** `brand-500` (`#C87156`) is only AA at *large* sizes (≥18.66px / ≥14pt bold). For small accent text (eyebrows, taglines, labels) on Cream/Sand, use **`brand-700` (`#924936`)** which is AA at any size. The terracotta *hue* is preserved; only the small-text shade is darkened.
 
 ### 7.3 Typography 🔒
 

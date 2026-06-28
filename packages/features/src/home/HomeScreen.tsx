@@ -95,7 +95,7 @@ export function HomeScreen() {
         </Heading>
         <Text className="mt-3 max-w-[560px] text-ink-soft md:text-[17px] md:leading-[26px]">
           {t('home.heroSubtitle')}{' '}
-          <Text className="text-brand-500 font-semibold">{t('brand.tagline')}</Text>
+          <Text className="text-brand-700 font-semibold">{t('brand.tagline')}</Text>
         </Text>
       </View>
       <View className="w-full max-w-[1600px] mx-auto px-4 pt-3 md:px-10 md:pt-4 md:pb-2">
