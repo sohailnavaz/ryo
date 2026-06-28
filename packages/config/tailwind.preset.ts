@@ -32,7 +32,7 @@ const preset: Partial<Config> = {
         ink: {
           DEFAULT: '#0E1A2B',
           soft: '#5C5750', // warm secondary text
-          muted: '#8A837B', // warm tertiary text (Warm 500)
+          muted: '#6B6358', // warm tertiary text (Warm 500) — darkened for WCAG AA (≥4.5:1 on Sand)
         },
         // Warm greys (never pure grey).
         warm: {
@@ -40,7 +40,7 @@ const preset: Partial<Config> = {
           100: '#EFEAE3',
           200: '#E2DACE',
           300: '#CFC7BD', // borders/dividers
-          500: '#8A837B',
+          500: '#6B6358', // tertiary text — WCAG AA on Sand (was #8A837B, 3.04:1)
           700: '#4A4540', // body text
           900: '#1C1A17',
         },

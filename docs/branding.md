@@ -300,8 +300,8 @@ Hero accent is **not yet locked** — §0 open question. All other tokens are dr
 | -------- | ---------- | ---------------------------------- |
 | Warm 900 | `#1C1A17`  | Highest-contrast text on cream     |
 | Warm 700 | `#4A4540`  | Body text                          |
-| Warm 500 | `#8A837B`  | Secondary text                     |
-| Warm 300 | `#CFC7BD`  | Borders, dividers                  |
+| Warm 500 | `#6B6358`  | Tertiary / muted text — WCAG AA (≥4.5:1 on Sand). Darkened from `#8A837B` (was 3.04:1). |
+| Warm 300 | `#CFC7BD`  | Borders, dividers (non-text)       |
 | Warm 100 | `#EFEAE3`  | Subtle backgrounds                 |
 
 #### Semantic
