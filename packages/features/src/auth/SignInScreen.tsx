@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 import {
+  isGoogleAuthEnabled,
   requestPasswordReset,
   signInAsRole,
   signInWithPassword,
@@ -34,6 +35,7 @@ export function SignInScreen({ redirectTo }: SignInScreenProps) {
   const signInGoogle = useSignInWithGoogle();
   const router = useRouter();
   const supabaseConfigured = tryGetSupabase() !== null;
+  const googleEnabled = isGoogleAuthEnabled();
 
   const withPassword = async (mode: 'in' | 'up') => {
     if (!email.includes('@') || password.length < 6) {
@@ -194,14 +196,16 @@ export function SignInScreen({ redirectTo }: SignInScreenProps) {
               disabled={!supabaseConfigured}
               fullWidth
             />
-            <Button
-              title={signInGoogle.isPending ? 'Opening Google…' : 'Continue with Google'}
-              variant="outline"
-              onPress={continueWithGoogle}
-              loading={signInGoogle.isPending}
-              disabled={!supabaseConfigured}
-              fullWidth
-            />
+            {googleEnabled ? (
+              <Button
+                title={signInGoogle.isPending ? 'Opening Google…' : 'Continue with Google'}
+                variant="outline"
+                onPress={continueWithGoogle}
+                loading={signInGoogle.isPending}
+                disabled={!supabaseConfigured}
+                fullWidth
+              />
+            ) : null}
             {error ? (
               <Text variant="small" className="text-[#B4432F]">
                 {error}

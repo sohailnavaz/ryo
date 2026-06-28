@@ -15,7 +15,7 @@
 // green now and the real path lights up automatically once L1 ships the tables.
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { tryGetSupabase } from './client';
+import { getSupabase, tryGetSupabase } from './client';
 import {
   addLocalIncident,
   appendLocalEvent,
@@ -173,6 +173,23 @@ function localId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
+// --- real-session gate ------------------------------------------------------
+// Supabase is live, so `tryGetSupabase()` is always truthy. The real/demo split
+// hinges on whether there is a *genuine* session: demo identities carry
+// `app_metadata.demo === true` and must keep using the localStorage store so the
+// preview loop works without touching (or failing RLS on) the real tables.
+// Mirrors `realUserId()` in ./notifications-store.ts.
+async function hasRealSession(): Promise<boolean> {
+  const supabase = tryGetSupabase();
+  if (!supabase) return false;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return false;
+  if ((user.app_metadata as { demo?: boolean } | undefined)?.demo === true) return false;
+  return true;
+}
+
 // --- create -----------------------------------------------------------------
 
 export type CreateIncidentInput = {
@@ -191,16 +208,19 @@ export type CreateIncidentInput = {
 export async function createIncident(input: CreateIncidentInput): Promise<Incident> {
   const tier = tierForCategory(input.category);
   const now = new Date().toISOString();
-  const sb = tryGetSupabase();
 
-  if (sb) {
+  if (await hasRealSession()) {
+    const sb = getSupabase();
     const { data, error } = await sb
       .from('incidents')
       .insert({
         guest_id: input.guest_id,
+        guest_name: input.guest_name,
         booking_id: input.booking_id ?? null,
         listing_id: input.listing_id ?? null,
+        listing_title: input.listing_title ?? null,
         host_id: input.host_id ?? null,
+        host_name: input.host_name ?? null,
         category: input.category,
         tier,
         status: 'new',
@@ -301,8 +321,8 @@ export async function updateIncidentStatus(
   note?: string,
   assigned_to?: string | null,
 ): Promise<boolean> {
-  const sb = tryGetSupabase();
-  if (sb) {
+  if (await hasRealSession()) {
+    const sb = getSupabase();
     const patch: Record<string, unknown> = {
       status,
       updated_at: new Date().toISOString(),
@@ -341,8 +361,8 @@ export async function addIncidentNote(
   body: string,
   actor: string,
 ): Promise<boolean> {
-  const sb = tryGetSupabase();
-  if (sb) {
+  if (await hasRealSession()) {
+    const sb = getSupabase();
     const { error } = await sb
       .from('incident_events')
       .insert({ incident_id: incidentId, kind: 'note', body, actor_label: actor });
@@ -370,8 +390,8 @@ export function useMyIncidents(guestId: string | undefined) {
     queryKey: ['my-incidents', guestId ?? ''],
     enabled: !!guestId,
     queryFn: async (): Promise<Incident[]> => {
-      const sb = tryGetSupabase();
-      if (sb) {
+      if (await hasRealSession()) {
+        const sb = getSupabase();
         const { data, error } = await sb
           .from('incidents')
           .select('*')
@@ -393,8 +413,8 @@ export function useHostIncidents(hostId: string | undefined) {
     queryKey: ['host-incidents', hostId ?? ''],
     enabled: !!hostId,
     queryFn: async (): Promise<Incident[]> => {
-      const sb = tryGetSupabase();
-      if (sb) {
+      if (await hasRealSession()) {
+        const sb = getSupabase();
         const { data, error } = await sb
           .from('incidents')
           .select('*')
@@ -417,8 +437,8 @@ export function useIncident(incidentId: string | undefined) {
     queryKey: ['incident', incidentId ?? ''],
     enabled: !!incidentId,
     queryFn: async (): Promise<Incident | null> => {
-      const sb = tryGetSupabase();
-      if (sb) {
+      if (await hasRealSession()) {
+        const sb = getSupabase();
         const { data, error } = await sb
           .from('incidents')
           .select('*')
@@ -438,8 +458,8 @@ export function useIncidentEvents(incidentId: string | undefined) {
     queryKey: ['incident-events', incidentId ?? ''],
     enabled: !!incidentId,
     queryFn: async (): Promise<IncidentEvent[]> => {
-      const sb = tryGetSupabase();
-      if (sb) {
+      if (await hasRealSession()) {
+        const sb = getSupabase();
         const { data, error } = await sb
           .from('incident_events')
           .select('*')

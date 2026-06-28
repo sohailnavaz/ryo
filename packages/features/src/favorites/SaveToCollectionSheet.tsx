@@ -1,11 +1,6 @@
 import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
-import {
-  addToCollection,
-  createCollection,
-  removeFromCollection,
-  useWishlistCollections,
-} from '@bnb/api';
+import { useWishlistCollectionsApi } from '@bnb/api';
 import {
   Button,
   Check,
@@ -38,14 +33,17 @@ export function SaveToCollectionSheet({
   listingId,
   listingTitle,
 }: SaveToCollectionSheetProps) {
-  const collections = useWishlistCollections();
+  const { collections, addToCollection, removeFromCollection, createCollection } =
+    useWishlistCollectionsApi();
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState('');
 
   const toggle = (collectionId: string, isIn: boolean) => {
     if (!listingId) return;
-    if (isIn) removeFromCollection(collectionId, listingId);
-    else addToCollection(collectionId, listingId);
+    const op = isIn
+      ? removeFromCollection(collectionId, listingId)
+      : addToCollection(collectionId, listingId);
+    op.catch(() => toast.error('Couldn’t update your list. Please try again.'));
   };
 
   const create = () => {
@@ -54,10 +52,13 @@ export function SaveToCollectionSheet({
       toast.error('Give your list a name.');
       return;
     }
-    createCollection(trimmed, listingId ?? undefined);
-    toast.success(`Created “${trimmed}”.`);
-    setName('');
-    setCreating(false);
+    createCollection(trimmed, listingId ?? undefined)
+      .then(() => {
+        toast.success(`Created “${trimmed}”.`);
+        setName('');
+        setCreating(false);
+      })
+      .catch(() => toast.error('Couldn’t create the list. Please try again.'));
   };
 
   return (

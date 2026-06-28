@@ -4,7 +4,7 @@
 // produced by ./host.ts so anon visitors can see a plausible operations view without any auth.
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { tryGetSupabase } from './client';
+import { getSupabase, tryGetSupabase } from './client';
 import { fetchListings } from './listings';
 import { fetchHostDashboard, type SyntheticBooking } from './host';
 import {
@@ -21,7 +21,7 @@ import {
   type ReviewDecision,
   type UserStatus,
 } from './admin-store';
-import { auditIsLive, fetchRealAudit, recordAudit } from './audit';
+import { auditIsLive, fetchRealAudit, recordAudit, resolveStaffActor } from './audit';
 import {
   getCreatedIncidents,
   updateIncidentStatus,
@@ -656,6 +656,31 @@ export function useAdminFlags() {
   return useQuery({
     queryKey: ['admin-flags'],
     queryFn: async () => {
+      // Real mode (staff session): overlay live feature_flags rows on the seed
+      // so descriptions/rollout from the seed are preserved while enabled/updated
+      // reflect the real table. feature_flags is public-read, so the query is
+      // safe whenever Supabase is wired; we still gate the *write* on is_staff().
+      const staff = await resolveStaffActor();
+      if (staff) {
+        const sb = getSupabase();
+        const { data, error } = await sb.from('feature_flags').select('*');
+        if (!error && data) {
+          const byKey = new Map(
+            (data as Array<Record<string, unknown>>).map((r) => [String(r.key), r]),
+          );
+          return FLAGS_SEED.map((f) => {
+            const row = byKey.get(f.key);
+            if (!row) return f;
+            return {
+              ...f,
+              enabled: Boolean(row.enabled),
+              updated_by: String(row.updated_by ?? f.updated_by),
+              updated_at: String(row.updated_at ?? f.updated_at).slice(0, 10),
+            };
+          });
+        }
+      }
+      // Demo / unconfigured: localStorage override merge as before.
       const ov = getAdminOverrides();
       return FLAGS_SEED.map((f) =>
         ov.flags[f.key] !== undefined
@@ -766,11 +791,86 @@ export function useAdminGlobalSearch(query: string) {
 // ---------------------------------------------------------------------------
 // Mutations — privileged staff actions.
 //
-// These persist client-side via ./admin-store (v2-preview): they write the
-// override + an audit entry, then invalidate every admin query so the change
-// reflects optimistically across the console. When real staff auth + Supabase
-// land, each mutationFn becomes a privileged server call (docs/14-admin-ops.md).
+// Dual-path (docs/14-admin-ops.md): each mutationFn first resolves the current
+// *real* staff session via resolveStaffActor() (real Supabase user whose
+// profiles.role is 'staff'|'admin', gated by is_staff() RLS). When present it
+// performs a real Supabase write + an audit_log row. Otherwise — which is the
+// case for the client-side DEMO admin (demo-auth.ts), who has no real session —
+// it falls back to the ./admin-store localStorage override layer exactly as
+// before, so the preview console keeps working. Either way every admin query is
+// invalidated so the change reflects across the console.
 // ---------------------------------------------------------------------------
+
+// Real-write helpers — only reached once a StaffActor is resolved, so RLS
+// (is_staff()) will accept them. Each throws on error so the mutation surfaces
+// failures; the matching audit_log row is written by recordAudit().
+
+async function realSetUserStatus(userId: string, status: UserStatus): Promise<void> {
+  const sb = getSupabase();
+  const { error } = await sb.from('profiles').update({ status }).eq('id', userId);
+  if (error) throw error;
+}
+
+async function realModerateListing(
+  listingId: string,
+  decision: ModerationDecision,
+): Promise<void> {
+  // ModerationDecision ('approved'|'rejected'|'changes_requested') maps 1:1 onto
+  // listings.moderation_status, except 'changes_requested' is stored verbatim.
+  const sb = getSupabase();
+  const { error } = await sb
+    .from('listings')
+    .update({ moderation_status: decision })
+    .eq('id', listingId);
+  if (error) throw error;
+}
+
+async function realModerateReview(
+  reviewId: string,
+  decision: ReviewDecision,
+): Promise<void> {
+  // ReviewDecision 'kept'→'visible', 'removed'→'removed' on reviews.status.
+  const sb = getSupabase();
+  const status = decision === 'removed' ? 'removed' : 'visible';
+  const { error } = await sb.from('reviews').update({ status }).eq('id', reviewId);
+  if (error) throw error;
+}
+
+async function realToggleFlag(
+  key: string,
+  enabled: boolean,
+  actorId: string,
+  note?: string,
+): Promise<void> {
+  const sb = getSupabase();
+  const { error } = await sb.from('feature_flags').upsert(
+    {
+      key,
+      enabled,
+      note: note ?? null,
+      updated_by: actorId,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'key' },
+  );
+  if (error) throw error;
+}
+
+async function realCancelBooking(
+  bookingId: string,
+  reason_code: string,
+): Promise<void> {
+  const sb = getSupabase();
+  const { error } = await sb
+    .from('bookings')
+    .update({
+      status: 'cancelled',
+      cancel_reason_code: reason_code,
+      cancelled_by: 'admin',
+    })
+    .eq('id', bookingId);
+  if (error) throw error;
+}
 
 const ADMIN_QUERY_KEYS = [
   'admin-dashboard',
@@ -798,12 +898,19 @@ export function useAdminSetUserStatus() {
       reason_code: string;
       note?: string;
     }) => {
-      setUserStatus(v.userId, v.status, v.reason_code, v.note);
+      const action = v.status === 'suspended' ? 'user_suspended' : 'user_reinstated';
+      const staff = await resolveStaffActor();
+      if (staff) {
+        await realSetUserStatus(v.userId, v.status);
+      } else {
+        setUserStatus(v.userId, v.status, v.reason_code, v.note);
+      }
       await recordAudit({
-        action: v.status === 'suspended' ? 'user_suspended' : 'user_reinstated',
+        action,
         target: `user:${v.userId}`,
         reason_code: v.reason_code,
         note: v.note,
+        actor_label: staff?.label,
       });
     },
     onSuccess: () => invalidateAdmin(qc),
@@ -820,12 +927,18 @@ export function useAdminModerateListing() {
       reason_code: string;
       note?: string;
     }) => {
-      setModerationDecision(v.itemId, v.listingId, v.decision, v.reason_code, v.note);
+      const staff = await resolveStaffActor();
+      if (staff) {
+        await realModerateListing(v.listingId, v.decision);
+      } else {
+        setModerationDecision(v.itemId, v.listingId, v.decision, v.reason_code, v.note);
+      }
       await recordAudit({
         action: `listing_${v.decision}`,
         target: `listing:${v.listingId}`,
         reason_code: v.reason_code,
         note: v.note,
+        actor_label: staff?.label,
       });
     },
     onSuccess: () => invalidateAdmin(qc),
@@ -841,12 +954,18 @@ export function useAdminModerateReview() {
       reason_code: string;
       note?: string;
     }) => {
-      setReviewDecision(v.reviewId, v.decision, v.reason_code, v.note);
+      const staff = await resolveStaffActor();
+      if (staff) {
+        await realModerateReview(v.reviewId, v.decision);
+      } else {
+        setReviewDecision(v.reviewId, v.decision, v.reason_code, v.note);
+      }
       await recordAudit({
         action: v.decision === 'removed' ? 'review_removed' : 'review_kept',
         target: `review:${v.reviewId}`,
         reason_code: v.reason_code,
         note: v.note,
+        actor_label: staff?.label,
       });
     },
     onSuccess: () => invalidateAdmin(qc),
@@ -857,12 +976,18 @@ export function useAdminToggleFlag() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (v: { key: string; enabled: boolean; reason_code: string; note?: string }) => {
-      setFlagEnabled(v.key, v.enabled, v.reason_code, v.note);
+      const staff = await resolveStaffActor();
+      if (staff) {
+        await realToggleFlag(v.key, v.enabled, staff.id, v.note);
+      } else {
+        setFlagEnabled(v.key, v.enabled, v.reason_code, v.note);
+      }
       await recordAudit({
         action: v.enabled ? 'flag_enabled' : 'flag_disabled',
         target: `flag:${v.key}`,
         reason_code: v.reason_code,
         note: v.note,
+        actor_label: staff?.label,
       });
     },
     onSuccess: () => invalidateAdmin(qc),
@@ -916,12 +1041,21 @@ export function useAdminRefundBooking() {
       reason_code: string;
       note?: string;
     }) => {
-      refundBooking(v.bookingId, v.refunded_cents, v.cancelled, v.reason_code, v.note);
+      const staff = await resolveStaffActor();
+      if (staff) {
+        // Only cancellation has real columns to write (status + cancel_reason_code
+        // + cancelled_by). A refund-only action has no settlement column yet
+        // (payments still demo), so it is captured by the audit_log row alone.
+        if (v.cancelled) await realCancelBooking(v.bookingId, v.reason_code);
+      } else {
+        refundBooking(v.bookingId, v.refunded_cents, v.cancelled, v.reason_code, v.note);
+      }
       await recordAudit({
         action: v.cancelled ? 'booking_cancelled' : 'booking_refunded',
         target: `booking:${v.bookingId}`,
         reason_code: v.reason_code,
         note: v.note,
+        actor_label: staff?.label,
       });
     },
     onSuccess: () => invalidateAdmin(qc),

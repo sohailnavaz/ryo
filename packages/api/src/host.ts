@@ -7,6 +7,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Listing } from '@bnb/db';
 import { fetchListings } from './listings';
 import { tryGetSupabase } from './client';
+import { fetchThreads, fetchThreadMessages, type Thread } from './messaging';
 import {
   cancelBookingAsHost,
   getHostActionOverrides,
@@ -809,10 +810,31 @@ const THREAD_REPLIES = [
   'Let me check the calendar and get back to you within the hour.',
 ];
 
+/** Map a real messaging Thread (from messaging.ts) into the host inbox summary
+ *  shape the host UI already renders. The other participant is the guest. */
+function realThreadToSummary(t: Thread): InboxThreadSummary {
+  return {
+    id: t.id,
+    guest_name: t.other_name,
+    guest_avatar: t.other_avatar ?? '',
+    listing_id: t.listing_id,
+    listing_title: t.listing_title,
+    // The list-level "preview" is the last message; we don't ship message bodies
+    // with the thread list, so show a neutral placeholder until the thread opens.
+    preview: t.unread_count > 0 ? 'New message' : 'Open conversation',
+    last_at: t.last_message_at.slice(0, 10),
+    unread: t.unread_count > 0,
+  };
+}
+
 export function useHostInbox(hostId: string = DEMO_HOST_ID) {
   return useQuery({
     queryKey: ['host-inbox', hostId],
     queryFn: async (): Promise<InboxThreadSummary[]> => {
+      // Real path: when a genuine host session exists, read the live threads.
+      const real = await fetchThreads();
+      if (real) return real.filter((t) => t.role === 'host').map(realThreadToSummary);
+
       const d = await fetchHostDashboard(hostId);
       // One thread per upcoming/in-stay booking + one per recent completed.
       const active = d.bookings.filter(
@@ -850,6 +872,42 @@ export function useHostInboxThread(
     enabled: !!threadId,
     queryFn: async (): Promise<InboxThreadDetail | null> => {
       if (!threadId) return null;
+
+      // Real path: a genuine host session reads live messages for this thread.
+      // Synthetic thread ids are prefixed `th-`; real ones are bare UUIDs.
+      if (!threadId.startsWith('th-')) {
+        const realMessages = await fetchThreadMessages(threadId);
+        if (realMessages) {
+          const threads = await fetchThreads();
+          const t = threads?.find((x) => x.id === threadId);
+          const messages: InboxMessage[] = realMessages.map((m) => ({
+            id: m.id,
+            from: m.mine ? 'host' : 'guest',
+            body: m.body,
+            at: m.created_at.slice(0, 10),
+          }));
+          const last = messages[messages.length - 1];
+          return {
+            id: threadId,
+            booking_id: t?.booking_id ?? '',
+            guest_name: t?.other_name ?? 'Guest',
+            guest_avatar: t?.other_avatar ?? '',
+            listing_id: t?.listing_id ?? '',
+            listing_title: t?.listing_title ?? 'Listing',
+            preview: last?.body ?? '',
+            last_at: last?.at ?? (t?.last_message_at?.slice(0, 10) ?? todayIso()),
+            unread: (t?.unread_count ?? 0) > 0,
+            // Reservation context is only known when the thread is tied to a
+            // booking; the real path leaves these neutral until that join lands.
+            start_date: '',
+            end_date: '',
+            nights: 0,
+            guests: 0,
+            messages,
+          };
+        }
+      }
+
       const d = await fetchHostDashboard(hostId);
       const bookingId = threadId.replace(/^th-/, '');
       const b = d.bookings.find((x) => x.id === bookingId);

@@ -1,13 +1,10 @@
 import { useMemo, useState } from 'react';
 import { FlatList, View, useWindowDimensions } from 'react-native';
 import {
-  createCollection,
-  deleteCollection,
-  renameCollection,
   useFavoriteIds,
   useFavorites,
   useToggleFavorite,
-  useWishlistCollections,
+  useWishlistCollectionsApi,
 } from '@bnb/api';
 import type { Listing } from '@bnb/db';
 import {
@@ -38,7 +35,8 @@ export function FavoritesScreen() {
   const { data = [], isLoading } = useFavorites();
   const { data: favIds = [] } = useFavoriteIds();
   const toggleFav = useToggleFavorite();
-  const collections = useWishlistCollections();
+  const { collections, createCollection, renameCollection, deleteCollection } =
+    useWishlistCollectionsApi();
 
   const [selected, setSelected] = useState<Selected>('all');
   const [saveTarget, setSaveTarget] = useState<Listing | null>(null);
@@ -68,11 +66,14 @@ export function FavoritesScreen() {
       toast.error('Give your list a name.');
       return;
     }
-    const id = createCollection(trimmed);
-    toast.success(`Created “${trimmed}”.`);
-    setCreateName('');
-    setCreateOpen(false);
-    setSelected(id);
+    createCollection(trimmed)
+      .then((id) => {
+        toast.success(`Created “${trimmed}”.`);
+        setCreateName('');
+        setCreateOpen(false);
+        setSelected(id);
+      })
+      .catch(() => toast.error('Couldn’t create the list. Please try again.'));
   };
 
   const doRename = () => {
@@ -82,18 +83,25 @@ export function FavoritesScreen() {
       toast.error('Name can’t be empty.');
       return;
     }
-    renameCollection(renameId, trimmed);
-    setRenameId(null);
-    setRenameValue('');
-    toast.success('List renamed.');
+    renameCollection(renameId, trimmed)
+      .then(() => {
+        setRenameId(null);
+        setRenameValue('');
+        toast.success('List renamed.');
+      })
+      .catch(() => toast.error('Couldn’t rename the list. Please try again.'));
   };
 
   const doDelete = () => {
     if (!deleteId) return;
-    deleteCollection(deleteId);
-    if (selected === deleteId) setSelected('all');
-    setDeleteId(null);
-    toast.success('List deleted. Your saved stays are untouched.');
+    const id = deleteId;
+    deleteCollection(id)
+      .then(() => {
+        if (selected === id) setSelected('all');
+        setDeleteId(null);
+        toast.success('List deleted. Your saved stays are untouched.');
+      })
+      .catch(() => toast.error('Couldn’t delete the list. Please try again.'));
   };
 
   return (

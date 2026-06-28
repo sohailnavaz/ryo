@@ -1,8 +1,11 @@
 'use client';
 import { ErrorBoundary, ToastViewport, TopNav } from '@bnb/ui';
-import { useRole, useSignOut, useUnreadCount, useUser } from '@bnb/api';
+import { useRole, useSignOut, useInboxUnreadCount, useUser } from '@bnb/api';
 import { usePathname, useRouter } from 'next/navigation';
 import { ReactNode, useState } from 'react';
+import { SiteFooter } from '../_components/SiteFooter';
+import { Onboarding } from '../_components/Onboarding';
+import { LanguageSwitcher } from '../_components/LanguageSwitcher';
 
 const pathToKey = (p: string) => {
   if (p.startsWith('/stories')) return 'stories';
@@ -17,7 +20,7 @@ export default function MainLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
-  const unread = useUnreadCount();
+  const unread = useInboxUnreadCount();
   // Host & admin are their own apps (they have their own sidebar shell). Don't
   // bleed the guest browse-nav into them — hide the Stays/Stories tabs + the
   // guest bottom tabs, and show a clear context label instead.
@@ -39,8 +42,10 @@ export default function MainLayout({ children }: { children: ReactNode }) {
       <div className="flex-1 flex flex-col">
         <ErrorBoundary>{children}</ErrorBoundary>
       </div>
+      {!isDashboard ? <SiteFooter /> : null}
       {!isDashboard ? <MobileTabs /> : null}
       <ToastViewport />
+      {!isDashboard ? <Onboarding /> : null}
     </div>
   );
 }
@@ -50,7 +55,7 @@ function AccountMenu({ open, onClose }: { open: boolean; onClose: () => void }) 
   const user = useUser();
   const { role } = useRole();
   const signOut = useSignOut();
-  const unread = useUnreadCount();
+  const unread = useInboxUnreadCount();
   if (!open) return null;
 
   const go = (path: string) => {
@@ -106,9 +111,15 @@ function AccountMenu({ open, onClose }: { open: boolean; onClose: () => void }) 
 
           <div className="my-1 h-px bg-surface-border" />
           <Item label="🛎️ Concierge" path="/concierge" accent />
+          <Item label="Help center & FAQ" path="/faq" />
           <Item label="Get help" path="/help" />
           <Item label="Offline pack" path="/offline" />
           <Item label="Phrasebook" path="/phrasebook" />
+
+          <div className="my-1 h-px bg-surface-border" />
+          <div className="px-3 py-2">
+            <LanguageSwitcher variant="block" direction="down" />
+          </div>
 
           {isHost ? (
             <>

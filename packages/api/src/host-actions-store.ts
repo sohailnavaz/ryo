@@ -8,11 +8,19 @@
 //
 // Same pattern as ./admin-store.ts and ./host-calendar-store.ts — a module
 // singleton backed by `useSyncExternalStore` + localStorage, so actions survive a
-// page refresh and reflect optimistically across every host screen. When this
-// slice graduates to real v2, every mutator below is replaced by a Supabase write
-// + RLS check and this file is deleted (per the 2026-04-25 v2-preview deviation).
+// page refresh and reflect optimistically across every host screen.
+//
+// REAL BACKEND (L3): when a genuine host session exists (not a demo identity),
+// each mutator ALSO performs the real Supabase write — booking accept/decline +
+// host cancellation on `bookings`, review replies into `host_review_replies` —
+// and appends an `audit_log` row. The localStorage commit still runs so the
+// optimistic overlay shows instantly; the real host-dashboard read
+// (tryFetchRealHostDashboard in ./host.ts) converges on the persisted truth.
+// Demo identities (`app_metadata.demo === true`) have no real row to write, so
+// only the localStorage path runs.
 
 import { useSyncExternalStore } from 'react';
+import { getSupabase, tryGetSupabase } from './client';
 
 const STORAGE_KEY = 'bnb.host-actions';
 
@@ -101,6 +109,122 @@ function nowStamp(): string {
   return new Date().toISOString().slice(0, 16).replace('T', ' ');
 }
 
+// --- real backend (Supabase) ------------------------------------------------
+
+/** A *real* Supabase user id, or null for demo / unconfigured. Demo identities
+ *  carry `app_metadata.demo === true`; only genuine sessions hit the tables. */
+async function realUserId(): Promise<string | null> {
+  const supabase = tryGetSupabase();
+  if (!supabase) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  if ((user.app_metadata as { demo?: boolean } | undefined)?.demo === true) return null;
+  return user.id;
+}
+
+/** Append an audit row for a host action. Best-effort: a failed audit write must
+ *  never block the primary mutation. */
+async function appendAudit(entry: {
+  action: string;
+  target: string;
+  reason_code: string;
+  note?: string;
+}): Promise<void> {
+  try {
+    const supabase = getSupabase();
+    await supabase.from('audit_log').insert({
+      actor_label: 'host',
+      action: entry.action,
+      target: entry.target,
+      reason_code: entry.reason_code,
+      note: entry.note ?? null,
+    });
+  } catch {
+    // best-effort; audit_log insert is restricted to staff under RLS, so for a
+    // plain host this no-ops silently — the primary write is what matters.
+  }
+}
+
+/** Update a booking the host owns (RLS: host of the listing). */
+async function updateOwnedBooking(
+  bookingId: string,
+  patch: Record<string, unknown>,
+): Promise<void> {
+  const supabase = getSupabase();
+  const { error } = await supabase.from('bookings').update(patch).eq('id', bookingId);
+  if (error) throw error;
+}
+
+async function remoteDecideBooking(
+  bookingId: string,
+  decision: BookingDecision,
+  reason_code: string,
+  note?: string,
+): Promise<void> {
+  await updateOwnedBooking(bookingId, {
+    status: decision, // 'accepted' | 'declined'
+    host_decision_at: new Date().toISOString(),
+    host_decision_note: note ?? null,
+  });
+  await appendAudit({
+    action: decision === 'accepted' ? 'booking_request_accepted' : 'booking_request_declined',
+    target: `booking:${bookingId}`,
+    reason_code,
+    note,
+  });
+}
+
+async function remoteCancelBooking(
+  bookingId: string,
+  reason_code: string,
+  note?: string,
+): Promise<void> {
+  await updateOwnedBooking(bookingId, {
+    status: 'cancelled',
+    cancel_reason_code: reason_code,
+    cancelled_by: 'host',
+    host_decision_at: new Date().toISOString(),
+    host_decision_note: note ?? null,
+  });
+  await appendAudit({
+    action: 'booking_host_cancelled',
+    target: `booking:${bookingId}`,
+    reason_code,
+    note,
+  });
+}
+
+async function remoteReplyToReview(reviewId: string, body: string): Promise<void> {
+  const uid = await realUserId();
+  if (!uid) return;
+  const supabase = getSupabase();
+  const { error } = await supabase
+    .from('host_review_replies')
+    .upsert({ review_id: reviewId, host_id: uid, body }, { onConflict: 'review_id' });
+  if (error) throw error;
+  await appendAudit({
+    action: 'review_replied',
+    target: `review:${reviewId}`,
+    reason_code: 'host_reply',
+    note: body.slice(0, 140),
+  });
+}
+
+/** Fire a remote write for a real host session; swallow errors so the optimistic
+ *  localStorage overlay (already committed) remains the source of UI truth even
+ *  if the network write fails. Returns silently for demo / unconfigured. */
+function syncRemote(run: (uid: string) => Promise<void>): void {
+  void realUserId()
+    .then((uid) => {
+      if (uid) return run(uid);
+    })
+    .catch(() => {
+      // best-effort; localStorage overlay already reflects the action.
+    });
+}
+
 function pushAudit(
   o: HostActionOverrides,
   entry: Omit<LocalHostAuditEntry, 'id' | 'created_at' | 'actor'>,
@@ -134,6 +258,7 @@ export function setBookingDecision(
     note,
   });
   commit(next);
+  syncRemote(() => remoteDecideBooking(bookingId, decision, reason_code, note));
 }
 
 /** Host-initiated cancellation of a confirmed booking (with penalty disclosure). */
@@ -157,6 +282,7 @@ export function cancelBookingAsHost(
     note,
   });
   commit(next);
+  syncRemote(() => remoteCancelBooking(bookingId, reason_code, note));
 }
 
 /** Post (or replace) the host's single public reply to a review. */
@@ -176,6 +302,7 @@ export function replyToReview(reviewId: string, body: string): void {
     note: trimmed.slice(0, 140),
   });
   commit(next);
+  syncRemote(() => remoteReplyToReview(reviewId, trimmed));
 }
 
 export function resetHostActionOverrides(): void {

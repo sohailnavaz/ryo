@@ -12,6 +12,8 @@
 // by Supabase reads/writes (+ RLS + realtime) and this file is deleted.
 
 import { useSyncExternalStore } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { getSupabase, tryGetSupabase } from './client';
 
 const STORAGE_KEY = 'bnb.guest-notifications';
 
@@ -213,4 +215,177 @@ export function useNotifications(): Notification[] {
 /** Count of unread notifications — drives the TopNav badge. */
 export function useUnreadCount(): number {
   return useNotificationsState().items.reduce((acc, n) => acc + (n.read ? 0 : 1), 0);
+}
+
+// ===========================================================================
+// Real, per-user backing (Supabase `notifications` table).
+//
+// When there's a REAL signed-in Supabase session, the inbox reads + writes the
+// per-user `notifications` table (RLS: self-only). When there's NO real user
+// (demo sign-in / unconfigured Supabase), everything above (the localStorage
+// seeded store) stays in charge, so demo accounts still see a populated inbox.
+//
+// The `useNotificationsInbox()` hook below unifies both: it returns the same
+// shape regardless of path, plus an `isPreview` flag and async-safe mutators.
+// Existing sync hooks (`useNotifications` / `useUnreadCount`) are preserved for
+// the demo path and as the SSR/first-paint snapshot.
+// ===========================================================================
+
+/** A row in the `notifications` table. Mirrors `Notification` plus the owner. */
+type NotificationRow = {
+  id: string;
+  profile_id: string;
+  kind: NotificationKind;
+  title: string;
+  body: string;
+  read: boolean;
+  created_at: string;
+};
+
+function rowToNotification(r: NotificationRow): Notification {
+  return {
+    id: r.id,
+    kind: r.kind,
+    title: r.title,
+    body: r.body,
+    created_at: r.created_at,
+    read: r.read,
+  };
+}
+
+/** A *real* Supabase user id, or null for demo / unconfigured. Demo identities
+ *  carry `app_metadata.demo === true`; only genuine sessions hit the table. */
+async function realUserId(): Promise<string | null> {
+  const supabase = tryGetSupabase();
+  if (!supabase) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  if ((user.app_metadata as { demo?: boolean } | undefined)?.demo === true) return null;
+  return user.id;
+}
+
+const NOTIFICATIONS_QUERY_KEY = ['notifications'] as const;
+
+/** Server-backed fetch: returns this user's notifications (newest first), or
+ *  `null` when there is no real session (caller falls back to the local store). */
+export async function fetchNotifications(): Promise<Notification[] | null> {
+  const uid = await realUserId();
+  if (!uid) return null;
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from('notifications')
+    .select('id, profile_id, kind, title, body, read, created_at')
+    .eq('profile_id', uid)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return ((data ?? []) as unknown as NotificationRow[]).map(rowToNotification);
+}
+
+async function markReadRemote(id: string): Promise<void> {
+  const uid = await realUserId();
+  if (!uid) return;
+  const supabase = getSupabase();
+  const { error } = await supabase
+    .from('notifications')
+    .update({ read: true })
+    .eq('id', id)
+    .eq('profile_id', uid);
+  if (error) throw error;
+}
+
+async function markAllReadRemote(): Promise<void> {
+  const uid = await realUserId();
+  if (!uid) return;
+  const supabase = getSupabase();
+  const { error } = await supabase
+    .from('notifications')
+    .update({ read: true })
+    .eq('profile_id', uid)
+    .eq('read', false);
+  if (error) throw error;
+}
+
+async function clearAllRemote(): Promise<void> {
+  const uid = await realUserId();
+  if (!uid) return;
+  const supabase = getSupabase();
+  const { error } = await supabase.from('notifications').delete().eq('profile_id', uid);
+  if (error) throw error;
+}
+
+/** The unified inbox state returned by `useNotificationsInbox()`. */
+export type NotificationsInbox = {
+  /** All notifications, newest first. */
+  items: Notification[];
+  /** Count of unread items — drives the TopNav badge. */
+  unread: number;
+  /** True while the real-backed query is loading its first result. */
+  isLoading: boolean;
+  /** True when serving the seeded localStorage store (demo / unconfigured). */
+  isPreview: boolean;
+  markRead: (id: string) => void;
+  markAllRead: () => void;
+  clearAll: () => void;
+};
+
+/**
+ * Unified guest-notifications inbox.
+ *
+ * - Real signed-in user → reads/writes the per-user `notifications` table.
+ * - Demo / unconfigured → falls back to the seeded localStorage store, so demo
+ *   accounts still see a populated inbox and the existing mutators keep working.
+ *
+ * Both paths expose the same shape, so consumers don't branch on auth.
+ */
+export function useNotificationsInbox(): NotificationsInbox {
+  const qc = useQueryClient();
+
+  // localStorage-backed snapshot (also the SSR / first-paint source).
+  const local = useNotificationsState();
+
+  const query = useQuery({
+    queryKey: NOTIFICATIONS_QUERY_KEY,
+    queryFn: fetchNotifications,
+    staleTime: 30_000,
+  });
+
+  const invalidate = () => qc.invalidateQueries({ queryKey: NOTIFICATIONS_QUERY_KEY });
+
+  const markReadM = useMutation({ mutationFn: markReadRemote, onSuccess: invalidate });
+  const markAllReadM = useMutation({ mutationFn: markAllReadRemote, onSuccess: invalidate });
+  const clearAllM = useMutation({ mutationFn: clearAllRemote, onSuccess: invalidate });
+
+  // `query.data === null` means "no real session" → use the local store.
+  const isReal = Array.isArray(query.data);
+
+  if (isReal) {
+    const items = query.data as Notification[];
+    return {
+      items,
+      unread: items.reduce((acc, n) => acc + (n.read ? 0 : 1), 0),
+      isLoading: query.isLoading,
+      isPreview: false,
+      markRead: (id) => markReadM.mutate(id),
+      markAllRead: () => markAllReadM.mutate(),
+      clearAll: () => clearAllM.mutate(),
+    };
+  }
+
+  // Demo / unconfigured fallback — the seeded localStorage store.
+  return {
+    items: local.items,
+    unread: local.items.reduce((acc, n) => acc + (n.read ? 0 : 1), 0),
+    isLoading: query.isLoading && query.data === undefined,
+    isPreview: true,
+    markRead,
+    markAllRead,
+    clearAll,
+  };
+}
+
+/** Convenience: unread count from the unified inbox (real or seeded). */
+export function useInboxUnreadCount(): number {
+  return useNotificationsInbox().unread;
 }

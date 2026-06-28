@@ -1,0 +1,6 @@
+# Ryo security contact — RFC 9116
+# If you believe you've found a vulnerability, please reach out.
+Contact: mailto:security@ryo.app
+Policy: https://ryo-web.vercel.app/legal/security
+Preferred-Languages: en
+Expires: 2027-06-28T00:00:00.000Z

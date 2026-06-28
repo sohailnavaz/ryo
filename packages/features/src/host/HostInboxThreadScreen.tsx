@@ -1,6 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View } from 'react-native';
-import { DEMO_HOST_ID, useHostInboxThread } from '@bnb/api';
+import {
+  DEMO_HOST_ID,
+  useHostInboxThread,
+  useMarkThreadRead,
+  useSendMessage,
+} from '@bnb/api';
 import {
   Avatar,
   Badge,
@@ -28,6 +33,38 @@ export function HostInboxThreadScreen({
   const router = useRouter();
   const [draft, setDraft] = useState('');
 
+  // Real threads carry a bare UUID id; synthetic preview threads are `th-…`.
+  const isRealThread = !threadId.startsWith('th-');
+  const sendMessage = useSendMessage();
+  const markRead = useMarkThreadRead(threadId);
+
+  // On a real thread, mark the guest's unread messages as read once it opens.
+  useEffect(() => {
+    if (isRealThread) markRead.mutate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRealThread, threadId]);
+
+  const handleSend = () => {
+    const body = draft.trim();
+    if (body.length === 0) return;
+    if (isRealThread) {
+      sendMessage.mutate(
+        { threadId, body },
+        {
+          onSuccess: () => {
+            setDraft('');
+            toast.success('Sent');
+          },
+          onError: () => toast.error('Could not send your message. Please try again.'),
+        },
+      );
+      return;
+    }
+    // Synthetic / demo preview thread — no real backend row to write to.
+    toast.success('Preview only — message not actually sent.');
+    setDraft('');
+  };
+
   if (isLoading) {
     return (
       <HostShell title="Thread" subtitle="Loading…">
@@ -47,10 +84,18 @@ export function HostInboxThreadScreen({
     );
   }
 
+  // Reservation context is only present when the thread is tied to a booking
+  // (synthetic threads always have it; real inquiry threads may not yet).
+  const hasReservation = !!data.start_date && !!data.end_date;
+
   return (
     <HostShell
       title={data.guest_name}
-      subtitle={`${data.listing_title} · ${data.start_date} → ${data.end_date} · ${data.guests} guests`}
+      subtitle={
+        hasReservation
+          ? `${data.listing_title} · ${data.start_date} → ${data.end_date} · ${data.guests} guests`
+          : data.listing_title
+      }
     >
       <View className="mt-6 flex-col md:flex-row gap-6">
         <View className="flex-1">
@@ -104,11 +149,8 @@ export function HostInboxThreadScreen({
               </Pressable>
               <Button
                 variant="secondary"
-                disabled={draft.trim().length === 0}
-                onPress={() => {
-                  toast.success('Preview only — message not actually sent.');
-                  setDraft('');
-                }}
+                disabled={draft.trim().length === 0 || sendMessage.isPending}
+                onPress={handleSend}
               >
                 Send
               </Button>
@@ -117,22 +159,26 @@ export function HostInboxThreadScreen({
         </View>
 
         <View className="md:w-[320px]">
-          <Card className="p-5">
-            <Text className="font-semibold">Reservation</Text>
-            <VStack className="mt-3 gap-1.5">
-              <Row label="Check-in"  value={data.start_date} />
-              <Row label="Check-out" value={data.end_date} />
-              <Row label="Nights"    value={String(data.nights)} />
-              <Row label="Guests"    value={String(data.guests)} />
-            </VStack>
-            <Button
-              variant="outline"
-              className="mt-4"
-              onPress={() => router.push(`/host/bookings/${data.booking_id}`)}
-            >
-              Open booking
-            </Button>
-          </Card>
+          {hasReservation ? (
+            <Card className="p-5">
+              <Text className="font-semibold">Reservation</Text>
+              <VStack className="mt-3 gap-1.5">
+                <Row label="Check-in"  value={data.start_date} />
+                <Row label="Check-out" value={data.end_date} />
+                <Row label="Nights"    value={String(data.nights)} />
+                <Row label="Guests"    value={String(data.guests)} />
+              </VStack>
+              {data.booking_id ? (
+                <Button
+                  variant="outline"
+                  className="mt-4"
+                  onPress={() => router.push(`/host/bookings/${data.booking_id}`)}
+                >
+                  Open booking
+                </Button>
+              ) : null}
+            </Card>
+          ) : null}
 
           <Card className="mt-4 p-5">
             <Text className="font-semibold">Guest</Text>
