@@ -1,8 +1,8 @@
 ---
 doc: PROGRESS
 purpose: Human-readable living status doc. Safe to share with collaborators, investors, or friends.
-last_updated: 2026-05-23
-version: 0.11.1
+last_updated: 2026-06-28
+version: 0.12.0
 ---
 
 # Ryo — Progress
@@ -20,7 +20,8 @@ version: 0.11.1
 - **Codebase alias:** `bnb` (legacy dir name) → being rebranded to `ryo`. See [branding §12](./branding.md#12-naming-migration-bnb--ryo).
 - **Tagline (locked):** *Just Ryo it.*
 - **Owner:** Makuta Developers — dm@makutadevelopers.com
-- **Stage:** v1, **live at https://ryo-web.vercel.app** on real Supabase data. **Real auth + a real persisted booking verified end-to-end** (sign in → book → saves → shows in trips). Guest flow + account hub built; Stories / Map / globe / Notifications / Offline PWA / Phrasebook / host actions+payouts shipped. Host + admin + incidents still **v2-preview (client-side)**; payments mocked; demo-role bypass present (remove before public launch).
+- **Stage:** v1, **live at https://ryo-web.vercel.app** on real Supabase data. **Real auth + a real persisted booking verified end-to-end** (sign in → book → saves → shows in trips). Guest flow + account hub built; Stories / Map / globe / Notifications / Offline PWA / Phrasebook / host actions+payouts shipped.
+- **Backends are now real (2026-06-28).** Every feature that was a client-side `*-store.ts` mock now has a real Supabase table + RLS — messaging, notifications, named wishlists, review submission (verified-stay gated), host calendar/payouts/KYC, incidents, and admin moderation/audit/feature-flags. Each API hook uses **real Supabase when a genuine session is signed in, and the localStorage store as the demo/offline fallback** — so the one-click demo accounts behave exactly as before. Storage buckets (avatars, listing photos) + a payments schema also landed. Validated locally (`supabase db reset` clean, typecheck + `next build` green); **migrations `0005`–`0015` not yet applied to the live project, and the live Vercel deploy still runs in preview mode** until its env vars are set. Payments processor (Stripe/Razorpay) + the demo-role bypass removal remain before public launch.
 
 ---
 
@@ -164,6 +165,15 @@ These are the calls I'd most like a second opinion on. If you're reviewing, skim
 ## 8. Changelog
 
 Append-only, newest first. One line per shipped thing. Version bumps follow branding.md convention (patch / minor / major).
+
+### `0.12.0` — 2026-06-28 — 🧱 the backends become real
+
+**Decision: build all real backends before sharing for management review** (keeping the demo accounts). Every feature area that was a client-side `*-store.ts` localStorage mock now has a real Supabase table with RLS.
+
+- **10 new migrations (`0005`–`0014`):** `listing_calendar` (+ privacy-safe `listing_booked_ranges()` RPC) · `message_threads` + `messages` (real guest↔host messaging, replacing the synthetic inbox) · `notifications` · `wishlists` + `wishlist_items` (named collections) · `review_drafts` + `host_review_replies` + **verified-stay insert RLS** + an auto listing-rating trigger · `host_payout_methods` + `host_kyc_checks` + booking accept/decline/cancel columns · `incidents` + `incident_events` · `profiles.status` / `listings.moderation_status` / `reviews.status` + `feature_flags` + append-only `audit_log` · Storage buckets (`avatars`, `listing_photos`) with owner-scoped RLS · `payment_intents` + `payouts` (schema only, clients read-only).
+- **8 API areas rewired** onto the tables (new `messaging.ts` + `wishlists.ts`; reviews/notifications/host-calendar/host-actions/host-verification/incidents/admin updated). One consistent rule: **real Supabase when a genuine session exists, localStorage fallback for demo/unconfigured** — demo accounts unchanged. `offline-pack-store` intentionally stays client-only (it's a read cache).
+- **Verified:** `supabase db reset` applies all migrations clean; `pnpm typecheck` green (7 packages); `next build` green (40 routes). Committed on `fix/gate-google-auth-button` (`7b4c945`).
+- **Not yet live:** migrations not applied to the live project (`mtldmawenkdebtchnocs`); the public Vercel deploy still runs in preview mode until its Supabase env vars are set. Payments processor + demo-bypass removal still pending public launch.
 
 ### `0.11.1` — 2026-05-25 — 🎉 first REAL persisted booking
 
