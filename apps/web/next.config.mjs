@@ -35,13 +35,34 @@ const nextConfig = {
       { protocol: 'https', hostname: 'a0.muscache.com' },
     ],
   },
-  // Production security headers (safe set — no strict CSP yet; a CSP needs
-  // per-origin testing against Supabase / map tiles / Unsplash before enabling).
+  // Production security headers, including a Content-Security-Policy scoped to
+  // the origins this app actually uses (tested against home / listing / map /
+  // FAQ). script-src is locked to same-origin — 'unsafe-inline'/'unsafe-eval'
+  // are required by Next's inline bootstrap + react-native-web/nativewind +
+  // maplibre-gl; the value of script-src 'self' here is blocking *external*
+  // script hosts. style 'unsafe-inline' is required by RN-web/nativewind +
+  // maplibre injected styles.
   async headers() {
+    const csp = [
+      "default-src 'self'",
+      "base-uri 'self'",
+      "object-src 'none'",
+      "frame-ancestors 'self'",
+      "form-action 'self'",
+      "img-src 'self' data: blob: https:",
+      "font-src 'self' data:",
+      "style-src 'self' 'unsafe-inline'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      "worker-src 'self' blob:",
+      "manifest-src 'self'",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://tiles.openfreemap.org",
+      'upgrade-insecure-requests',
+    ].join('; ');
     return [
       {
         source: '/:path*',
         headers: [
+          { key: 'Content-Security-Policy', value: csp },
           { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
