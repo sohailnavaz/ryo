@@ -1,8 +1,15 @@
 import { View } from 'react-native';
-import { DEMO_HOST_ID, useHostDashboard, type SyntheticBooking } from '@bnb/api';
+import {
+  DEMO_HOST_ID,
+  useCanPublishListings,
+  useHostDashboard,
+  useMyHostApplication,
+  type SyntheticBooking,
+} from '@bnb/api';
 import {
   Avatar,
   Badge,
+  Button,
   Card,
   Divider,
   Heading,
@@ -21,6 +28,8 @@ import { HostShell } from './shell';
 export function HostDashboardScreen({ hostId = DEMO_HOST_ID }: { hostId?: string }) {
   const router = useRouter();
   const { data, isLoading } = useHostDashboard(hostId);
+  const canPublish = useCanPublishListings();
+  const { application, status } = useMyHostApplication();
 
   const pendingRequests = (data?.bookings ?? []).filter(
     (b) => b.is_request && b.request_state === 'pending',
@@ -28,6 +37,41 @@ export function HostDashboardScreen({ hostId = DEMO_HOST_ID }: { hostId?: string
 
   return (
     <HostShell title="Welcome back, Mira." subtitle="Here's how your homes are doing this week.">
+      {!canPublish ? (
+        <Card className="mb-4 p-5 border border-brand-500/40 bg-brand-500/5">
+          <HStack className="items-center justify-between gap-3 flex-wrap">
+            <VStack className="gap-0.5 flex-1 min-w-[220px]">
+              <Text className="font-semibold">
+                {application
+                  ? status === 'changes_requested'
+                    ? 'A few changes were requested on your application'
+                    : status === 'rejected'
+                      ? 'Your host application wasn’t approved'
+                      : 'Your host application is in review'
+                  : 'Become a host on Ryo'}
+              </Text>
+              <Text variant="small" className="text-ink-soft">
+                {application
+                  ? status === 'pending'
+                    ? 'Our team is reviewing it — we’ll be in touch soon.'
+                    : 'Open your application for details.'
+                  : 'Apply once to publish your first listing — it takes about 3 minutes.'}
+              </Text>
+            </VStack>
+            <Button
+              title={
+                application
+                  ? status === 'changes_requested'
+                    ? 'Update application'
+                    : 'View application'
+                  : 'Become a host'
+              }
+              onPress={() => router.push('/host/apply')}
+            />
+          </HStack>
+        </Card>
+      ) : null}
+
       {pendingRequests.length > 0 ? (
         <Pressable onPress={() => router.push('/host/bookings')}>
           <Card className="mb-4 p-4 border border-brand-500/40">

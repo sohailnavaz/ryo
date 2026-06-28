@@ -5,6 +5,7 @@ export const ADMIN_NAV = [
   { key: 'overview',   label: 'Overview',    path: '/admin' },
   { key: 'search',     label: 'Search',      path: '/admin/search' },
   { key: 'users',      label: 'Users',       path: '/admin/users' },
+  { key: 'host-apps',  label: 'Host applications', path: '/admin/host-applications' },
   { key: 'bookings',   label: 'Bookings',    path: '/admin/bookings' },
   { key: 'moderation', label: 'Moderation',  path: '/admin/moderation' },
   { key: 'incidents',  label: 'Incidents',   path: '/admin/incidents' },
