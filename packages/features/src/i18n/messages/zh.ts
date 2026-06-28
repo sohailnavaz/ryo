@@ -44,6 +44,40 @@ export const zh: Messages = {
   'sort.topRated': '评分最高',
   'sort.newest': '最新',
 
+  // Common actions (extended)
+  'common.edit': '编辑',
+  'common.saving': '保存中…',
+  'common.reserve': '预订',
+
+  // Listing detail
+  'listing.aboutPlace': '关于此房源',
+  'listing.offers': '此房源提供的设施',
+  'listing.whereYoullBe': '您将入住的位置',
+
+  // Booking
+  'booking.confirmAndPay': '确认并支付',
+  'booking.yourDates': '您的日期',
+  'booking.guests': '房客',
+  'booking.adults': '成人',
+  'booking.children': '儿童',
+  'booking.infants': '婴儿',
+  'booking.pets': '宠物',
+  'booking.payWith': '支付方式',
+  'booking.priceDetails': '价格明细',
+  'booking.addToCalendar': '将住宿添加到日历',
+
+  // Trips
+  'trips.title': '行程',
+  'trips.cancelBooking': '取消此预订',
+  'trips.keepBooking': '保留预订',
+
+  // Profile
+  'profile.continueEmail': '使用电子邮件继续',
+  'profile.aboutYou': '关于您',
+  'profile.aboutYouSub': '展示在您的公开个人资料中',
+  'profile.personalInfo': '个人信息',
+  'profile.preferences': '偏好设置',
+
   // Search / filters
   'search.where': '目的地',
   'search.placeholder': '搜索国家和城市',

@@ -33,6 +33,7 @@ import {
 } from '@bnb/utils';
 import { AddToCalendar } from '../shared/AddToCalendar';
 import { useFiltersStore } from '../state/filtersStore';
+import { useT } from '../i18n';
 
 export type BookingScreenProps = { id: string };
 
@@ -46,6 +47,7 @@ function overlapsBooked(
 }
 
 export function BookingScreen({ id }: BookingScreenProps) {
+  const t = useT();
   const router = useRouter();
   const { data: listing, isLoading } = useListing(id);
   const { data: bookedRanges = [] } = useListingBookedRanges(id);
@@ -154,12 +156,12 @@ export function BookingScreen({ id }: BookingScreenProps) {
         <IconButton onPress={() => router.back()} className="bg-surface border border-surface-border">
           <ArrowLeft size={18} color="#0E1A2B" />
         </IconButton>
-        <Heading level={2}>Confirm and pay</Heading>
+        <Heading level={2}>{t('booking.confirmAndPay')}</Heading>
       </View>
       <View className="px-4 md:px-10 md:mx-auto md:w-full md:max-w-[920px] md:flex-row md:gap-12">
         <VStack className="flex-1 gap-5">
           <Card className="p-4">
-            <Heading level={4}>Your dates</Heading>
+            <Heading level={4}>{t('booking.yourDates')}</Heading>
             <View className="mt-3 gap-3">
               <HStack className="justify-between">
                 <VStack>
@@ -184,14 +186,14 @@ export function BookingScreen({ id }: BookingScreenProps) {
           </Card>
 
           <Card className="p-4">
-            <Heading level={4}>Guests</Heading>
+            <Heading level={4}>{t('booking.guests')}</Heading>
             <Text variant="small" className="text-ink-soft mt-1">
               {capacity} of {listing.max_guests} {listing.max_guests === 1 ? 'spot' : 'spots'} used
               {overCapacity ? ' — over capacity' : ''}
             </Text>
             <View className="mt-3 gap-1">
               <GuestRow
-                label="Adults"
+                label={t('booking.adults')}
                 hint="Ages 13+"
                 value={guests.adults}
                 min={1}
@@ -200,7 +202,7 @@ export function BookingScreen({ id }: BookingScreenProps) {
               />
               <Divider className="my-1" />
               <GuestRow
-                label="Children"
+                label={t('booking.children')}
                 hint="Ages 2–12"
                 value={guests.children}
                 onChange={(v) => setGuests((g) => ({ ...g, children: v }))}
@@ -208,14 +210,14 @@ export function BookingScreen({ id }: BookingScreenProps) {
               />
               <Divider className="my-1" />
               <GuestRow
-                label="Infants"
+                label={t('booking.infants')}
                 hint="Under 2 · don’t count toward capacity"
                 value={guests.infants}
                 onChange={(v) => setGuests((g) => ({ ...g, infants: v }))}
               />
               <Divider className="my-1" />
               <GuestRow
-                label="Pets"
+                label={t('booking.pets')}
                 hint="Bringing a service animal?"
                 value={guests.pets}
                 onChange={(v) => setGuests((g) => ({ ...g, pets: v }))}
@@ -229,7 +231,7 @@ export function BookingScreen({ id }: BookingScreenProps) {
           </Card>
 
           <Card className="p-4">
-            <Heading level={4}>Pay with</Heading>
+            <Heading level={4}>{t('booking.payWith')}</Heading>
             <Text variant="small" className="text-ink-soft mt-2">
               Mock payment in v1 — no card is charged.
             </Text>
@@ -258,7 +260,7 @@ export function BookingScreen({ id }: BookingScreenProps) {
               </VStack>
             </HStack>
             <Divider />
-            <Heading level={4}>Price details</Heading>
+            <Heading level={4}>{t('booking.priceDetails')}</Heading>
             <View className="mt-3">
               <PriceTotal breakdown={breakdown} currency={listing.currency} />
             </View>
@@ -280,7 +282,7 @@ export function BookingScreen({ id }: BookingScreenProps) {
               <View className="mt-3">
                 <AddToCalendar
                   fullWidth
-                  label="Add stay to calendar"
+                  label={t('booking.addToCalendar')}
                   hint="Add your check-in and check-out to your calendar."
                   event={{
                     title: `Ryo stay — ${listing.title}`,

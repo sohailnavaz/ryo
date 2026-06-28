@@ -44,6 +44,40 @@ export const de: Messages = {
   'sort.topRated': 'Bestbewertet',
   'sort.newest': 'Neueste',
 
+  // Common actions (extended)
+  'common.edit': 'Bearbeiten',
+  'common.saving': 'Wird gespeichert…',
+  'common.reserve': 'Reservieren',
+
+  // Listing detail
+  'listing.aboutPlace': 'Über diese Unterkunft',
+  'listing.offers': 'Was diese Unterkunft bietet',
+  'listing.whereYoullBe': 'Wo du wohnen wirst',
+
+  // Booking
+  'booking.confirmAndPay': 'Bestätigen und bezahlen',
+  'booking.yourDates': 'Deine Daten',
+  'booking.guests': 'Gäste',
+  'booking.adults': 'Erwachsene',
+  'booking.children': 'Kinder',
+  'booking.infants': 'Kleinkinder',
+  'booking.pets': 'Haustiere',
+  'booking.payWith': 'Bezahlen mit',
+  'booking.priceDetails': 'Preisdetails',
+  'booking.addToCalendar': 'Aufenthalt zum Kalender hinzufügen',
+
+  // Trips
+  'trips.title': 'Reisen',
+  'trips.cancelBooking': 'Diese Buchung stornieren',
+  'trips.keepBooking': 'Buchung behalten',
+
+  // Profile
+  'profile.continueEmail': 'Mit E-Mail fortfahren',
+  'profile.aboutYou': 'Über dich',
+  'profile.aboutYouSub': 'Wird in deinem öffentlichen Profil angezeigt',
+  'profile.personalInfo': 'Persönliche Daten',
+  'profile.preferences': 'Einstellungen',
+
   // Search / filters
   'search.where': 'Wohin',
   'search.placeholder': 'Länder und Städte suchen',

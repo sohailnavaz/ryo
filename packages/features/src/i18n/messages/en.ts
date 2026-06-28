@@ -45,6 +45,40 @@ export const en = {
   'sort.topRated': 'Top-rated',
   'sort.newest': 'Newest',
 
+  // Common actions (extended)
+  'common.edit': 'Edit',
+  'common.saving': 'Saving…',
+  'common.reserve': 'Reserve',
+
+  // Listing detail
+  'listing.aboutPlace': 'About this place',
+  'listing.offers': 'What this place offers',
+  'listing.whereYoullBe': "Where you'll be",
+
+  // Booking
+  'booking.confirmAndPay': 'Confirm and pay',
+  'booking.yourDates': 'Your dates',
+  'booking.guests': 'Guests',
+  'booking.adults': 'Adults',
+  'booking.children': 'Children',
+  'booking.infants': 'Infants',
+  'booking.pets': 'Pets',
+  'booking.payWith': 'Pay with',
+  'booking.priceDetails': 'Price details',
+  'booking.addToCalendar': 'Add stay to calendar',
+
+  // Trips
+  'trips.title': 'Trips',
+  'trips.cancelBooking': 'Cancel this booking',
+  'trips.keepBooking': 'Keep the booking',
+
+  // Profile
+  'profile.continueEmail': 'Continue with email',
+  'profile.aboutYou': 'About you',
+  'profile.aboutYouSub': 'Shared on your public profile',
+  'profile.personalInfo': 'Personal info',
+  'profile.preferences': 'Preferences',
+
   // Search / filters
   'search.where': 'Where',
   'search.placeholder': 'Search countries and cities',

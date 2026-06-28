@@ -23,6 +23,7 @@ import {
   VStack,
 } from '@bnb/ui';
 import { useRouter } from '@bnb/ui/nav';
+import { useT } from '../i18n';
 
 const LOCALES = ['en-IN', 'en-US', 'hi-IN', 'es-ES', 'fr-FR', 'ja-JP', 'ar-AE'];
 const CURRENCIES = ['USD', 'INR', 'EUR', 'GBP', 'JPY', 'AUD'];
@@ -30,6 +31,7 @@ const LANGUAGES = ['English', 'Hindi', 'Spanish', 'French', 'Arabic', 'Japanese'
 const DECADES = ['1950s', '1960s', '1970s', '1980s', '1990s', '2000s'];
 
 export function ProfileScreen() {
+  const t = useT();
   const router = useRouter();
   const { data: profile, isLoading } = useMyProfile();
   const signOut = useSignOut();
@@ -49,7 +51,7 @@ export function ProfileScreen() {
         <Text className="text-ink-soft">
           Create an account or sign in to manage your profile, trips, wishlists, and more.
         </Text>
-        <Button title="Continue with email" onPress={() => router.push('/sign-in')} />
+        <Button title={t('profile.continueEmail')} onPress={() => router.push('/sign-in')} />
       </View>
     );
   }
@@ -135,6 +137,7 @@ function SectionCard({
   children: React.ReactNode;
   canEdit?: boolean;
 }) {
+  const t = useT();
   return (
     <Card className="p-5 gap-3">
       <HStack className="justify-between items-start gap-3">
@@ -147,15 +150,15 @@ function SectionCard({
           ) : null}
         </VStack>
         {canEdit && !editing ? (
-          <Button title="Edit" variant="ghost" onPress={onEdit} />
+          <Button title={t('common.edit')} variant="ghost" onPress={onEdit} />
         ) : null}
       </HStack>
       <Divider />
       {children}
       {editing ? (
         <HStack className="gap-2 mt-1">
-          <Button title="Cancel" variant="ghost" onPress={onCancel} />
-          <Button title={saving ? 'Saving…' : 'Save'} onPress={onSave} loading={saving} />
+          <Button title={t('common.cancel')} variant="ghost" onPress={onCancel} />
+          <Button title={saving ? t('common.saving') : t('common.save')} onPress={onSave} loading={saving} />
         </HStack>
       ) : null}
     </Card>
@@ -206,6 +209,7 @@ function ChipPicker({
 // ---- About ----------------------------------------------------------------
 
 function AboutSection({ profile }: { profile: RyoProfile }) {
+  const t = useT();
   const update = useUpdateProfile();
   const [editing, setEditing] = useState(false);
   const [bio, setBio] = useState(profile.bio);
@@ -233,8 +237,8 @@ function AboutSection({ profile }: { profile: RyoProfile }) {
 
   return (
     <SectionCard
-      title="About you"
-      subtitle="Shared on your public profile"
+      title={t('profile.aboutYou')}
+      subtitle={t('profile.aboutYouSub')}
       editing={editing}
       onEdit={() => setEditing(true)}
       onCancel={() => setEditing(false)}
@@ -284,6 +288,7 @@ function AboutSection({ profile }: { profile: RyoProfile }) {
 // ---- Personal info --------------------------------------------------------
 
 function PersonalInfoSection({ profile }: { profile: RyoProfile }) {
+  const t = useT();
   const update = useUpdateProfile();
   const [editing, setEditing] = useState(false);
   const [fullName, setFullName] = useState(profile.full_name);
@@ -337,7 +342,7 @@ function PersonalInfoSection({ profile }: { profile: RyoProfile }) {
 
   return (
     <SectionCard
-      title="Personal info"
+      title={t('profile.personalInfo')}
       editing={editing}
       onEdit={() => setEditing(true)}
       onCancel={() => setEditing(false)}
@@ -400,6 +405,7 @@ function PersonalInfoSection({ profile }: { profile: RyoProfile }) {
 // ---- Preferences ----------------------------------------------------------
 
 function PreferencesSection({ profile }: { profile: RyoProfile }) {
+  const t = useT();
   const update = useUpdateProfile();
   const [editing, setEditing] = useState(false);
   const [locale, setLocale] = useState(profile.preferred_locale);
@@ -417,7 +423,7 @@ function PreferencesSection({ profile }: { profile: RyoProfile }) {
 
   return (
     <SectionCard
-      title="Preferences"
+      title={t('profile.preferences')}
       editing={editing}
       onEdit={() => setEditing(true)}
       onCancel={() => setEditing(false)}

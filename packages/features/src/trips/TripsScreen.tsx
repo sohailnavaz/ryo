@@ -23,10 +23,12 @@ import {
 } from '@bnb/ui';
 import { useRouter } from '@bnb/ui/nav';
 import { formatDateRange, formatPrice } from '@bnb/utils';
+import { useT } from '../i18n';
 
 type Tab = 'upcoming' | 'past' | 'cancelled';
 
 export function TripsScreen() {
+  const t = useT();
   const router = useRouter();
   const { data, isLoading } = useGuestDashboard();
   const cancelBooking = useCancelBooking();
@@ -75,7 +77,7 @@ export function TripsScreen() {
   return (
     <View className="flex-1 bg-surface">
       <View className="px-4 pt-6 md:px-10 md:mx-auto md:w-full md:max-w-[1120px]">
-        <Heading level={1}>Trips</Heading>
+        <Heading level={1}>{t('trips.title')}</Heading>
         <HStack className="mt-4 gap-2">
           {(
             [
@@ -183,7 +185,7 @@ export function TripsScreen() {
                   <View className="mt-2">
                     {!showConfirm ? (
                       <Button
-                        title="Cancel this booking"
+                        title={t('trips.cancelBooking')}
                         variant="ghost"
                         onPress={() => setConfirmCancel(b.id)}
                       />
@@ -196,7 +198,7 @@ export function TripsScreen() {
                         </Text>
                         <HStack className="gap-2">
                           <Button
-                            title="Keep the booking"
+                            title={t('trips.keepBooking')}
                             variant="ghost"
                             onPress={() => setConfirmCancel(null)}
                           />
