@@ -32,9 +32,11 @@ test('a listing detail page renders with SEO metadata', async ({ page }) => {
   await page.goto('/listing/l-positano-cliffside');
   // generateMetadata humanizes the slug → "Positano Cliffside · Ryo".
   await expect(page).toHaveTitle(/Positano Cliffside/);
-  // The route emits LodgingBusiness JSON-LD server-side (deterministic; the
-  // gallery itself is client-rendered react-native-web and covered elsewhere).
-  expect(await page.content()).toContain('LodgingBusiness');
+  // The route emits LodgingBusiness + BreadcrumbList JSON-LD server-side
+  // (deterministic; the gallery itself is client-rendered and covered elsewhere).
+  const html = await page.content();
+  expect(html).toContain('LodgingBusiness');
+  expect(html).toContain('BreadcrumbList');
 });
 
 test('legal pages are server-rendered and indexable', async ({ page }) => {
@@ -43,8 +45,9 @@ test('legal pages are server-rendered and indexable', async ({ page }) => {
   await expect(page.getByRole('heading', { name: /Privacy Policy/i })).toBeVisible();
 });
 
-test('FAQ help center loads and search filters', async ({ page }) => {
+test('FAQ help center loads, emits FAQPage schema, and search filters', async ({ page }) => {
   await page.goto('/faq');
+  expect(await page.content()).toContain('FAQPage');
   await expect(page.getByText('How can we help?', { exact: false })).toBeVisible();
   await page.getByPlaceholder(/Search help articles/i).fill('refund');
   await expect(page.getByText(/results? for/i)).toBeVisible();

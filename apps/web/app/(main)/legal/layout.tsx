@@ -1,5 +1,15 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { JsonLd } from '../../_components/StructuredData';
+
+const legalBreadcrumb = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Ryo', item: '/' },
+    { '@type': 'ListItem', position: 2, name: 'Legal', item: '/legal' },
+  ],
+};
 
 const NAV = [
   { href: '/legal/privacy', label: 'Privacy' },
@@ -11,6 +21,7 @@ const NAV = [
 export default function LegalLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-surface">
+      <JsonLd data={legalBreadcrumb} />
       <div className="mx-auto max-w-3xl px-5 py-12">
         <div className="mb-8">
           <Link

@@ -33,10 +33,22 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const human = humanize(id);
   const data = {
     '@context': 'https://schema.org',
-    '@type': 'LodgingBusiness',
-    name: human,
-    url: `/listing/${id}`,
-    description: `Book ${human} on Ryo.`,
+    '@graph': [
+      {
+        '@type': 'LodgingBusiness',
+        name: human,
+        url: `/listing/${id}`,
+        description: `Book ${human} on Ryo.`,
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Ryo', item: '/' },
+          { '@type': 'ListItem', position: 2, name: 'Stays', item: '/' },
+          { '@type': 'ListItem', position: 3, name: human, item: `/listing/${id}` },
+        ],
+      },
+    ],
   };
   return (
     <>
