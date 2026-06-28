@@ -44,6 +44,40 @@ export const ja: Messages = {
   'sort.topRated': '高評価順',
   'sort.newest': '新着順',
 
+  // Common actions (extended)
+  'common.edit': '編集',
+  'common.saving': '保存中…',
+  'common.reserve': '予約する',
+
+  // Listing detail
+  'listing.aboutPlace': 'この宿泊先について',
+  'listing.offers': 'この宿泊先の設備・サービス',
+  'listing.whereYoullBe': '宿泊エリア',
+
+  // Booking
+  'booking.confirmAndPay': '確認して支払う',
+  'booking.yourDates': '宿泊日',
+  'booking.guests': 'ゲスト',
+  'booking.adults': '大人',
+  'booking.children': '子供',
+  'booking.infants': '幼児',
+  'booking.pets': 'ペット',
+  'booking.payWith': 'お支払い方法',
+  'booking.priceDetails': '料金の内訳',
+  'booking.addToCalendar': '宿泊をカレンダーに追加',
+
+  // Trips
+  'trips.title': '旅程',
+  'trips.cancelBooking': 'この予約をキャンセル',
+  'trips.keepBooking': '予約を維持する',
+
+  // Profile
+  'profile.continueEmail': 'メールで続ける',
+  'profile.aboutYou': 'あなたについて',
+  'profile.aboutYouSub': '公開プロフィールに表示されます',
+  'profile.personalInfo': '個人情報',
+  'profile.preferences': '設定',
+
   // Search / filters
   'search.where': 'どこへ',
   'search.placeholder': '国や都市を検索',

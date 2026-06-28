@@ -44,6 +44,40 @@ export const fr: Messages = {
   'sort.topRated': 'Les mieux notés',
   'sort.newest': 'Les plus récents',
 
+  // Common actions (extended)
+  'common.edit': 'Modifier',
+  'common.saving': 'Enregistrement…',
+  'common.reserve': 'Réserver',
+
+  // Listing detail
+  'listing.aboutPlace': 'À propos de ce logement',
+  'listing.offers': 'Ce que propose ce logement',
+  'listing.whereYoullBe': 'Où vous séjournerez',
+
+  // Booking
+  'booking.confirmAndPay': 'Confirmer et payer',
+  'booking.yourDates': 'Vos dates',
+  'booking.guests': 'Voyageurs',
+  'booking.adults': 'Adultes',
+  'booking.children': 'Enfants',
+  'booking.infants': 'Bébés',
+  'booking.pets': 'Animaux',
+  'booking.payWith': 'Payer avec',
+  'booking.priceDetails': 'Détails du prix',
+  'booking.addToCalendar': 'Ajouter le séjour au calendrier',
+
+  // Trips
+  'trips.title': 'Voyages',
+  'trips.cancelBooking': 'Annuler cette réservation',
+  'trips.keepBooking': 'Conserver la réservation',
+
+  // Profile
+  'profile.continueEmail': 'Continuer avec l’e-mail',
+  'profile.aboutYou': 'À propos de vous',
+  'profile.aboutYouSub': 'Affiché sur votre profil public',
+  'profile.personalInfo': 'Informations personnelles',
+  'profile.preferences': 'Préférences',
+
   // Search / filters
   'search.where': 'Où',
   'search.placeholder': 'Rechercher des pays et des villes',

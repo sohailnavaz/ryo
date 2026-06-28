@@ -19,6 +19,7 @@ import { Map } from '@bnb/ui/Map';
 import { useRouter } from '@bnb/ui/nav';
 import { formatDateRange, formatPrice } from '@bnb/utils';
 import { useFiltersStore } from '../state/filtersStore';
+import { useT } from '../i18n';
 
 export type ListingScreenProps = { id: string };
 
@@ -51,6 +52,7 @@ async function shareListing(opts: { id: string; title: string; city: string }): 
 }
 
 export function ListingScreen({ id }: ListingScreenProps) {
+  const t = useT();
   const { width } = useWindowDimensions();
   const router = useRouter();
   const { data: listing, isLoading } = useListing(id);
@@ -220,14 +222,14 @@ export function ListingScreen({ id }: ListingScreenProps) {
             <Divider />
 
             <VStack className="gap-2">
-              <Heading level={3}>About this place</Heading>
+              <Heading level={3}>{t('listing.aboutPlace')}</Heading>
               <Text className="text-ink leading-[22px]">{listing.description}</Text>
             </VStack>
 
             <Divider />
 
             <VStack className="gap-3">
-              <Heading level={3}>What this place offers</Heading>
+              <Heading level={3}>{t('listing.offers')}</Heading>
               <View className="flex-row flex-wrap gap-2">
                 {listing.amenities.map((a) => (
                   <Badge key={a}>{a}</Badge>
@@ -238,7 +240,7 @@ export function ListingScreen({ id }: ListingScreenProps) {
             <Divider />
 
             <VStack className="gap-3">
-              <Heading level={3}>Where you'll be</Heading>
+              <Heading level={3}>{t('listing.whereYoullBe')}</Heading>
               <HStack className="gap-2">
                 <MapPin size={14} color="#0E1A2B" />
                 <Text variant="small">
@@ -301,7 +303,7 @@ export function ListingScreen({ id }: ListingScreenProps) {
                   </Text>
                 </View>
                 <View className="mt-3">
-                  <Button title="Reserve" fullWidth onPress={goBook} />
+                  <Button title={t('common.reserve')} fullWidth onPress={goBook} />
                 </View>
                 <View className="mt-4">
                   <PriceTotal
@@ -330,7 +332,7 @@ export function ListingScreen({ id }: ListingScreenProps) {
                 : 'Pick your dates'}
             </Text>
           </VStack>
-          <Button title="Reserve" onPress={goBook} />
+          <Button title={t('common.reserve')} onPress={goBook} />
         </View>
       ) : null}
     </View>

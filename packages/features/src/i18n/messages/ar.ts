@@ -45,6 +45,40 @@ export const ar: Messages = {
   'sort.topRated': 'الأعلى تقييمًا',
   'sort.newest': 'الأحدث',
 
+  // Common actions (extended)
+  'common.edit': 'تعديل',
+  'common.saving': 'جارٍ الحفظ…',
+  'common.reserve': 'احجز',
+
+  // Listing detail
+  'listing.aboutPlace': 'عن مكان الإقامة',
+  'listing.offers': 'ما يوفّره مكان الإقامة',
+  'listing.whereYoullBe': 'أين ستقيم',
+
+  // Booking
+  'booking.confirmAndPay': 'التأكيد والدفع',
+  'booking.yourDates': 'تواريخك',
+  'booking.guests': 'الضيوف',
+  'booking.adults': 'البالغون',
+  'booking.children': 'الأطفال',
+  'booking.infants': 'الرُّضّع',
+  'booking.pets': 'الحيوانات الأليفة',
+  'booking.payWith': 'الدفع عبر',
+  'booking.priceDetails': 'تفاصيل السعر',
+  'booking.addToCalendar': 'إضافة الإقامة إلى التقويم',
+
+  // Trips
+  'trips.title': 'الرحلات',
+  'trips.cancelBooking': 'إلغاء هذا الحجز',
+  'trips.keepBooking': 'الإبقاء على الحجز',
+
+  // Profile
+  'profile.continueEmail': 'المتابعة بالبريد الإلكتروني',
+  'profile.aboutYou': 'نبذة عنك',
+  'profile.aboutYouSub': 'تظهر في ملفك الشخصي العام',
+  'profile.personalInfo': 'المعلومات الشخصية',
+  'profile.preferences': 'التفضيلات',
+
   // Search / filters
   'search.where': 'إلى أين',
   'search.placeholder': 'ابحث عن الدول والمدن',
