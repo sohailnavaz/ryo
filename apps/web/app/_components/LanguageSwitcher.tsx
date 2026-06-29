@@ -11,7 +11,7 @@ export function LanguageSwitcher({
   variant = 'inline',
   direction = 'up',
 }: {
-  variant?: 'inline' | 'block';
+  variant?: 'inline' | 'block' | 'icon';
   direction?: 'up' | 'down';
 }) {
   const { locale, meta, setLocale } = useLocale();
@@ -28,6 +28,8 @@ export function LanguageSwitcher({
     return () => document.removeEventListener('mousedown', onClick);
   }, [open]);
 
+  const isIcon = variant === 'icon';
+
   return (
     <div className="relative" ref={ref}>
       <button
@@ -35,31 +37,43 @@ export function LanguageSwitcher({
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className={`flex items-center gap-2 rounded-full border border-surface-border px-3 py-2 text-[13px] font-semibold text-ink hover:border-ink ${
-          variant === 'block' ? 'w-full justify-between' : ''
-        }`}
+        aria-label={t('language.choose')}
+        title={`${meta.flag} ${meta.nativeName}`}
+        className={
+          isIcon
+            ? 'flex items-center justify-center rounded-full p-2.5 text-ink hover:bg-surface-alt transition'
+            : `flex items-center gap-2 rounded-full border border-surface-border px-3 py-2 text-[13px] font-semibold text-ink hover:border-ink ${
+                variant === 'block' ? 'w-full justify-between' : ''
+              }`
+        }
       >
-        <span aria-hidden>🌐</span>
-        <span>
-          {meta.flag} {meta.nativeName}
+        <span aria-hidden className={isIcon ? 'text-[16px]' : ''}>
+          🌐
         </span>
-        <span aria-hidden className="text-ink-muted">
-          ▾
-        </span>
+        {isIcon ? null : (
+          <>
+            <span>
+              {meta.flag} {meta.nativeName}
+            </span>
+            <span aria-hidden className="text-ink-muted">
+              ▾
+            </span>
+          </>
+        )}
       </button>
 
       {open ? (
         <div
           role="listbox"
           aria-label={t('language.choose')}
-          className={`absolute left-0 z-50 w-56 overflow-hidden rounded-2xl border border-surface-border bg-surface shadow-pop ${
-            direction === 'up' ? 'bottom-full mb-2' : 'top-full mt-2'
-          }`}
+          className={`absolute z-50 w-56 overflow-hidden rounded-2xl border border-surface-border bg-surface shadow-pop ${
+            isIcon ? 'right-0' : 'left-0'
+          } ${direction === 'up' ? 'bottom-full mb-2' : 'top-full mt-2'}`}
         >
           <p className="border-b border-surface-border px-4 py-2.5 text-[12px] font-semibold uppercase tracking-wide text-ink-muted">
             {t('language.title')}
           </p>
-          <div className="py-1">
+          <div className="max-h-[60vh] overflow-y-auto py-1">
             {LOCALES.map((l) => (
               <button
                 key={l.code}

@@ -1,8 +1,9 @@
+import type { ReactNode } from 'react';
 import { View } from 'react-native';
 import { cn } from '@bnb/utils';
 import { Pressable } from './Pressable';
 import { Text } from './Text';
-import { Bell, Globe, Menu, User } from './icons';
+import { Bell, Menu, User } from './icons';
 
 export type TopNavProps = {
   active: string;
@@ -14,6 +15,9 @@ export type TopNavProps = {
   showTabs?: boolean;
   /** Context label shown in place of tabs (e.g. "Hosting", "Operations"). */
   context?: string;
+  /** Functional language control rendered in the nav (the single source of
+   *  truth for language — the app no longer duplicates it in the account menu). */
+  languageControl?: ReactNode;
   className?: string;
 };
 
@@ -34,6 +38,7 @@ export function TopNav({
   notificationCount = 0,
   showTabs = true,
   context,
+  languageControl,
   className,
 }: TopNavProps) {
   return (
@@ -72,13 +77,7 @@ export function TopNav({
           ) : null}
         </View>
         <View className="flex-row items-center gap-2">
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Language"
-            className="rounded-full p-2.5 hover:bg-surface-alt transition"
-          >
-            <Globe size={16} color="#0E1A2B" />
-          </Pressable>
+          {languageControl ?? null}
           <Pressable
             onPress={onOpenNotifications}
             accessibilityRole="button"
