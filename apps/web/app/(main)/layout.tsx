@@ -38,6 +38,7 @@ export default function MainLayout({ children }: { children: ReactNode }) {
         notificationCount={unread}
         showTabs={!isDashboard}
         context={isDashboard ? context : undefined}
+        languageControl={<LanguageSwitcher variant="icon" direction="down" />}
       />
       <AccountMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
       <div className="flex-1 flex flex-col">
@@ -117,11 +118,6 @@ function AccountMenu({ open, onClose }: { open: boolean; onClose: () => void }) 
           <Item label={t('nav.help')} path="/help" />
           <Item label={t('nav.offlinePack')} path="/offline" />
           <Item label={t('nav.phrasebook')} path="/phrasebook" />
-
-          <div className="my-1 h-px bg-surface-border" />
-          <div className="px-3 py-2">
-            <LanguageSwitcher variant="block" direction="down" />
-          </div>
 
           {isHost ? (
             <>
