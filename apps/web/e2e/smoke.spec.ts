@@ -26,6 +26,8 @@ test('home renders the hero, sort bar and listings', async ({ page }) => {
   await expect(page.getByText('Recommended', { exact: false })).toBeVisible();
   // At least one listing card rendered (cards carry photos).
   await expect(page.locator('img').first()).toBeVisible();
+  // Resource hints warm up the image/tile CDNs.
+  expect(await page.locator('link[rel="preconnect"]').count()).toBeGreaterThan(0);
 });
 
 test('a listing detail page renders with SEO metadata', async ({ page }) => {

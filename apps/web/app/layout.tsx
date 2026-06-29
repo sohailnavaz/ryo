@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Fraunces, Inter } from 'next/font/google';
+import { preconnect, prefetchDNS } from 'react-dom';
 import './globals.css';
 import { Providers } from './providers';
 import { ServiceWorkerRegister } from './ServiceWorkerRegister';
@@ -83,7 +84,20 @@ export const viewport: Viewport = {
   themeColor: '#FAF6F0',
 };
 
+// Warm up connections to the origins we fetch the heaviest assets from —
+// listing photos (Unsplash / muscache) and map tiles — so the TLS handshake is
+// already done by the time the page requests them. React hoists these to <head>.
+const ASSET_ORIGINS = [
+  'https://images.unsplash.com',
+  'https://a0.muscache.com',
+  'https://tiles.openfreemap.org',
+];
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  for (const origin of ASSET_ORIGINS) {
+    prefetchDNS(origin);
+    preconnect(origin, { crossOrigin: 'anonymous' });
+  }
   return (
     <html lang="en" className={`${inter.variable} ${fraunces.variable}`}>
       <body className="bg-surface text-ink antialiased">
