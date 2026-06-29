@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
 import { View } from 'react-native';
-// NOTE: useAdminHostApplications / useAdminReviewHostApplication are built by the
-// host-application agent and re-exported from @bnb/api. Until the index.ts export
-// lands these two names will not resolve under typecheck — that is expected and
-// noted in the handoff; everything else in this file is self-contained.
-import { useAdminHostApplications, useAdminReviewHostApplication } from '@bnb/api';
+import {
+  useAdminHostApplications,
+  useAdminReviewHostApplication,
+  type HostApplication,
+  type HostApplicationStatus,
+} from '@bnb/api';
 import {
   Avatar,
   Badge,
@@ -21,33 +22,18 @@ import {
 } from '@bnb/ui';
 import { AdminShell } from './shell';
 
-// ---------------------------------------------------------------------------
-// Local view-model. The canonical type lives with the host-applications agent;
-// we read fields defensively so a slightly different shape still renders.
-// ---------------------------------------------------------------------------
+// View-model is the canonical HostApplication from @bnb/api — read its real
+// fields so the console never drifts from the data the hook actually returns.
+type ApplicationStatus = HostApplicationStatus;
+type HostApplicationRow = HostApplication;
 
-type ApplicationStatus =
-  | 'pending'
-  | 'approved'
-  | 'rejected'
-  | 'changes_requested';
-
-type HostApplicationRow = {
-  id: string;
-  status: ApplicationStatus;
-  applicant_name?: string;
-  applicant_email?: string;
-  applicant_avatar?: string | null;
-  property_type?: string;
-  property_title?: string;
-  city?: string;
-  country?: string;
-  listings_intended?: number;
-  about?: string;
-  experience?: string;
-  submitted_at?: string;
-  [key: string]: unknown;
-};
+/** Short, locale-aware date for a submitted-at timestamp. */
+function formatSubmitted(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
 
 type ReviewDecision = 'approved' | 'rejected' | 'changes_requested';
 
@@ -94,12 +80,18 @@ function statusLabel(s: ApplicationStatus): string {
 }
 
 function applicantName(a: HostApplicationRow): string {
-  return a.applicant_name || a.applicant_email || `Applicant ${a.id}`;
+  return a.full_name?.trim() || `Applicant ${a.id.slice(0, 8)}`;
 }
 
+/** Where the applicant lives. */
+function applicantLocation(a: HostApplicationRow): string {
+  return [a.city, a.country].filter(Boolean).join(', ');
+}
+
+/** What + where they want to host. */
 function propertyIntent(a: HostApplicationRow): string {
-  const place = a.property_title || a.property_type || 'Property';
-  const loc = [a.city, a.country].filter(Boolean).join(', ');
+  const place = a.property_type?.trim() || 'Property';
+  const loc = [a.property_city, a.property_country].filter(Boolean).join(', ');
   return loc ? `${place} · ${loc}` : place;
 }
 
@@ -201,11 +193,7 @@ export function AdminHostApplicationsScreen() {
                     className={`px-4 py-3 ${selectedId === a.id ? 'border-2 border-ink' : ''}`}
                   >
                     <HStack className="gap-3 items-center">
-                      <Avatar
-                        src={a.applicant_avatar ?? undefined}
-                        name={applicantName(a)}
-                        size={40}
-                      />
+                      <Avatar name={applicantName(a)} size={40} />
                       <VStack className="flex-1 gap-0.5">
                         <HStack className="gap-2 items-center">
                           <Text className="font-semibold flex-1" numberOfLines={1}>
@@ -222,9 +210,9 @@ export function AdminHostApplicationsScreen() {
                         >
                           {propertyIntent(a)}
                         </Text>
-                        {a.submitted_at ? (
+                        {formatSubmitted(a.created_at) ? (
                           <Text variant="caption" className="mt-0.5">
-                            Submitted {a.submitted_at}
+                            Submitted {formatSubmitted(a.created_at)}
                           </Text>
                         ) : null}
                       </VStack>
@@ -338,16 +326,12 @@ function ApplicationDetail({
       />
 
       <HStack className="gap-3 items-center">
-        <Avatar
-          src={a.applicant_avatar ?? undefined}
-          name={applicantName(a)}
-          size={48}
-        />
+        <Avatar name={applicantName(a)} size={48} />
         <VStack className="flex-1 gap-0.5">
           <Text className="font-semibold">{applicantName(a)}</Text>
-          {a.applicant_email ? (
+          {applicantLocation(a) ? (
             <Text variant="small" className="text-ink-soft" numberOfLines={1}>
-              {a.applicant_email}
+              {applicantLocation(a)}
             </Text>
           ) : null}
         </VStack>
@@ -358,32 +342,28 @@ function ApplicationDetail({
 
       <VStack className="gap-3">
         <Field label="Property" value={propertyIntent(a)} />
-        {typeof a.property_type === 'string' ? (
-          <Field label="Type" value={a.property_type} />
+        {a.phone?.trim() ? <Field label="Phone" value={a.phone} /> : null}
+        {applicantLocation(a) ? <Field label="From" value={applicantLocation(a)} /> : null}
+        {formatSubmitted(a.created_at) ? (
+          <Field label="Submitted" value={formatSubmitted(a.created_at)!} />
         ) : null}
-        {typeof a.listings_intended === 'number' ? (
-          <Field label="Listings intended" value={String(a.listings_intended)} />
-        ) : null}
-        {a.submitted_at ? (
-          <Field label="Submitted" value={a.submitted_at} />
-        ) : null}
-        <Field label="Application id" value={a.id} />
+        <Field label="Application id" value={a.id.slice(0, 8)} />
       </VStack>
 
-      {a.about ? (
+      {a.headline?.trim() ? (
         <View className="mt-4">
-          <Text variant="label">About the host</Text>
+          <Text variant="label">Pitch</Text>
           <View className="mt-1 rounded-xl bg-surface-alt px-3 py-3">
-            <Text variant="small">{a.about}</Text>
+            <Text variant="small">{a.headline}</Text>
           </View>
         </View>
       ) : null}
 
-      {a.experience ? (
+      {a.about?.trim() ? (
         <View className="mt-3">
-          <Text variant="label">Hosting experience</Text>
+          <Text variant="label">About the host</Text>
           <View className="mt-1 rounded-xl bg-surface-alt px-3 py-3">
-            <Text variant="small">{a.experience}</Text>
+            <Text variant="small">{a.about}</Text>
           </View>
         </View>
       ) : null}
