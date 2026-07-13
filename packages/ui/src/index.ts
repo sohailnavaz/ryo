@@ -24,3 +24,4 @@ export * from './ErrorBoundary';
 export * from './Toggle';
 export * from './ConfirmModal';
 export * from './ReasonCodeModal';
+export * from './DataTable';

@@ -1,4 +1,9 @@
-import { ReactNode } from 'react';
+'use client';
+
+import { ReactNode, useState } from 'react';
+import { useAdminOmnibox } from '@bnb/api';
+import { CommandPalette } from '@bnb/ui/CommandPalette';
+import { useRouter } from '@bnb/ui/nav';
 import { DashboardShell } from '../shared/dashboard-shell';
 
 export const ADMIN_NAV = [
@@ -14,6 +19,12 @@ export const ADMIN_NAV = [
   { key: 'health',     label: 'System',      path: '/admin/health' },
 ] as const;
 
+/**
+ * The admin chrome. Mounts ⌘K on every console page — the omnibox is the primary
+ * navigation, so it must be reachable from wherever the operator happens to be
+ * standing, not just from a search page they have to find first.
+ * (docs/15-admin-console.md §3)
+ */
 export function AdminShell({
   title,
   subtitle,
@@ -23,6 +34,10 @@ export function AdminShell({
   subtitle?: string;
   children: ReactNode;
 }) {
+  const router = useRouter();
+  const [q, setQ] = useState('');
+  const { data: hits, isFetching } = useAdminOmnibox(q);
+
   return (
     <DashboardShell
       kind="admin"
@@ -32,6 +47,21 @@ export function AdminShell({
       subtitle={subtitle}
       maxWidth={1320}
     >
+      <CommandPalette
+        query={q}
+        onQueryChange={setQ}
+        loading={isFetching && q.trim().length >= 2}
+        items={(hits ?? []).map((h) => ({
+          id: h.id,
+          label: h.label,
+          sublabel: h.sublabel,
+          group: h.kind,
+          href: h.href,
+        }))}
+        onSelect={(item) => {
+          if (item.href) router.push(item.href);
+        }}
+      />
       {children}
     </DashboardShell>
   );

@@ -18,6 +18,10 @@
       "react-native": "./src/Map.native.tsx",
       "default": "./src/Map.web.tsx"
     },
+    "./CommandPalette": {
+      "react-native": "./src/CommandPalette.native.tsx",
+      "default": "./src/CommandPalette.web.tsx"
+    },
     "./global.css": "./src/global.css"
   },
   "scripts": {
