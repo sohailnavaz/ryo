@@ -2,7 +2,7 @@
 doc: PROGRESS
 purpose: Human-readable living status doc. Safe to share with collaborators, investors, or friends.
 last_updated: 2026-07-13
-version: 0.12.0
+version: 0.13.0
 ---
 
 # Ryo — Progress
@@ -164,6 +164,24 @@ These are the calls I'd most like a second opinion on. If you're reviewing, skim
 ## 8. Changelog
 
 Append-only, newest first. One line per shipped thing. Version bumps follow branding.md convention (patch / minor / major).
+
+### `0.13.0` — 2026-07-13 — the admin console stops being a database browser
+
+`/admin/users` used to fetch **every** user, filter them in the browser, and render every row under the heading *"Every account on file."* That dies at 50,000 rows — but the deeper problem was that "all users" is a question nobody actually asks.
+
+**Segments are now the front door.** *Needs attention* (suspended this week — did we get it right?) · *Hosts about to churn* (live 30+ days with no booking yet, still saveable) · *Most valuable* · *New this week*. The raw list is the escape hatch, not the entrance.
+
+- **⌘K, anywhere in the console.** Paste an email, a name, a city, or a booking id and land on the record. This is how operators actually navigate; the table is the fallback.
+- **Pagination that doesn't lie.** Keyset, not offset — offset silently drops and repeats rows when the data changes underneath you mid-scroll. Verified: 126 rows, 6 pages, no gaps, no repeats.
+- **Facets carry counts** (`active · 126 · suspended · 1 · hosts · 4`), so you never click a filter to find out it matches nothing.
+- **PII is masked by default.** Emails render as `g•••@ryo.test`. Unmasking requires the admin role and is recorded as an event. Plain staff cannot unmask at all.
+- **Bulk actions show their cost first** — *"suspends 3 accounts, 4 upcoming bookings worth ₹86,000 at risk, 4 guests affected"* — and are capped.
+
+**A latent deploy-day bug, found by running it.** Every database read failed locally with `permission denied` — not a policy denial, a missing grant. Postgres was handing our tables a different default privilege set than Supabase's own, so the schema only worked in production *by luck of the environment*. Privileges are now stated explicitly, least-privilege, in the migration.
+
+Verified 11/11 in SQL and **20/20 driving a real browser**. Typecheck 7/7; build green.
+
+*Still to come:* bookings, moderation and incidents lists still use the old in-memory pattern; Phase 2 deletes the localStorage stores.
 
 ### `0.12.0` — 2026-07-13 — the admin spine
 
