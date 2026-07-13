@@ -19,8 +19,13 @@ import { getSupabase, tryGetSupabase } from './client';
 // Types
 // ---------------------------------------------------------------------------
 
-export type AdminSubjectType = 'user' | 'listing' | 'review' | 'booking';
+export type AdminSubjectType = 'user' | 'listing' | 'review' | 'booking' | 'incident' | 'flag';
 
+/**
+ * Must stay in lockstep with `admin_actions_registry`. The server rejects anything it
+ * doesn't know, so a drift here fails loudly at runtime rather than silently — but
+ * keeping the union honest is what lets the compiler catch it first.
+ */
 export type AdminActionName =
   | 'user.suspend'
   | 'user.reinstate'
@@ -31,7 +36,10 @@ export type AdminActionName =
   | 'review.remove'
   | 'review.restore'
   | 'booking.cancel'
-  | 'booking.refund';
+  | 'booking.refund'
+  | 'incident.assign'
+  | 'incident.resolve'
+  | 'flag.toggle';
 
 /** What an action would touch. Shown to the operator BEFORE they commit. */
 export type BlastRadius = {
@@ -39,6 +47,9 @@ export type BlastRadius = {
   upcoming_bookings: number;
   upcoming_booking_value_cents: number;
   guests_notified: number;
+  /** Set on flag toggles: this changes the product for everyone, not one record. */
+  platform_wide?: boolean;
+  emergency?: boolean;
 };
 
 export type AdminActionInput = {

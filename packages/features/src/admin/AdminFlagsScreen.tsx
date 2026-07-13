@@ -1,113 +1,179 @@
+'use client';
+
 import { useState } from 'react';
 import { View } from 'react-native';
-import { useAdminFlags, useAdminToggleFlag, type AdminFlag } from '@bnb/api';
+import {
+  newIdempotencyKey,
+  previewAdminAction,
+  useFeatureFlags,
+  useReasonCodes,
+  useRunAdminAction,
+  type FeatureFlag,
+} from '@bnb/api';
 import {
   Badge,
+  Button,
   Card,
   HStack,
-  Pressable,
   ReasonCodeModal,
   Skeleton,
   Text,
   toast,
   VStack,
 } from '@bnb/ui';
+import { formatPrice } from '@bnb/utils';
 import { AdminShell } from './shell';
 
-const FLAG_REASONS = [
-  { code: 'launch_window', label: 'Launch window' },
-  { code: 'incident_mitigation', label: 'Incident mitigation' },
-  { code: 'experiment', label: 'Experiment' },
-  { code: 'rollback', label: 'Rollback' },
-  { code: 'other', label: 'Other' },
-];
+// Feature flags, for real. (docs/15-admin-console.md, Phase 2)
+//
+// Previously a toggle wrote to a localStorage override — the flag flipped on the
+// operator's own screen and nowhere else. For a *kill switch* that is worse than
+// having none at all, because it looks like it worked.
+//
+// Now it goes through `admin_action('flag.toggle')`: reason code, audit row, event,
+// and for emergency flags a MANDATORY written note — enforced in the database, not
+// merely in this component.
 
 export function AdminFlagsScreen() {
-  const { data, isLoading } = useAdminFlags();
+  const { data: flags, isLoading } = useFeatureFlags();
+  const { data: reasons } = useReasonCodes('flag');
+  const runAction = useRunAdminAction();
+
+  const [pending, setPending] = useState<{ flag: FeatureFlag; radius: string } | null>(null);
+
+  async function askThen(flag: FeatureFlag) {
+    try {
+      const p = await previewAdminAction({
+        action: 'flag.toggle',
+        subjectType: 'flag',
+        subjectId: flag.key,
+        payload: { enabled: !flag.enabled },
+      });
+      const b = p.blast_radius;
+
+      // An emergency switch is the largest-blast-radius action in the console: it
+      // doesn't change one record, it changes the product for everyone. Say so.
+      setPending({
+        flag,
+        radius: b?.emergency
+          ? `⚠ Platform-wide kill switch. ${b.upcoming_bookings} upcoming booking(s) worth ${formatPrice(
+              b.upcoming_booking_value_cents,
+              'INR',
+            )} are in flight right now. A written note is required.`
+          : `Platform-wide. Turns this ${flag.enabled ? 'off' : 'on'} for every user immediately.`,
+      });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not preview that toggle.');
+    }
+  }
+
+  async function commit(reason_code: string, note: string) {
+    if (!pending) return;
+    const { flag } = pending;
+    try {
+      await runAction.mutateAsync({
+        action: 'flag.toggle',
+        subjectType: 'flag',
+        subjectId: flag.key,
+        reasonCode: reason_code,
+        note,
+        payload: { enabled: !flag.enabled },
+        idempotencyKey: newIdempotencyKey(),
+      });
+      toast.success(`${flag.label} is now ${flag.enabled ? 'off' : 'on'}.`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'That toggle did not complete.');
+    } finally {
+      setPending(null);
+    }
+  }
+
+  const emergency = (flags ?? []).filter((f) => f.is_emergency);
+  const normal = (flags ?? []).filter((f) => !f.is_emergency);
 
   return (
     <AdminShell
       title="Feature flags"
-      subtitle="Toggle features by user, region, or percentage. Every change is logged."
+      subtitle="Every toggle is platform-wide, reasoned, and written to the audit log."
     >
-      <View className="mt-6">
-        {isLoading || !data ? (
-          <Skeleton className="h-[400px] w-full" />
-        ) : (
-          <VStack className="gap-3">
-            {data.map((f) => (
-              <FlagRow key={f.key} flag={f} />
-            ))}
-          </VStack>
-        )}
-      </View>
+      {isLoading ? (
+        <Skeleton className="mt-6 h-80 w-full" />
+      ) : (
+        <>
+          <View className="mt-6">
+            <Text variant="label" className="mb-2">
+              Features
+            </Text>
+            <Card className="p-0 overflow-hidden">
+              {normal.map((f, i) => (
+                <FlagRow key={f.key} flag={f} last={i === normal.length - 1} onToggle={() => askThen(f)} />
+              ))}
+            </Card>
+          </View>
+
+          <View className="mt-6">
+            <Text variant="label" className="mb-2">
+              Emergency kill switches
+            </Text>
+            <Card className="p-0 overflow-hidden border-brand-500">
+              {emergency.map((f, i) => (
+                <FlagRow key={f.key} flag={f} last={i === emergency.length - 1} onToggle={() => askThen(f)} />
+              ))}
+            </Card>
+          </View>
+        </>
+      )}
+
+      <ReasonCodeModal
+        open={pending !== null}
+        onClose={() => setPending(null)}
+        onSubmit={({ reason_code, note }) => commit(reason_code, note)}
+        title={pending ? `${pending.flag.enabled ? 'Turn off' : 'Turn on'} “${pending.flag.label}”?` : ''}
+        message={pending?.radius}
+        reasonCodes={(reasons ?? []).map((r) => ({ code: r.code, label: r.label }))}
+        // The database enforces this too — the UI just says so first.
+        requireNote={pending?.flag.is_emergency}
+        notePlaceholder="What is happening, and why now?"
+        confirmLabel={pending?.flag.enabled ? 'Turn off' : 'Turn on'}
+        destructive={pending?.flag.is_emergency}
+        loading={runAction.isPending}
+      />
     </AdminShell>
   );
 }
 
-function FlagRow({ flag }: { flag: AdminFlag }) {
-  const isEmergency = flag.key.includes('freeze');
-  const [open, setOpen] = useState(false);
-  const toggle = useAdminToggleFlag();
-  const next = !flag.enabled;
-
+function FlagRow({
+  flag,
+  last,
+  onToggle,
+}: {
+  flag: FeatureFlag;
+  last: boolean;
+  onToggle: () => void;
+}) {
   return (
-    <Card className={`p-5 ${isEmergency ? 'border-2 border-brand-500' : ''}`}>
-      <ReasonCodeModal
-        open={open}
-        onClose={() => setOpen(false)}
-        title={`${next ? 'Enable' : 'Disable'} ${flag.key}?`}
-        message={
-          isEmergency
-            ? '🚨 Emergency flag. In production this requires two-person superadmin approval. The change is logged immediately.'
-            : flag.description
-        }
-        reasonCodes={FLAG_REASONS}
-        requireNote={isEmergency}
-        confirmLabel={next ? 'Enable' : 'Disable'}
-        destructive={isEmergency && next}
-        loading={toggle.isPending}
-        onSubmit={({ reason_code, note }) =>
-          toggle.mutate(
-            { key: flag.key, enabled: next, reason_code, note: note || undefined },
-            {
-              onSuccess: () => {
-                setOpen(false);
-                toast.success(`Flag ${flag.key} ${next ? 'enabled' : 'disabled'}.`);
-              },
-              onError: () => toast.error('Could not change flag. Try again.'),
-            },
-          )
-        }
-      />
-      <HStack className="justify-between gap-3 flex-wrap">
-        <VStack className="flex-1 min-w-[260px] gap-1">
-          <HStack className="gap-2 items-center flex-wrap">
-            <Text className="font-semibold">{flag.key}</Text>
-            {isEmergency ? <Badge variant="brand">emergency</Badge> : null}
-            <Badge variant="neutral">{flag.rollout_pct}% rollout</Badge>
-          </HStack>
-          <Text variant="small" className="text-ink-soft">{flag.description}</Text>
-          <Text variant="caption" className="text-ink-soft">
-            Last changed by {flag.updated_by} · {flag.updated_at}
-          </Text>
-        </VStack>
-        <Pressable
-          accessibilityRole="switch"
-          accessibilityState={{ checked: flag.enabled }}
-          onPress={() => setOpen(true)}
-          className={`self-start rounded-full px-4 py-2 ${
-            flag.enabled ? 'bg-ink' : 'bg-surface-alt'
-          }`}
-        >
-          <Text
-            variant="small"
-            className={flag.enabled ? 'text-white font-semibold' : 'text-ink font-semibold'}
-          >
-            {flag.enabled ? 'enabled' : 'disabled'}
-          </Text>
-        </Pressable>
-      </HStack>
-    </Card>
+    <View
+      className={`px-5 py-4 flex-row items-center justify-between gap-4 ${
+        last ? '' : 'border-b border-surface-border'
+      }`}
+    >
+      <VStack className="flex-1 gap-0.5">
+        <HStack className="gap-2 items-center flex-wrap">
+          <Text className="font-semibold">{flag.label}</Text>
+          <Badge variant={flag.enabled ? 'dark' : 'neutral'}>{flag.enabled ? 'on' : 'off'}</Badge>
+          {flag.is_emergency ? <Badge variant="brand">emergency</Badge> : null}
+        </HStack>
+        <Text variant="small" className="text-ink-soft">
+          {flag.description}
+        </Text>
+        <Text variant="small" className="text-ink-soft">
+          {flag.key} · updated {new Date(flag.updated_at).toLocaleDateString()}
+        </Text>
+      </VStack>
+
+      <Button variant="outline" size="sm" onPress={onToggle}>
+        {flag.enabled ? 'Turn off…' : 'Turn on…'}
+      </Button>
+    </View>
   );
 }
