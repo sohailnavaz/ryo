@@ -35,6 +35,7 @@ The docs are designed to survive UI iteration. Screens will change constantly; t
 | 12 | [concierge-support.md](./12-concierge-support.md)        | 24/7 multilingual concierge — **the Ryo differentiator**                      |
 | 13 | [host-tools.md](./13-host-tools.md)                      | Host dashboard, calendar sync, analytics, payouts                             |
 | 14 | [admin-ops.md](./14-admin-ops.md)                        | Internal admin console, moderation, finance, audit                            |
+| 15 | [admin-console.md](./15-admin-console.md)                | **Build spec** for §14 — surface map, the scalable list primitive, roles, event spine, expenditure & P&L model, analytics |
 
 > No `01` file — the brand bible at [branding.md](./branding.md) occupies that slot by design, since it changes on its own cadence and has its own living-doc conventions (see [§17](./branding.md#17-how-to-update-this-document)).
 

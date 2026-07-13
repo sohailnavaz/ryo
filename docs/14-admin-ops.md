@@ -2,6 +2,8 @@
 
 > The internal console — the control room behind every guest and host experience.
 
+> **⚠️ See [15 · Admin Console build spec](./15-admin-console.md).** This document states *what* the console is for and remains accurate on that. The **build-grade architecture** — the scalable list primitive, the event spine, the role matrix, the expenditure/P&L model, and the analytics stack — lives in §15, which also supersedes §12 below ("not in v1; use Supabase studio").
+
 | Field         | Value                                                                                    |
 | ------------- | ---------------------------------------------------------------------------------------- |
 | Module ID     | `14-admin-ops`                                                                           |

@@ -1,8 +1,8 @@
 ---
 doc: PROGRESS
 purpose: Human-readable living status doc. Safe to share with collaborators, investors, or friends.
-last_updated: 2026-05-23
-version: 0.11.1
+last_updated: 2026-07-13
+version: 0.12.0
 ---
 
 # Ryo — Progress
@@ -164,6 +164,25 @@ These are the calls I'd most like a second opinion on. If you're reviewing, skim
 ## 8. Changelog
 
 Append-only, newest first. One line per shipped thing. Version bumps follow branding.md convention (patch / minor / major).
+
+### `0.12.0` — 2026-07-13 — the admin spine
+
+**The unglamorous foundation the whole console stands on.** Nothing new is visible on screen; everything else now has something real to stand on.
+
+First, a full architecture spec — **[docs/15-admin-console.md](./15-admin-console.md)** — covering the complete admin surface, a list primitive that survives 100,000 rows, the staff role matrix, the analytics stack, and an honest **expenditure + P&L model** (revenue derived from real bookings; marketing, host share and salaries entered, with recurring costs and budget-vs-actual). It ends with an anti-vibe checklist — the honest test of whether this is professional or merely looks it.
+
+Then **migration `0005_admin_spine.sql`**:
+
+- **The columns the console acts on finally exist.** `profiles.status`, `listings.moderation_status`, `reviews.status` — none of them did, which is precisely *why* every admin action to date only ever wrote to the browser's localStorage.
+- **`admin_action()` — one write path.** Permission → idempotency → blast radius → dry-run → four-eyes approval → state change → audit → event, all in a single transaction. A double-click can no longer double-act; a crash can no longer suspend a user without an audit trail.
+- **A tamper-evident audit log.** Hash-chained: editing history breaks every hash after it, and a verifier finds it. It is append-only — not even an admin can rewrite it.
+- **Blast radius before you commit.** Suspending a host now tells you first: *"1 listing, 1 upcoming booking worth ₹600, 1 guest notified."*
+- **Honest refusals.** `booking.refund` is specified but **disabled**, and says so — "needs the double-entry ledger (Phase 3)" — instead of pretending to move money.
+- **The event spine.** An append-only, partitioned stream of facts, with the actor stamped from the JWT so an event can never lie about who caused it. Recording one can never throw: analytics must not be able to break a booking.
+
+**Verified against a real Postgres, not just typechecked** — 12/12 behavioural checks pass, including tamper-refusal, idempotent replay, and the four-eyes flow. Typecheck 7/7; `next build` green (43 routes).
+
+*Still to come:* the admin screens are **not yet wired** to any of this — Phase 1 rebuilds the list surfaces on a scalable primitive, Phase 2 deletes the localStorage stores, Phase 3 brings the ledger and the expenditure page.
 
 ### `0.11.1` — 2026-05-25 — 🎉 first REAL persisted booking
 

@@ -8,3 +8,7 @@
 // Server code (route handlers, server actions) should import data functions
 // from here instead. Only modules free of client React hooks may be re-exported.
 export { fetchListings, fetchListing } from './listings';
+
+// The event spine is hook-free by design, so server routes (concierge, webhooks)
+// can record facts too. See docs/15-admin-console.md §5.
+export { recordEvent, trackEvent, type EventName, type EventSource } from './events';
