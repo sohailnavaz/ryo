@@ -1,8 +1,8 @@
 ---
 doc: PROGRESS
 purpose: Human-readable living status doc. Safe to share with collaborators, investors, or friends.
-last_updated: 2026-07-13
-version: 0.13.0
+last_updated: 2026-07-14
+version: 0.14.0
 ---
 
 # Ryo — Progress
@@ -164,6 +164,31 @@ These are the calls I'd most like a second opinion on. If you're reviewing, skim
 ## 8. Changelog
 
 Append-only, newest first. One line per shipped thing. Version bumps follow branding.md convention (patch / minor / major).
+
+### `0.14.0` — 2026-07-14 — the console is real, and the money is on a ledger
+
+**`admin-store.ts` is deleted.** No admin action writes to the browser any more.
+
+The two worst offenders are gone. **Moderation** rendered a *hardcoded* array of two fake flagged reviews about listings that don't exist — it looked like a working moderation console and moderated nothing. **Incidents** was worse: a guest could raise a real incident from `/help` and no staff member would ever see it, because the console was showing invented ones instead. Both now read real tables, and every decision is reason-coded, audited, and atomic.
+
+**The money layer landed.** The Finance screen was a synthetic GMV chart. GMV is a vanity number — it is what *guests* paid, most of which is the host's money passing through us, and it says nothing about whether the business works.
+
+What replaces it is a real P&L on a **double-entry ledger**:
+
+> GMV → *less host payouts (never ours)* → **NET REVENUE** → *less variable costs* → **CONTRIBUTION MARGIN** → *less fixed costs* → **OPERATING PROFIT**
+
+- **Revenue derives from bookings; costs are entered** — marketing, salaries, infrastructure — exactly as scoped. Enter a salary once and it recurs monthly.
+- **Revenue is recognised at check-in, not at booking.** A March booking for a June stay earns nothing in March; a cancelled one never earns anything.
+- **Escrow float is shown as held, not earned** — money on our books that isn't ours, never summed into revenue.
+- Unit economics: contribution per booking, blended CAC, budget-vs-actual per account.
+- The ledger **refuses any journal that doesn't balance**, and is immutable — you correct a mistake with a reversing entry, never an edit.
+- **Refunds work again** — there is finally somewhere to record them.
+
+**Three bugs were found by running it, not by typechecking.** The sharpest: *deferred revenue went negative* — which a liability cannot be — because escrow was dated at check-in while cancellations reversed it today. Money is captured when the guest **books**. That one was caught by reading the number on the rendered page.
+
+The admin banner also stopped lying: it used to claim users, moderation and the audit log were synthetic. It now names only what still is — Overview and System health.
+
+Verified 15/15 in SQL (including *the books balance* — every journal, debits = credits) and 16/16 in a real browser.
 
 ### `0.13.0` — 2026-07-13 — the admin console stops being a database browser
 
