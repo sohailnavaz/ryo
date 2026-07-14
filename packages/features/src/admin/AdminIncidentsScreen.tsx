@@ -1,14 +1,15 @@
+'use client';
+
 import { useState } from 'react';
 import { View } from 'react-native';
 import {
-  incidentSla,
-  useAdminIncidents,
-  useAdminSetIncidentState,
-  type AdminIncident,
-  type IncidentSlaState,
+  newIdempotencyKey,
+  useAdminIncidentQueue,
+  useReasonCodes,
+  useRunAdminAction,
+  type AdminIncidentRow,
 } from '@bnb/api';
 import {
-  Avatar,
   Badge,
   Button,
   Card,
@@ -22,226 +23,208 @@ import {
 } from '@bnb/ui';
 import { AdminShell } from './shell';
 
-const TIERS = [1, 2, 3] as const;
+// The incident console, on real data. (docs/15-admin-console.md, Phase 2)
+//
+// Previously: a synthetic seed of invented incidents, with "resolve" writing to
+// localStorage. A guest could raise a real incident from /help and no staff member
+// would ever see it — the console displayed fabricated ones instead. That is the most
+// damaging kind of demo-ware, because it hides real distress behind fake work.
+//
+// Now it reads the `incidents` table, and assign/resolve go through `admin_action()`,
+// which appends to the incident's timeline in the same transaction.
 
-function slaVariant(state: IncidentSlaState): 'neutral' | 'brand' | 'dark' {
-  if (state === 'breached') return 'brand';
-  if (state === 'due_soon') return 'dark';
-  return 'neutral';
+const TIER_LABEL: Record<1 | 2 | 3, string> = {
+  1: 'Tier 1 · urgent',
+  2: 'Tier 2 · same day',
+  3: 'Tier 3 · routine',
+};
+
+/** First-response budget per tier (docs/12 §concierge SLA). */
+const TIER_SLA_MINUTES: Record<1 | 2 | 3, number> = { 1: 60, 2: 480, 3: 1440 };
+
+function slaState(i: AdminIncidentRow): { label: string; breached: boolean } {
+  if (i.status === 'resolved') return { label: 'resolved', breached: false };
+  const mins = (Date.now() - new Date(i.created_at).getTime()) / 60000;
+  const budget = TIER_SLA_MINUTES[i.tier];
+  if (mins > budget) return { label: 'SLA breached', breached: true };
+  return { label: `${Math.max(0, Math.round(budget - mins))}m left`, breached: false };
 }
-
-/** AdminIncident carries only `opened_at` (a date); anchor the SLA clock there. */
-function slaForIncident(i: AdminIncident) {
-  return incidentSla({ tier: i.tier, created_at: `${i.opened_at}T09:00:00Z`, status: i.state });
-}
-
-const RESOLVE_REASONS = [
-  { code: 'resolved_guest', label: 'Resolved with guest' },
-  { code: 'resolved_host', label: 'Resolved with host' },
-  { code: 'rebooked', label: 'Guest rebooked' },
-  { code: 'refunded', label: 'Refund issued' },
-  { code: 'no_action', label: 'No action needed' },
-  { code: 'other', label: 'Other' },
-];
 
 export function AdminIncidentsScreen() {
-  const { data, isLoading } = useAdminIncidents();
-  const [selected, setSelected] = useState<AdminIncident | null>(null);
-  const [resolveOpen, setResolveOpen] = useState(false);
-  const setIncidentState = useAdminSetIncidentState();
+  const [showResolved, setShowResolved] = useState(false);
+  const [pending, setPending] = useState<AdminIncidentRow | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
 
-  // Keep the detail pane in sync with refreshed query data after a mutation.
-  const current = selected ? (data?.find((i) => i.id === selected.id) ?? selected) : null;
+  const { data, isLoading } = useAdminIncidentQueue();
+  const { data: reasons } = useReasonCodes('incident');
+  const runAction = useRunAdminAction();
+
+  const all = data ?? [];
+  const open = all.filter((i) => i.status !== 'resolved');
+  const resolved = all.filter((i) => i.status === 'resolved');
+  const shown = showResolved ? resolved : open;
+
+  async function assign(i: AdminIncidentRow) {
+    try {
+      await runAction.mutateAsync({
+        action: 'incident.assign',
+        subjectType: 'incident',
+        subjectId: i.id,
+        note: 'Taking this',
+        idempotencyKey: newIdempotencyKey(),
+      });
+      toast.success('Assigned to you.');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not assign that.');
+    }
+  }
+
+  async function resolve(reason_code: string, note: string) {
+    if (!pending) return;
+    try {
+      await runAction.mutateAsync({
+        action: 'incident.resolve',
+        subjectType: 'incident',
+        subjectId: pending.id,
+        reasonCode: reason_code,
+        note,
+        idempotencyKey: newIdempotencyKey(),
+      });
+      toast.success('Incident resolved.');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not resolve that.');
+    } finally {
+      setPending(null);
+    }
+  }
 
   return (
     <AdminShell
       title="Incidents"
-      subtitle="Severity-tiered queues. Tier 1 = active impact; Tier 3 = informational."
+      subtitle="Real incidents raised by real guests. Tier 1 means someone needs help now."
     >
-      {current ? (
-        <ReasonCodeModal
-          open={resolveOpen}
-          onClose={() => setResolveOpen(false)}
-          title={`Resolve “${current.title}”?`}
-          message="Closes the incident and records the outcome in the audit log."
-          reasonCodes={RESOLVE_REASONS}
-          requireNote
-          confirmLabel="Resolve"
-          loading={setIncidentState.isPending}
-          onSubmit={({ reason_code, note }) =>
-            setIncidentState.mutate(
-              { incidentId: current.id, state: 'resolved', reason_code, note: note || undefined },
-              {
-                onSuccess: () => {
-                  setResolveOpen(false);
-                  toast.success('Incident resolved.');
-                },
-                onError: () => toast.error('Could not resolve. Try again.'),
-              },
-            )
-          }
-        />
-      ) : null}
-      <View className="mt-6">
-        {isLoading || !data ? (
-          <Skeleton className="h-[400px] w-full" />
+      <HStack className="mt-6 gap-2">
+        {([false, true] as const).map((r) => (
+          <Pressable key={String(r)} onPress={() => setShowResolved(r)}>
+            <View
+              className={`px-3.5 py-2 rounded-full border ${
+                showResolved === r ? 'bg-ink border-ink' : 'bg-surface border-surface-border'
+              }`}
+            >
+              <Text
+                variant="small"
+                className={showResolved === r ? 'text-surface font-semibold' : 'text-ink-soft'}
+              >
+                {r ? `Resolved · ${resolved.length}` : `Open · ${open.length}`}
+              </Text>
+            </View>
+          </Pressable>
+        ))}
+      </HStack>
+
+      <View className="mt-4">
+        {isLoading ? (
+          <Skeleton className="h-96 w-full" />
+        ) : shown.length === 0 ? (
+          <Card className="p-10 items-center">
+            <Text className="font-semibold">
+              {showResolved ? 'Nothing resolved yet' : 'No open incidents'}
+            </Text>
+            <Text variant="small" className="text-ink-soft mt-1 text-center">
+              {showResolved
+                ? 'Resolved incidents collect here.'
+                : 'Nobody is currently having a bad stay. Keep it that way.'}
+            </Text>
+          </Card>
         ) : (
-          <View className="flex-col md:flex-row gap-6">
-            <View className="flex-1 gap-6">
-              {TIERS.map((tier) => {
-                const items = data.filter((i) => i.tier === tier);
-                return (
-                  <View key={tier}>
-                    <HStack className="gap-2 items-center">
-                      <Text className="font-semibold">Tier {tier}</Text>
-                      <Badge variant={tier === 1 ? 'brand' : 'neutral'}>{items.length}</Badge>
-                    </HStack>
-                    {items.length === 0 ? (
-                      <Card className="mt-2 p-4 items-center">
+          <VStack className="gap-3">
+            {shown.map((i) => {
+              const sla = slaState(i);
+              const isOpen = selected === i.id;
+              return (
+                <Card key={i.id} className="p-5">
+                  <Pressable onPress={() => setSelected(isOpen ? null : i.id)}>
+                    <HStack className="justify-between items-start gap-4 flex-wrap">
+                      <VStack className="flex-1 gap-1 min-w-[220px]">
+                        <HStack className="gap-2 items-center flex-wrap">
+                          <Badge variant={i.tier === 1 ? 'brand' : 'neutral'}>{TIER_LABEL[i.tier]}</Badge>
+                          <Badge variant="neutral">{i.status}</Badge>
+                          {i.status !== 'resolved' ? (
+                            <Badge variant={sla.breached ? 'brand' : 'neutral'}>{sla.label}</Badge>
+                          ) : null}
+                        </HStack>
+                        <Text className="font-semibold">{i.subject}</Text>
                         <Text variant="small" className="text-ink-soft">
-                          Nothing in this tier.
+                          {i.guest_name} · {i.listing_title} · {new Date(i.created_at).toLocaleString()}
                         </Text>
-                      </Card>
-                    ) : (
-                      <VStack className="mt-2 gap-2">
-                        {items.map((i) => (
-                          <Pressable key={i.id} onPress={() => setSelected(i)}>
-                            <Card
-                              className={`p-4 ${selected?.id === i.id ? 'border-2 border-ink' : ''}`}
-                            >
-                              <HStack className="justify-between gap-3">
-                                <VStack className="flex-1 gap-0.5">
-                                  <Text className="font-semibold" numberOfLines={1}>
-                                    {i.title}
-                                  </Text>
-                                  <Text variant="small" className="text-ink-soft" numberOfLines={1}>
-                                    {i.user_name} · opened {i.opened_at}
-                                  </Text>
-                                </VStack>
-                                <VStack className="items-end gap-1">
-                                  <Badge
-                                    variant={
-                                      i.state === 'resolved'
-                                        ? 'neutral'
-                                        : i.state === 'new'
-                                          ? 'brand'
-                                          : 'dark'
-                                    }
-                                  >
-                                    {i.state.replace('_', ' ')}
-                                  </Badge>
-                                  {i.state !== 'resolved'
-                                    ? (() => {
-                                        const sla = slaForIncident(i);
-                                        return (
-                                          <Badge variant={slaVariant(sla.state)}>
-                                            {sla.state === 'breached'
-                                              ? 'SLA breached'
-                                              : sla.state === 'due_soon'
-                                                ? 'Due soon'
-                                                : 'On track'}
-                                          </Badge>
-                                        );
-                                      })()
-                                    : null}
-                                </VStack>
-                              </HStack>
-                            </Card>
-                          </Pressable>
-                        ))}
+                        {i.assignee_name ? (
+                          <Text variant="small" className="text-ink-soft">
+                            Assigned to {i.assignee_name}
+                          </Text>
+                        ) : null}
                       </VStack>
-                    )}
-                  </View>
-                );
-              })}
-            </View>
 
-            <View className="md:w-[400px]">
-              {current ? (
-                <Card className="p-5">
-                  <Badge
-                    className="self-start"
-                    variant={current.tier === 1 ? 'brand' : 'neutral'}
-                  >
-                    Tier {current.tier}
-                  </Badge>
-                  <Text className="mt-3 font-semibold">{current.title}</Text>
-                  <HStack className="mt-3 gap-3 items-center">
-                    <Avatar name={current.user_name} size={36} />
-                    <VStack className="flex-1 gap-0.5">
-                      <Text className="font-semibold">{current.user_name}</Text>
-                      {current.booking_id ? (
-                        <Text variant="small" className="text-ink-soft">
-                          {current.booking_id}
-                        </Text>
+                      {i.status !== 'resolved' ? (
+                        <HStack className="gap-2">
+                          {!i.assigned_to ? (
+                            <Button variant="outline" size="sm" onPress={() => assign(i)}>
+                              Take it
+                            </Button>
+                          ) : null}
+                          <Button size="sm" onPress={() => setPending(i)}>
+                            Resolve…
+                          </Button>
+                        </HStack>
                       ) : null}
-                    </VStack>
-                    <Badge
-                      variant={
-                        current.state === 'resolved'
-                          ? 'neutral'
-                          : current.state === 'new'
-                            ? 'brand'
-                            : 'dark'
-                      }
-                    >
-                      {current.state.replace('_', ' ')}
-                    </Badge>
-                  </HStack>
-                  <Text variant="small" className="mt-3 text-ink-soft">
-                    Opened {current.opened_at}
-                    {current.assigned_to ? ` · assigned to ${current.assigned_to}` : ''}
-                  </Text>
-                  {current.state !== 'resolved'
-                    ? (() => {
-                        const sla = slaForIncident(current);
-                        return (
-                          <Badge className="mt-2" variant={slaVariant(sla.state)}>
-                            {sla.label}
-                          </Badge>
-                        );
-                      })()
-                    : null}
-                  <View className="mt-3 rounded-xl bg-surface-alt px-3 py-3">
-                    <Text variant="small">{current.summary}</Text>
-                  </View>
+                    </HStack>
+                  </Pressable>
 
-                  <VStack className="mt-4 gap-2">
-                    <Button
-                      variant="secondary"
-                      disabled={current.state === 'resolved' || setIncidentState.isPending}
-                      onPress={() =>
-                        setIncidentState.mutate(
-                          { incidentId: current.id, state: 'in_progress', reason_code: 'self_assign' },
-                          {
-                            onSuccess: () => toast.success('Assigned to you.'),
-                            onError: () => toast.error('Could not assign. Try again.'),
-                          },
-                        )
-                      }
-                    >
-                      Assign to me
-                    </Button>
-                    <Button
-                      variant="outline"
-                      disabled={current.state === 'resolved'}
-                      onPress={() => setResolveOpen(true)}
-                    >
-                      {current.state === 'resolved' ? 'Resolved' : 'Resolve'}
-                    </Button>
-                  </VStack>
+                  {isOpen ? (
+                    <View className="mt-4 pt-4 border-t border-surface-border">
+                      <Text variant="small" className="mb-3">
+                        {i.detail || 'No further detail was given.'}
+                      </Text>
+                      <Text variant="label" className="mb-2">
+                        Timeline
+                      </Text>
+                      {i.events.length === 0 ? (
+                        <Text variant="small" className="text-ink-soft">
+                          Nothing has happened yet. That is the problem.
+                        </Text>
+                      ) : (
+                        <VStack className="gap-2">
+                          {i.events.map((e) => (
+                            <HStack key={e.id} className="gap-2 items-start">
+                              <Badge variant="neutral">{e.kind}</Badge>
+                              <VStack className="flex-1">
+                                <Text variant="small">{e.body}</Text>
+                                <Text variant="small" className="text-ink-soft">
+                                  {e.actor_label ?? 'system'} · {new Date(e.created_at).toLocaleString()}
+                                </Text>
+                              </VStack>
+                            </HStack>
+                          ))}
+                        </VStack>
+                      )}
+                    </View>
+                  ) : null}
                 </Card>
-              ) : (
-                <Card className="p-6 items-center">
-                  <Text className="text-ink-soft text-center">
-                    Select an incident to see the full detail and actions.
-                  </Text>
-                </Card>
-              )}
-            </View>
-          </View>
+              );
+            })}
+          </VStack>
         )}
       </View>
+
+      <ReasonCodeModal
+        open={pending !== null}
+        onClose={() => setPending(null)}
+        onSubmit={({ reason_code, note }) => resolve(reason_code, note)}
+        title={pending ? `Resolve “${pending.subject}”?` : ''}
+        message="The guest sees this outcome. Say what actually happened."
+        reasonCodes={(reasons ?? []).map((r) => ({ code: r.code, label: r.label }))}
+        confirmLabel="Resolve"
+        loading={runAction.isPending}
+      />
     </AdminShell>
   );
 }

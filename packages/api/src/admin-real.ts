@@ -178,8 +178,126 @@ export function useFeatureFlags() {
 }
 
 // ---------------------------------------------------------------------------
-// Audit log — the real, hash-chained one
+// Bookings
 // ---------------------------------------------------------------------------
+
+/** Derived from dates on the SERVER — the table only stores confirmed|cancelled. */
+export type BookingDisplayStatus = 'upcoming' | 'in_stay' | 'completed' | 'cancelled';
+
+export type AdminBookingRow = {
+  id: string;
+  listing_id: string;
+  listing_title: string;
+  city: string;
+  guest_id: string;
+  guest_name: string;
+  host_id: string;
+  host_name: string;
+  start_date: string;
+  end_date: string;
+  total_cents: number;
+  currency: string;
+  status: 'confirmed' | 'cancelled';
+  display_status: BookingDisplayStatus;
+};
+
+export type AdminBookingFull = AdminBookingRow & {
+  country: string;
+  guest_email: string;
+  nights: number;
+  created_at: string;
+  /** Null fields mean "not recorded" — older rows predate migration 0004. */
+  breakdown: {
+    subtotal_cents: number | null;
+    cleaning_fee_cents: number | null;
+    service_fee_cents: number | null;
+    taxes_cents: number | null;
+    discount_cents: number | null;
+  };
+  guests: {
+    adults: number | null;
+    children: number | null;
+    infants: number | null;
+    pets: number | null;
+  };
+  incidents: Array<{ id: string; subject: string; status: string; tier: number }>;
+  audit_trail: AdminAuditRow[];
+};
+
+export function useAdminBookingList(filter: BookingDisplayStatus | 'all' = 'all', q = '') {
+  return useQuery<AdminBookingRow[]>({
+    queryKey: ['admin-bookings-real', filter, q],
+    queryFn: async () => {
+      const supabase = tryGetSupabase();
+      if (!supabase) return [];
+      const { data, error } = await supabase.rpc('admin_list_bookings', {
+        p_filter: filter,
+        p_q: q.trim() || null,
+        p_limit: 200,
+      });
+      if (error) throw new Error(error.message);
+      return (data ?? []) as AdminBookingRow[];
+    },
+  });
+}
+
+export function useAdminBookingFull(bookingId: string | undefined) {
+  return useQuery<AdminBookingFull | null>({
+    queryKey: ['admin-booking-full', bookingId],
+    enabled: Boolean(bookingId),
+    queryFn: async () => {
+      const supabase = tryGetSupabase();
+      if (!supabase || !bookingId) return null;
+      const { data, error } = await supabase.rpc('admin_get_booking', { p_id: bookingId });
+      if (error) throw new Error(error.message);
+      return (data as AdminBookingFull | null) ?? null;
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Incidents
+// ---------------------------------------------------------------------------
+
+export type AdminIncidentRow = {
+  id: string;
+  subject: string;
+  detail: string;
+  category: string;
+  tier: 1 | 2 | 3;
+  status: 'new' | 'assigned' | 'in_progress' | 'resolved';
+  guest_id: string | null;
+  guest_name: string;
+  listing_id: string | null;
+  listing_title: string;
+  booking_id: string | null;
+  assigned_to: string | null;
+  assignee_name: string | null;
+  created_at: string;
+  resolved_at: string | null;
+  events: Array<{
+    id: string;
+    kind: string;
+    body: string;
+    actor_label: string | null;
+    created_at: string;
+  }>;
+};
+
+export function useAdminIncidentQueue(status?: string) {
+  return useQuery<AdminIncidentRow[]>({
+    queryKey: ['admin-incidents-real', status ?? 'all'],
+    queryFn: async () => {
+      const supabase = tryGetSupabase();
+      if (!supabase) return [];
+      const { data, error } = await supabase.rpc('admin_list_incidents', {
+        p_status: status ?? null,
+      });
+      if (error) throw new Error(error.message);
+      return (data ?? []) as AdminIncidentRow[];
+    },
+  });
+}
 
 export function useRealAuditLog(limit = 100, action?: string) {
   return useQuery<AdminAuditRow[]>({

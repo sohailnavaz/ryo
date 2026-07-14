@@ -20,7 +20,6 @@ export * from './host-verification-store';
 export * from './host-calendar-store';
 export * from './host-calendar';
 export * from './admin';
-export * from './admin-store';
 export * from './admin-action';
 export * from './admin-list';
 export * from './admin-real';
