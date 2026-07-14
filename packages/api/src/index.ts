@@ -23,6 +23,7 @@ export * from './admin';
 export * from './admin-action';
 export * from './admin-list';
 export * from './admin-real';
+export * from './finance';
 export * from './events';
 export * from './notifications-store';
 export * from './incidents';

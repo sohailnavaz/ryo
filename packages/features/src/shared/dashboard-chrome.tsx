@@ -10,9 +10,14 @@ const KIND_COPY: Record<DashboardKind, { title: string; body: string }> = {
       'Not production. Bookings, earnings and reviews on this page are synthesised for layout review. Real data wires up when v2 ships.',
   },
   admin: {
-    title: 'Maintenance dashboard preview',
+    title: 'Partly live',
+    // This banner used to claim users, the audit log and moderation were synthetic.
+    // After Phases 0–3 that is no longer true, and a banner that lies about which
+    // buttons are real is worse than no banner: it teaches an operator to distrust
+    // the console exactly where it has become trustworthy. Say precisely what is
+    // still fake, and nothing more.
     body:
-      'Not production. Users, audit log, moderation queue and system health on this page are synthesised for layout review.',
+      'Users, moderation, incidents, bookings, flags, the audit log and finance are LIVE — actions here really happen and are recorded. Overview and System health are still synthesised.',
   },
   guest: {
     title: 'Account preview',
