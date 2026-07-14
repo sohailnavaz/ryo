@@ -25,7 +25,13 @@ export function StaffGate({
   const router = useRouter();
 
   const loading = sessionLoading || roleLoading;
-  const allowed = role === 'staff' || role === 'admin';
+
+  // A demo identity can never pass this gate, whatever role it claims. `useRole`
+  // already clamps demo users to guest/host, but the console is the one place worth
+  // stating the rule twice: staff access requires a REAL Supabase session, because
+  // only a real session carries the JWT the database checks on every privileged call.
+  const isDemo = (user?.app_metadata as { demo?: boolean } | undefined)?.demo === true;
+  const allowed = !isDemo && (role === 'staff' || role === 'admin');
 
   useEffect(() => {
     if (loading) return;

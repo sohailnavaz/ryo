@@ -72,21 +72,30 @@ export function useRole(): { role: UserRole | null; loading: boolean } {
     enabled: realLookup,
     staleTime: 60_000,
     queryFn: async (): Promise<UserRole> => {
-      const { data, error } = await getSupabase()
-        .from('profiles')
-        .select('role')
-        .eq('id', user!.id)
-        .single();
-      if (error) return 'guest'; // column missing / row absent → safe default
-      return ((data as { role?: UserRole } | null)?.role ?? 'guest') as UserRole;
+      // `my_role()` reads profiles.role for auth.uid() inside the database. The role
+      // column is no longer selectable by the API roles at all (migration 0011), so
+      // this is the ONLY way a client can learn its own role — and it cannot learn
+      // anyone else's.
+      const { data, error } = await getSupabase().rpc('my_role');
+      if (error) return 'guest'; // fail closed
+      return ((data as UserRole | null) ?? 'guest') as UserRole;
     },
   });
 
   if (!user) return { role: null, loading: sessionLoading };
-  if (isDemo) return { role: meta?.role ?? 'guest', loading: sessionLoading };
-  if (!realLookup) return { role: 'guest', loading: sessionLoading };
-  return { role: data ?? null, loading: sessionLoading || isLoading };
+
+  // A demo identity is NEVER staff. Even if someone hand-edits localStorage to claim
+  // `role: 'admin'`, this clamps it — and the database would refuse them anyway,
+  // because they hold no JWT. Two locks, because one lock is a single typo from open.
+  if (isDemo) {
+    const claimed = meta?.role;
+    const safe: UserRole = claimed === 'host' ? 'host' : 'guest';
+    return { role: safe, loading: false };
+  }
+
+  return { role: (data ?? null) as UserRole | null, loading: isLoading };
 }
+
 
 export function useSignOut() {
   const qc = useQueryClient();
