@@ -1,15 +1,23 @@
 import { useMemo, useState } from 'react';
 import { FlatList, View, useWindowDimensions } from 'react-native';
-import { useFavoriteIds, useListings, useToggleFavorite } from '@bnb/api';
+import {
+  filtersAreSavable,
+  useFavoriteIds,
+  useListings,
+  useSaveSearch,
+  useToggleFavorite,
+} from '@bnb/api';
 import type { Listing } from '@bnb/db';
 import {
   CategoryBar,
   Heading,
+  Heart,
   ListingCard,
   Pressable,
   SearchBar,
   Skeleton,
   Text,
+  toast,
 } from '@bnb/ui';
 import { useRouter } from '@bnb/ui/nav';
 import { FilterSheet } from '../search/FilterSheet';
@@ -57,6 +65,22 @@ export function HomeScreen() {
   const { data: favIds = [] } = useFavoriteIds();
   const toggleFav = useToggleFavorite();
   const [sort, setSort] = useState<SortKey>('recommended');
+  const saveSearch = useSaveSearch();
+
+  const onSaveSearch = async () => {
+    try {
+      const res = await saveSearch.mutateAsync(filters);
+      if (res === 'saved') {
+        toast.success('Search saved', {
+          description: "We'll notify you when a new place matches.",
+        });
+      } else {
+        toast.info('Sign in to save searches and get match alerts.');
+      }
+    } catch {
+      toast.error("Couldn't save this search. Try again.");
+    }
+  };
 
   const sortedData = useMemo(() => sortListings(data ?? [], sort), [data, sort]);
 
@@ -147,6 +171,19 @@ export function HomeScreen() {
             </Pressable>
           );
         })}
+        {filtersAreSavable(filters) ? (
+          <Pressable
+            onPress={onSaveSearch}
+            disabled={saveSearch.isPending}
+            accessibilityLabel="Save this search"
+            className="ml-auto rounded-full px-3 py-1.5 border border-brand-500 flex-row items-center gap-1.5"
+          >
+            <Heart size={13} color="#C87156" />
+            <Text variant="small" className="font-semibold text-brand-600">
+              {saveSearch.isPending ? 'Saving…' : 'Save search'}
+            </Text>
+          </Pressable>
+        ) : null}
       </View>
 
       {isLoading ? (

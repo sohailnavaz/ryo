@@ -38,3 +38,4 @@ export * from './places-data';
 export * from './places';
 export * from './finance';
 export * from './storage';
+export * from './saved-searches';
