@@ -36,9 +36,21 @@ eas build --profile production --platform ios       # needs an Apple Developer a
 eas build --profile production --platform android   # needs a Google Play acct ($25 once)
 ```
 
-Before the first production build, fill the placeholders in `eas.json` → `submit.production`:
-`appleId`, `ascAppId`, `appleTeamId` (from App Store Connect) and a Play service-account
-JSON. Then:
+Before the first production build:
+
+1. **Fill `eas.json` → `build.production.env.EXPO_PUBLIC_SUPABASE_ANON_KEY`** with the
+   live project's anon (publishable) key. It ships as `EXPO_PUBLIC_*`, so it is meant to
+   be public — but until it's set, the built app has no Supabase key and every network
+   call fails silently. (The URL is already set.)
+2. **Enable the Apple provider** in Supabase → Auth → Providers → Apple, and add the
+   Service ID / key from the Apple Developer portal. The app already offers "Sign in with
+   Apple" (required by App Store Guideline 4.8 because we offer Google) — native uses the
+   OS sheet via `expo-apple-authentication`, web falls back to OAuth. Without the provider
+   enabled the button returns a 400.
+3. **Fill the placeholders in `eas.json` → `submit.production`:** `appleId`, `ascAppId`,
+   `appleTeamId` (from App Store Connect) and a Play service-account JSON.
+
+Then:
 
 ```bash
 eas submit --profile production --platform ios
@@ -57,6 +69,8 @@ eas submit --profile production --platform android
   photo library + camera, with usage strings (needed for listing/profile media).
 - ✅ **Native share** works (OS share sheet on device, Web Share/clipboard on web) —
   listing "Share" and trip-detail "Share this trip".
+- ✅ **Sign in with Apple** wired (native OS sheet + web OAuth) — clears the App Store
+  Guideline 4.8 blocker. Needs the Apple provider enabled in Supabase (see above).
 
 ## The parts only YOU can do (accounts + payment)
 

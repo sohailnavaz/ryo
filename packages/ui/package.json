@@ -22,6 +22,10 @@
     "./share": {
       "react-native": "./src/share.native.tsx",
       "default": "./src/share.web.tsx"
+    },
+    "./apple-auth": {
+      "react-native": "./src/apple-auth.native.tsx",
+      "default": "./src/apple-auth.web.tsx"
     }
   },
   "scripts": {

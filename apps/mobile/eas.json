@@ -19,7 +19,8 @@
       "channel": "production",
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_SUPABASE_URL": "https://mtldmawenkdebtchnocs.supabase.co"
+        "EXPO_PUBLIC_SUPABASE_URL": "https://mtldmawenkdebtchnocs.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "REPLACE_WITH_SUPABASE_ANON_KEY"
       }
     }
   },
