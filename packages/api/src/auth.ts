@@ -79,7 +79,12 @@ export function useRole(): { role: UserRole | null; loading: boolean } {
   });
 
   if (!user) return { role: null, loading: sessionLoading };
-  if (isDemo) return { role: meta?.role ?? 'guest', loading: sessionLoading };
+  // A demo identity is NEVER staff. Even if localStorage is hand-edited to claim
+  // 'admin', clamp it to guest/host — and the database refuses it anyway (no JWT).
+  if (isDemo) {
+    const claimed = meta?.role;
+    return { role: claimed === 'host' ? 'host' : 'guest', loading: sessionLoading };
+  }
   if (!realLookup) return { role: 'guest', loading: sessionLoading };
   return { role: data ?? null, loading: sessionLoading || isLoading };
 }
