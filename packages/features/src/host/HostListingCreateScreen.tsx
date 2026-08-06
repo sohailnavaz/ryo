@@ -20,6 +20,7 @@ import {
 } from '@bnb/ui';
 import { useRouter } from '@bnb/ui/nav';
 import { AddressAutocomplete } from './AddressAutocomplete';
+import { PhotoUploader } from '../shared/PhotoUploader';
 
 const PROPERTY_TYPES = ['House', 'Apartment', 'Cabin', 'Villa', 'Treehouse', 'Cottage'];
 const CURRENCIES = ['USD', 'INR', 'EUR', 'GBP', 'JPY', 'AUD'];
@@ -43,7 +44,7 @@ export function HostListingCreateScreen() {
   const [address, setAddress] = useState('');
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [amenities, setAmenities] = useState<string[]>([]);
-  const [photoUrl, setPhotoUrl] = useState('');
+  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
 
   const num = (s: string, d = 0) => {
     const n = Number(s);
@@ -81,7 +82,7 @@ export function HostListingCreateScreen() {
       lat: coords?.lat,
       lng: coords?.lng,
       amenities,
-      photo_urls: photoUrl.trim() ? [photoUrl.trim()] : [],
+      photo_urls: photoUrls,
     };
     create.mutate(input, {
       onSuccess: (id) => {
@@ -236,19 +237,13 @@ export function HostListingCreateScreen() {
         </Card>
 
         <Card className="p-5 gap-4">
-          <Heading level={3}>Photo</Heading>
+          <Heading level={3}>Photos</Heading>
           <Divider />
-          <Field label="Photo URL">
-            <Input
-              value={photoUrl}
-              onChangeText={setPhotoUrl}
-              placeholder="https://images.unsplash.com/…"
-              autoCapitalize="none"
-            />
-          </Field>
-          <Text variant="caption">
-            Paste an image URL for now. Drag-and-drop upload arrives with file storage.
-          </Text>
+          <PhotoUploader
+            urls={photoUrls}
+            onChange={setPhotoUrls}
+            disabled={!supabaseConfigured}
+          />
         </Card>
 
         <HStack className="gap-2 justify-end">

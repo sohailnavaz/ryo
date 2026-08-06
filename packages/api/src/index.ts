@@ -37,3 +37,4 @@ export * from './offline-pack-store';
 export * from './places-data';
 export * from './places';
 export * from './finance';
+export * from './storage';

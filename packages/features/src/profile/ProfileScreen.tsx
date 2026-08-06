@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import {
   tryGetSupabase,
+  uploadAvatar,
   useMyProfile,
   useSignOut,
   useUpdateProfile,
@@ -11,6 +12,7 @@ import {
 import {
   Avatar,
   Button,
+  Camera,
   Card,
   Divider,
   Heading,
@@ -23,6 +25,7 @@ import {
   VStack,
 } from '@bnb/ui';
 import { useRouter } from '@bnb/ui/nav';
+import { pickImages } from '@bnb/ui/image-picker';
 import { useT } from '../i18n';
 
 const LOCALES = ['en-IN', 'en-US', 'hi-IN', 'es-ES', 'fr-FR', 'ja-JP', 'ar-AE'];
@@ -287,6 +290,39 @@ function AboutSection({ profile }: { profile: RyoProfile }) {
 
 // ---- Personal info --------------------------------------------------------
 
+/** Pick a photo from the device and upload it to the `avatars` bucket, handing
+ *  the resulting public URL back to the form. Falls back to the URL field on web
+ *  if the picker is unavailable. */
+function AvatarUploadButton({ onUploaded }: { onUploaded: (url: string) => void }) {
+  const [busy, setBusy] = useState(false);
+  const upload = async () => {
+    setBusy(true);
+    try {
+      const [img] = await pickImages({ multiple: false });
+      if (!img) return;
+      const url = await uploadAvatar(img);
+      onUploaded(url);
+      toast.success('Photo uploaded.');
+    } catch (e) {
+      toast.error("Couldn't upload your photo.", {
+        description: e instanceof Error ? e.message : undefined,
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Button
+      title={busy ? 'Uploading…' : 'Upload a photo'}
+      variant="outline"
+      size="sm"
+      onPress={upload}
+      loading={busy}
+      leftIcon={<Camera size={14} color="#1F5A6B" />}
+    />
+  );
+}
+
 function PersonalInfoSection({ profile }: { profile: RyoProfile }) {
   const t = useT();
   const update = useUpdateProfile();
@@ -354,11 +390,12 @@ function PersonalInfoSection({ profile }: { profile: RyoProfile }) {
           <HStack className="gap-3 items-center">
             <Avatar src={avatarUrl.trim() || null} name={preferredName || fullName} size={56} />
             <View className="flex-1">
+              <AvatarUploadButton onUploaded={setAvatarUrl} />
               <LabeledInput
-                label="Profile photo URL"
+                label="…or paste a photo URL"
                 value={avatarUrl}
                 onChangeText={setAvatarUrl}
-                placeholder="https://…  (upload arrives with Storage)"
+                placeholder="https://…"
                 autoCapitalize="none"
               />
             </View>

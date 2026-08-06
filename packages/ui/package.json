@@ -26,6 +26,10 @@
     "./apple-auth": {
       "react-native": "./src/apple-auth.native.tsx",
       "default": "./src/apple-auth.web.tsx"
+    },
+    "./image-picker": {
+      "react-native": "./src/image-picker.native.tsx",
+      "default": "./src/image-picker.web.tsx"
     }
   },
   "scripts": {
