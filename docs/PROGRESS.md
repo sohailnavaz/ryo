@@ -2,7 +2,7 @@
 doc: PROGRESS
 purpose: Human-readable living status doc. Safe to share with collaborators, investors, or friends.
 last_updated: 2026-07-14
-version: 0.14.0
+version: 0.15.0
 ---
 
 # Ryo — Progress
