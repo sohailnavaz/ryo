@@ -1,37 +1,46 @@
 {
   "expo": {
-    "name": "bnb",
-    "slug": "bnb",
-    "scheme": "bnb",
-    "version": "0.0.1",
-    "orientation": "default",
-    "userInterfaceStyle": "light",
+    "name": "Ryo",
+    "slug": "ryo",
+    "version": "1.0.0",
+    "orientation": "portrait",
     "icon": "./assets/icon.png",
+    "scheme": "ryo",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#FAF6F0"
     },
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.navazshaik.bnb"
-    },
-    "android": {
-      "package": "com.navazshaik.bnb",
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/icon.png",
-        "backgroundColor": "#ffffff"
+      "bundleIdentifier": "com.ryostays.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Ryo needs access to your photos so you can add images to a listing or your profile.",
+        "NSCameraUsageDescription": "Ryo uses the camera so you can take photos or video of a listing.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
+    "android": {
+      "package": "com.ryostays.app",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#C87156"
+      },
+      "permissions": ["CAMERA", "READ_MEDIA_IMAGES", "READ_MEDIA_VIDEO"]
+    },
     "web": {
-      "bundler": "metro",
-      "output": "single"
+      "favicon": "./assets/favicon.png"
     },
     "plugins": ["expo-router"],
-    "experiments": {
-      "typedRoutes": false,
-      "tsconfigPaths": true
-    },
-    "newArchEnabled": true
+    "extra": {
+      "eas": {
+        "projectId": "REPLACE_AFTER_eas_init"
+      }
+    }
   }
 }

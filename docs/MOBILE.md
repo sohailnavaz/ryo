@@ -45,13 +45,41 @@ eas submit --profile production --platform ios
 eas submit --profile production --platform android
 ```
 
-## Still open for a polished store release
+## Done — the app is now submission-shaped
 
-- **App identity is still `bnb`** (`app.json` name/slug/bundle id `com.navazshaik.bnb`).
-  Rename to Ryo as part of the `bnb → ryo` migration ([branding §12](./branding.md)).
-- **Icon + splash** are the Expo defaults — replace with the real brand assets.
-- **Route coverage:** mobile currently ships the guest core (home, listing, booking,
-  trips, wishlists, profile). Host/admin/messaging are web-first; add mobile routes if
-  they're in scope for the phone app.
-- **Push notifications, deep links** — not yet configured.
-- Smoke-test on a physical device before submitting.
+- ✅ **Identity is Ryo.** `app.json`: name **Ryo**, slug `ryo`, scheme `ryo`, version
+  `1.0.0`, bundle id **`com.ryostays.app`** (iOS + Android). ⚠️ Confirm you want that
+  bundle id before the first build — it's permanent once an app is created in the
+  stores. Change it here if you own a different reverse-domain.
+- ✅ **Real brand icon + splash** (`assets/icon.png`, `adaptive-icon.png`, `splash.png`)
+  — terracotta field + the 旅 mark, cream splash. A designer can refine, but these ship.
+- ✅ **Permissions declared** (`app.json` → iOS `infoPlist`, Android `permissions`):
+  photo library + camera, with usage strings (needed for listing/profile media).
+- ✅ **Native share** works (OS share sheet on device, Web Share/clipboard on web) —
+  listing "Share" and trip-detail "Share this trip".
+
+## The parts only YOU can do (accounts + payment)
+
+```bash
+npm i -g eas-cli && eas login          # free Expo account
+eas init                                # creates the project; paste its id into app.json → extra.eas.projectId
+eas build --profile production --platform ios       # Apple Developer account, $99/yr
+eas build --profile production --platform android   # Google Play account, $25 once
+eas submit --profile production --platform ios      # fill eas.json → submit.production first
+eas submit --profile production --platform android
+```
+
+You'll also provide, in the store consoles: app description, keywords, category,
+support URL, a **privacy policy URL** (required by both stores — the web app has
+`/legal` pages to point at), and screenshots (take them from a running device/sim).
+
+## Still open (nice-to-have, not blockers)
+
+- **Route coverage:** the phone app ships the guest core (home, listing, booking,
+  trips, wishlists, profile). Host/admin/messaging are web-first — add mobile routes
+  only if they're in scope for the phone.
+- **Push notifications + deep links** — not yet configured.
+- **A device smoke-test** — this environment has no iOS simulator, so the app is
+  verified by a clean production bundle (`expo export`, 3.7k modules) but not yet run
+  on a physical device. Do one `eas build --profile development` run and open it on your
+  phone before submitting.

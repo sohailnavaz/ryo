@@ -18,7 +18,11 @@
       "react-native": "./src/Map.native.tsx",
       "default": "./src/Map.web.tsx"
     },
-    "./global.css": "./src/global.css"
+    "./global.css": "./src/global.css",
+    "./share": {
+      "react-native": "./src/share.native.tsx",
+      "default": "./src/share.web.tsx"
+    }
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

@@ -16,6 +16,7 @@ import {
 } from '@bnb/ui';
 import { ArrowLeft, Bath, Bed, Heart, MapPin, Share2, Star, Users, Pressable, toast } from '@bnb/ui';
 import { Map } from '@bnb/ui/Map';
+import { shareContent } from '@bnb/ui/share';
 import { useRouter } from '@bnb/ui/nav';
 import { formatDateRange, formatPrice } from '@bnb/utils';
 import { useFiltersStore } from '../state/filtersStore';
@@ -23,32 +24,18 @@ import { useT } from '../i18n';
 
 export type ListingScreenProps = { id: string };
 
-/** Share the current listing via the Web Share API, falling back to clipboard.
- *  Returns true if some form of sharing succeeded so the caller can toast. */
-async function shareListing(opts: { id: string; title: string; city: string }): Promise<'shared' | 'copied' | 'failed'> {
-  if (typeof window === 'undefined') return 'failed';
-  const url = window.location.href;
-  const text = `Check out ${opts.title} in ${opts.city} on Ryo`;
-  const nav = window.navigator as Navigator & {
-    share?: (data: { title?: string; text?: string; url?: string }) => Promise<void>;
-  };
-  if (nav.share) {
-    try {
-      await nav.share({ title: opts.title, text, url });
-      return 'shared';
-    } catch {
-      // user cancelled or share rejected — fall through to clipboard
-    }
-  }
-  if (nav.clipboard?.writeText) {
-    try {
-      await nav.clipboard.writeText(url);
-      return 'copied';
-    } catch {
-      // ignore
-    }
-  }
-  return 'failed';
+const SHARE_ORIGIN = 'https://ryo-web.vercel.app';
+
+/** Share a listing via the OS share sheet (native) or Web Share / clipboard (web).
+ *  Builds a canonical URL from the id so it works with no `window` on native. */
+async function shareListing(opts: { id: string; title: string; city: string }): Promise<'shared' | 'copied' | 'dismissed' | 'failed'> {
+  const url =
+    typeof window !== 'undefined' ? window.location.href : `${SHARE_ORIGIN}/listing/${opts.id}`;
+  return shareContent({
+    title: opts.title,
+    message: `Check out ${opts.title} in ${opts.city} on Ryo`,
+    url,
+  });
 }
 
 export function ListingScreen({ id }: ListingScreenProps) {
