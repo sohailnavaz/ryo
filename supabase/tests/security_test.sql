@@ -81,7 +81,11 @@ begin
   insert into notifications (profile_id, kind, title, body)
     values ('44440000-0000-4000-8000-000000000a01','system','Hi','private');
   perform pg_temp.act_as('44440000-0000-4000-8000-000000000a03'); -- someone else
-  if (select count(*) from notifications) <> 0 then raise exception 'FAIL 4: another user reads my notifications'; end if;
+  -- a03 legitimately sees their own welcome notification (0022) — the invariant
+  -- is that they see NONE of a01's rows.
+  if (select count(*) from notifications
+       where profile_id='44440000-0000-4000-8000-000000000a01' or body='private') <> 0
+    then raise exception 'FAIL 4: another user reads my notifications'; end if;
   perform pg_temp.as_pg();
   perform pg_temp.act_as('44440000-0000-4000-8000-000000000a01'); -- the owner
   if (select count(*) from notifications where body='private') <> 1 then raise exception 'FAIL 4: owner cannot read own notification'; end if;
