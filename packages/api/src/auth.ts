@@ -72,13 +72,9 @@ export function useRole(): { role: UserRole | null; loading: boolean } {
     enabled: realLookup,
     staleTime: 60_000,
     queryFn: async (): Promise<UserRole> => {
-      const { data, error } = await getSupabase()
-        .from('profiles')
-        .select('role')
-        .eq('id', user!.id)
-        .single();
-      if (error) return 'guest'; // column missing / row absent → safe default
-      return ((data as { role?: UserRole } | null)?.role ?? 'guest') as UserRole;
+      const { data, error } = await getSupabase().rpc('my_role');
+      if (error) return 'guest';
+      return ((data as UserRole | null) ?? 'guest') as UserRole;
     },
   });
 
