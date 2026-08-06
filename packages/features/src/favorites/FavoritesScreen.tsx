@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
 import { FlatList, View, useWindowDimensions } from 'react-native';
 import {
-  createCollection,
-  deleteCollection,
-  renameCollection,
+  useCreateCollection,
+  useDeleteCollection,
+  useRenameCollection,
   useFavoriteIds,
   useFavorites,
   useToggleFavorite,
@@ -38,7 +38,10 @@ export function FavoritesScreen() {
   const { data = [], isLoading } = useFavorites();
   const { data: favIds = [] } = useFavoriteIds();
   const toggleFav = useToggleFavorite();
-  const collections = useWishlistCollections();
+  const { collections } = useWishlistCollections();
+  const createCol = useCreateCollection();
+  const renameCol = useRenameCollection();
+  const deleteCol = useDeleteCollection();
 
   const [selected, setSelected] = useState<Selected>('all');
   const [saveTarget, setSaveTarget] = useState<Listing | null>(null);
@@ -68,11 +71,12 @@ export function FavoritesScreen() {
       toast.error('Give your list a name.');
       return;
     }
-    const id = createCollection(trimmed);
+    createCol.mutateAsync({ name: trimmed }).then((id) => {
+      if (typeof id === 'string') setSelected(id);
+    });
     toast.success(`Created “${trimmed}”.`);
     setCreateName('');
     setCreateOpen(false);
-    setSelected(id);
   };
 
   const doRename = () => {
@@ -82,7 +86,7 @@ export function FavoritesScreen() {
       toast.error('Name can’t be empty.');
       return;
     }
-    renameCollection(renameId, trimmed);
+    renameCol.mutate({ id: renameId, name: trimmed });
     setRenameId(null);
     setRenameValue('');
     toast.success('List renamed.');
@@ -90,7 +94,7 @@ export function FavoritesScreen() {
 
   const doDelete = () => {
     if (!deleteId) return;
-    deleteCollection(deleteId);
+    deleteCol.mutate(deleteId);
     if (selected === deleteId) setSelected('all');
     setDeleteId(null);
     toast.success('List deleted. Your saved stays are untouched.');

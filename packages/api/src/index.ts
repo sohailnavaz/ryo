@@ -9,7 +9,7 @@ export * from './listings';
 export * from './dummy-listings';
 export * from './bookings';
 export * from './favorites';
-export * from './wishlist-collections-store';
+export * from './wishlists';
 export * from './auth';
 export * from './reviews';
 export * from './review-drafts-store';

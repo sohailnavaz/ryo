@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import {
-  addToCollection,
-  createCollection,
-  removeFromCollection,
+  useCreateCollection,
+  useToggleInCollection,
   useWishlistCollections,
 } from '@bnb/api';
 import {
@@ -38,14 +37,15 @@ export function SaveToCollectionSheet({
   listingId,
   listingTitle,
 }: SaveToCollectionSheetProps) {
-  const collections = useWishlistCollections();
+  const { collections } = useWishlistCollections();
+  const toggleInCollection = useToggleInCollection();
+  const createCollection = useCreateCollection();
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState('');
 
   const toggle = (collectionId: string, isIn: boolean) => {
     if (!listingId) return;
-    if (isIn) removeFromCollection(collectionId, listingId);
-    else addToCollection(collectionId, listingId);
+    toggleInCollection.mutate({ collectionId, listingId, add: !isIn });
   };
 
   const create = () => {
@@ -54,7 +54,7 @@ export function SaveToCollectionSheet({
       toast.error('Give your list a name.');
       return;
     }
-    createCollection(trimmed, listingId ?? undefined);
+    createCollection.mutate({ name: trimmed, seedListingId: listingId ?? undefined });
     toast.success(`Created “${trimmed}”.`);
     setName('');
     setCreating(false);
@@ -94,7 +94,7 @@ export function SaveToCollectionSheet({
                       isIn ? 'bg-ink border-ink' : 'border-surface-border'
                     }`}
                   >
-                    {isIn ? <Check size={14} color="#fff" /> : null}
+                    {isIn ? <Check size={14} color="#0A0A0F" /> : null}
                   </View>
                 </Pressable>
               );
