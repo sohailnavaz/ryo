@@ -19,6 +19,7 @@ import { Map } from '@bnb/ui/Map';
 import { useRouter } from '@bnb/ui/nav';
 import { formatDateRange, formatPrice } from '@bnb/utils';
 import { useFiltersStore } from '../state/filtersStore';
+import { MessageHostButton } from '../messaging/MessageHostButton';
 
 export type ListingScreenProps = { id: string };
 
@@ -302,6 +303,9 @@ export function ListingScreen({ id }: ListingScreenProps) {
                 </View>
                 <View className="mt-3">
                   <Button title="Reserve" fullWidth onPress={goBook} />
+                </View>
+                <View className="mt-2">
+                  <MessageHostButton hostId={listing.host_id} listingId={listing.id} listingTitle={listing.title} fullWidth />
                 </View>
                 <View className="mt-4">
                   <PriceTotal

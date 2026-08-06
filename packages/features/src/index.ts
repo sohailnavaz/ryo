@@ -65,3 +65,7 @@ export * from './discover/DiscoverScreen';
 export * from './offline/OfflinePackScreen';
 export * from './phrasebook/PhrasebookScreen';
 export * from './phrasebook/data';
+
+export * from './messaging/MessagesScreen';
+export * from './messaging/ThreadScreen';
+export * from './messaging/MessageHostButton';

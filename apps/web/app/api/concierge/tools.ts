@@ -189,14 +189,20 @@ async function messageHost(
   if (!id || !message) {
     return { content: 'A listing id and a message are both required.', isError: true };
   }
-  // STUB: messaging threads don't exist yet. Confirm the listing is real, then
-  // acknowledge as queued for the concierge team. No data is written.
+  // Direct guest↔host messaging is now a real feature (migration 0013). The concierge
+  // does NOT send on the guest's behalf from here yet: this route authenticates the
+  // guest only by a client-supplied id, which is not enough to write AS them without a
+  // spoofing risk. Rather than fake a send or introduce that hole, guide the guest to
+  // the real composer, which sends under their own verified session.
+  // Follow-up: pass + verify the guest's access token into this route, then insert via
+  // an RLS-scoped client (see packages/api/src/messaging.ts `useStartThread`).
   const listing = await fetchListing(id);
   if (!listing) return { content: `No listing found for id "${id}".` };
   return {
     content:
-      `Queued a message to the host of "${listing.title}" for concierge delivery. ` +
-      `Direct host messaging is still being rolled out, so a concierge will pass this along and follow up with the guest. (No message was sent automatically.)`,
+      `You can message the host of "${listing.title}" directly — open the listing and tap ` +
+      `"Message host", and your message goes straight to them under your own account. ` +
+      `Draft to send: "${message}". If anything about the stay has gone wrong instead, I can open a support case.`,
   };
 }
 

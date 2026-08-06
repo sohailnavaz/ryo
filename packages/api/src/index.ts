@@ -10,6 +10,7 @@ export * from './dummy-listings';
 export * from './bookings';
 export * from './favorites';
 export * from './wishlists';
+export * from './messaging';
 export * from './auth';
 export * from './reviews';
 export * from './review-drafts-store';
