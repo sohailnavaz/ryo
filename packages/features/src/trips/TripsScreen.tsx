@@ -168,8 +168,8 @@ export function TripsScreen() {
                     <HStack className="items-center gap-2 px-1">
                       <Star
                         size={14}
-                        color="#C87156"
-                        fill={review ? '#C87156' : 'transparent'}
+                        color="#FF6B5C"
+                        fill={review ? '#FF6B5C' : 'transparent'}
                       />
                       <Text variant="small" className="text-ink underline">
                         {review ? `Your review · ${review.rating}/5` : 'Leave a review'}

@@ -89,7 +89,7 @@ export function ConciergeScreen({ endpoint }: ConciergeScreenProps) {
         <HStack className="justify-between py-4">
           <HStack className="gap-3">
             <View className="h-10 w-10 rounded-full bg-brand-100 items-center justify-center">
-              <Sparkles size={20} color="#C87156" />
+              <Sparkles size={20} color="#FF6B5C" />
             </View>
             <VStack>
               <Heading level={3}>Concierge</Heading>
@@ -115,7 +115,7 @@ export function ConciergeScreen({ endpoint }: ConciergeScreenProps) {
                   active ? 'bg-ink border-ink' : 'bg-surface border-surface-border'
                 }`}
               >
-                <Text className={active ? 'text-white text-[13px]' : 'text-ink text-[13px]'}>
+                <Text className={active ? 'text-cream text-[13px]' : 'text-ink text-[13px]'}>
                   {l.label}
                 </Text>
               </Pressable>
@@ -209,7 +209,7 @@ function MessageBubble({
     return (
       <View className="self-end max-w-[85%]">
         <View className="rounded-2xl rounded-br-md bg-ink px-4 py-2.5">
-          <Text className="text-white">{content}</Text>
+          <Text className="text-cream">{content}</Text>
         </View>
       </View>
     );

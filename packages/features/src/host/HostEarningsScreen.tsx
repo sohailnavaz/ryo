@@ -47,7 +47,7 @@ export function HostEarningsScreen({ hostId = DEMO_HOST_ID }: { hostId?: string 
                 active ? 'bg-ink border-ink' : 'bg-surface border-surface-border'
               }`}
             >
-              <Text variant="small" className={active ? 'text-white font-semibold' : 'text-ink'}>
+              <Text variant="small" className={active ? 'text-cream font-semibold' : 'text-ink'}>
                 {p.label}
               </Text>
             </Pressable>

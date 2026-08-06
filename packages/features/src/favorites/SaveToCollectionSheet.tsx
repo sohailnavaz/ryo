@@ -130,7 +130,7 @@ export function SaveToCollectionSheet({
         <Button
           title="Create a new list"
           variant="outline"
-          leftIcon={<Plus size={16} color="#0E1A2B" />}
+          leftIcon={<Plus size={16} color="#F3F4F8" />}
           onPress={() => setCreating(true)}
         />
       )}

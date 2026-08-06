@@ -49,8 +49,8 @@ export function ListingCard({
           >
             <Heart
               size={18}
-              color={isFavorite ? '#C87156' : '#ffffff'}
-              fill={isFavorite ? '#C87156' : 'transparent'}
+              color={isFavorite ? '#FF6B5C' : '#ffffff'}
+              fill={isFavorite ? '#FF6B5C' : 'transparent'}
             />
           </IconButton>
         </View>
@@ -58,12 +58,12 @@ export function ListingCard({
           <>
             <View className="absolute left-2 top-1/2 -mt-4">
               <IconButton onPress={prev} className="bg-white/90 h-8 w-8">
-                <ChevronLeft size={16} color="#0E1A2B" />
+                <ChevronLeft size={16} color="#0A0A0F" />
               </IconButton>
             </View>
             <View className="absolute right-2 top-1/2 -mt-4">
               <IconButton onPress={next} className="bg-white/90 h-8 w-8">
-                <ChevronRight size={16} color="#0E1A2B" />
+                <ChevronRight size={16} color="#0A0A0F" />
               </IconButton>
             </View>
             <View className="absolute bottom-3 left-0 right-0 flex-row justify-center gap-1">
@@ -87,7 +87,7 @@ export function ListingCard({
           </Text>
           {listing.rating_count > 0 ? (
             <View className="flex-row items-center gap-1">
-              <Star size={12} color="#0E1A2B" fill="#0E1A2B" />
+              <Star size={12} color="#FF6B5C" fill="#FF6B5C" />
               <Text variant="small">{listing.rating_avg.toFixed(2)}</Text>
             </View>
           ) : null}

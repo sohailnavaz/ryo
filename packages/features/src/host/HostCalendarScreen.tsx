@@ -85,7 +85,7 @@ export function HostCalendarScreen({ hostId = DEMO_HOST_ID }: { hostId?: string 
                 >
                   <Text
                     variant="small"
-                    className={isActive ? 'text-white font-semibold' : 'text-ink'}
+                    className={isActive ? 'text-cream font-semibold' : 'text-ink'}
                   >
                     {l.title}
                   </Text>
@@ -223,7 +223,7 @@ function DayCell({
     txt = 'text-ink-soft';
   } else if (cell.state === 'booked') {
     bg = 'bg-brand-500';
-    txt = 'text-white';
+    txt = 'text-cream';
   } else if (cell.state === 'blocked') {
     bg = 'bg-surface-alt';
     txt = 'text-ink-soft';

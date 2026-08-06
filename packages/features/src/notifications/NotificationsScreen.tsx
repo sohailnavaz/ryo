@@ -141,7 +141,7 @@ function NotificationRow({ notification: n }: { notification: Notification }) {
       <Card className={n.read ? 'p-4' : 'p-4 border-brand-200 bg-warm-50'}>
         <HStack className="gap-3 items-start">
           <View className="h-10 w-10 rounded-full bg-surface-alt items-center justify-center">
-            <Icon size={18} color="#1F5A6B" />
+            <Icon size={18} color="#34E7E4" />
           </View>
 
           <VStack className="flex-1 gap-1">
@@ -177,7 +177,7 @@ function EmptyState() {
   return (
     <Card className="mt-8 p-10 items-center">
       <View className="h-14 w-14 rounded-full bg-surface-alt items-center justify-center">
-        <Sparkles size={24} color="#C87156" />
+        <Sparkles size={24} color="#FF6B5C" />
       </View>
       <Heading level={3} className="mt-4">
         You're all caught up

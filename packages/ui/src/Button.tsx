@@ -22,21 +22,23 @@ export type ButtonProps = {
 const base =
   'flex-row items-center justify-center rounded-full transition duration-150 active:scale-[0.97]';
 
+// On the void, "on-accent" surfaces (aqua / white / coral) carry DARK text; surfaces
+// on the void carry light text. Getting this wrong is how a dark theme goes invisible.
 const variantClass: Record<Variant, string> = {
-  primary: 'bg-brand-500 hover:bg-brand-600 active:bg-brand-700 shadow-soft hover:shadow-card',
-  secondary: 'bg-ink hover:bg-ink/90 active:bg-ink/80',
-  ghost: 'bg-transparent hover:bg-surface-alt active:bg-warm-100',
+  primary: 'bg-brand-500 hover:bg-brand-400 active:bg-brand-600 glow-aqua', // aqua, the neon CTA
+  secondary: 'bg-ink hover:bg-ink/90 active:bg-ink/80', // ink is now near-white → a light button
+  ghost: 'bg-transparent hover:bg-surface-alt active:bg-warm-200',
   outline:
-    'bg-transparent border border-surface-border hover:border-ink/40 hover:bg-surface-alt active:bg-warm-100',
+    'bg-transparent border border-surface-border hover:border-brand-500/50 hover:bg-surface-alt active:bg-warm-200',
   danger: 'bg-danger hover:opacity-90 active:opacity-80',
 };
 
 const variantText: Record<Variant, string> = {
-  primary: 'text-white',
-  secondary: 'text-white',
+  primary: 'text-cream', // dark text on aqua
+  secondary: 'text-cream', // dark text on the near-white button
   ghost: 'text-ink',
   outline: 'text-ink',
-  danger: 'text-white',
+  danger: 'text-cream', // dark text on coral
 };
 
 const sizeClass: Record<Size, string> = {
@@ -81,7 +83,7 @@ export function Button({
       )}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'ghost' || variant === 'outline' ? '#0E1A2B' : '#FAF6F0'} />
+        <ActivityIndicator color={variant === 'ghost' || variant === 'outline' ? '#F3F4F8' : '#0A0A0F'} />
       ) : (
         <>
           {leftIcon ? <View className="mr-2">{leftIcon}</View> : null}

@@ -110,7 +110,7 @@ export function StoriesScreen() {
                       />
                       {/* location chip */}
                       <View className="absolute left-3 top-3 flex-row items-center gap-1 rounded-full bg-surface/90 px-2.5 py-1">
-                        <MapPin size={12} color="#C87156" />
+                        <MapPin size={12} color="#FF6B5C" />
                         <Text variant="caption" className="font-semibold text-ink">{s.city}</Text>
                       </View>
                     </View>

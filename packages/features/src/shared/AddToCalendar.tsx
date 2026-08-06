@@ -57,7 +57,7 @@ export function AddToCalendar({
         title={label}
         variant={variant}
         fullWidth={fullWidth}
-        leftIcon={<CalendarIcon size={16} color="#0E1A2B" />}
+        leftIcon={<CalendarIcon size={16} color="#F3F4F8" />}
         onPress={() => setOpen(true)}
       />
       <Sheet open={open} onClose={() => setOpen(false)} title="Add to calendar">

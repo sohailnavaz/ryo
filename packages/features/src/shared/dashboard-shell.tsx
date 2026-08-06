@@ -75,7 +75,7 @@ export function DashboardShell({
                 >
                   <Text
                     variant="small"
-                    className={active ? 'text-white font-semibold' : 'text-ink'}
+                    className={active ? 'text-cream font-semibold' : 'text-ink'}
                   >
                     {item.label}
                   </Text>

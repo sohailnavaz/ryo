@@ -71,7 +71,7 @@ export function HostInboxThreadScreen({
                       m.from === 'host' ? 'bg-ink' : 'bg-surface-alt'
                     }`}
                   >
-                    <Text className={m.from === 'host' ? 'text-white' : 'text-ink'}>
+                    <Text className={m.from === 'host' ? 'text-cream' : 'text-ink'}>
                       {m.body}
                     </Text>
                     <Text

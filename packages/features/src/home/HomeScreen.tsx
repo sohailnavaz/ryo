@@ -135,7 +135,7 @@ export function HomeScreen() {
             >
               <Text
                 variant="small"
-                className={`font-semibold ${selected ? 'text-white' : 'text-ink'}`}
+                className={`font-semibold ${selected ? 'text-cream' : 'text-ink'}`}
               >
                 {s.label}
               </Text>

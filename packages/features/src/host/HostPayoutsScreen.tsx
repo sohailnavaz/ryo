@@ -328,7 +328,7 @@ function Segmented({
               on ? 'bg-ink border-ink' : 'bg-surface border-surface-border'
             }`}
           >
-            <Text variant="small" className={on ? 'text-white font-semibold' : 'text-ink'}>
+            <Text variant="small" className={on ? 'text-cream font-semibold' : 'text-ink'}>
               {o.label}
             </Text>
           </Pressable>

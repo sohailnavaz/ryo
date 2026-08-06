@@ -154,7 +154,7 @@ export function DiscoverScreen() {
             >
               <Text
                 variant="small"
-                className={`font-semibold ${active ? 'text-white' : 'text-ink'}`}
+                className={`font-semibold ${active ? 'text-cream' : 'text-ink'}`}
               >
                 {c.city}
               </Text>

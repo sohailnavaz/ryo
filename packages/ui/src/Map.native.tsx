@@ -57,12 +57,12 @@ export function Map({ lat, lng, className, markers, onMarkerPress, selectedId, s
               coordinate={{ latitude: m.lat, longitude: m.lng }}
               title={m.label}
               description={typeof m.count === 'number' ? `${m.count} homes` : undefined}
-              pinColor={m.id === selectedId ? '#C87156' : '#1F5A6B'}
+              pinColor={m.id === selectedId ? '#FF6B5C' : '#34E7E4'}
               onPress={() => onMarkerPress?.(m.id)}
             />
           ))
         ) : (
-          <Marker coordinate={{ latitude: lat, longitude: lng }} pinColor="#C87156" />
+          <Marker coordinate={{ latitude: lat, longitude: lng }} pinColor="#FF6B5C" />
         )}
       </MapView>
     </View>

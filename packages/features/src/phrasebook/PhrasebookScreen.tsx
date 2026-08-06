@@ -51,7 +51,7 @@ export function PhrasebookScreen() {
                   <Text
                     className={
                       selected
-                        ? 'text-[14px] font-semibold text-white'
+                        ? 'text-[14px] font-semibold text-cream'
                         : 'text-[14px] font-semibold text-ink'
                     }
                   >

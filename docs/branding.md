@@ -17,7 +17,7 @@
 | **Aesthetic**        | Clean · Minimal · Luxurious · Warm · Playful where earned                  |
 | **Service ethos**    | *Omotenashi* — anticipate the guest's need before it is spoken             |
 | **Codebase alias**   | `bnb` → `ryo` (migration tracked in [§12](#12-naming-migration-bnb--ryo))  |
-| **Doc version**      | `0.2.0` — last updated 2026-04-23                                          |
+| **Doc version**      | `2.0.0` — last updated 2026-07-14 (visual identity → "Ryo, after dark") |
 | **Owner**            | Makuta Developers — dm@makutadevelopers.com                                |
 
 ---
@@ -64,7 +64,6 @@ Markers used throughout this document:
 The short list of branding decisions that are **not yet made**. Keep this section at the top so it is always visible. Move items to their proper section once resolved, and log the decision in the [Changelog](#18-changelog).
 
 - 🔲 Final logo (wordmark + symbol) — not yet designed
-- 🔲 Primary hero accent: terracotta vs. ink navy (both currently defined in §7.2)
 - 🔲 Final social handles (@ryo taken on most platforms — need fallback pattern)
 - 🔲 Trademark filing strategy (classes 39 / 42 / 43)
 - 🔲 Photography direction locked (stock vs. commissioned)
@@ -261,6 +260,8 @@ Ryo's design is **clean, minimal, luxurious**. Three principles apply to every s
 
 > **Quiet luxury, not loud luxury.** Ryo is luxurious in the way a well-made linen sheet is luxurious — not in the way a gold-plated faucet is. The feeling is *restraint*, *space*, and *care*. If something feels "fancy," it is probably wrong.
 
+> **Nocturnal luxury (v2.0).** From v2.0 the surface is *dark-first* — the ink void, with the world's places glowing against it like lit windows at night. This does not loosen "quiet": the void **is** the restraint. The single aqua glow on the primary action is the only "loud" moment, and it earns it by being the only one. Dark done wrong is a gamer HUD; dark done right is a hotel bar after midnight. We are the second one.
+
 **The three-question test.** Before shipping any screen, email, asset, or spec, answer:
 
 1. Is every element pulling its weight? *(Clean)*
@@ -280,44 +281,59 @@ When designed, capture here:
 - Minimum sizes (16px favicon, 24px app icon, 40px marketing)
 - Do / Don't examples
 
-### 7.2 Colour palette ✏️
+### 7.2 Colour palette 🔒 — v2.0 "Ryo, after dark"
 
-Hero accent is **not yet locked** — §0 open question. All other tokens are draft.
+**Locked (v2.0, 2026-07-14).** Ryo is now **dark-first**: a deep ink-void canvas where
+the *places* — the photography — glow like lit windows in a foreign city at night. The
+palette **descends from v1** rather than discarding it: warm terracotta became **coral**,
+ocean teal became **electric aqua**. The hero-accent open question (§0) is resolved — the
+hero is **aqua**, with coral as the warm second voice.
+
+> The old cream-and-terracotta palette is preserved in git history (`v0.2.0`) should we
+> ever ship a light theme. The tokens are theme-aware by name, so a light mode is a value
+> swap, not a rewrite.
 
 #### Core
 
-| Role             | Name            | Hex        | Usage                                         |
-| ---------------- | --------------- | ---------- | --------------------------------------------- |
-| Hero / action    | Terracotta      | `#C87156`  | Primary CTAs, key accents, brand moments      |
-| Hero alternate   | Ocean Teal      | `#1F5A6B`  | Alternate accent; candidate for hero          |
-| Ink (text)       | Ink Navy        | `#0E1A2B`  | Primary text, headings                        |
-| Cream (surface)  | Warm Cream      | `#FAF6F0`  | Default background — never pure white         |
-| Sand (surface 2) | Sand            | `#EFE7DA`  | Secondary surface, cards                      |
+| Role                | Name           | Hex        | Usage                                            |
+| ------------------- | -------------- | ---------- | ------------------------------------------------ |
+| Hero / action       | Electric Aqua  | `#34E7E4`  | Primary CTAs, links, focus, brand moments        |
+| Warm accent         | Coral          | `#FF6B5C`  | Secondary accent, "hosted" warmth, alarm/danger  |
+| Canvas              | Ink Void       | `#0A0A0F`  | The page — deep near-black, blue undertone        |
+| Surface             | Slate          | `#14141C`  | Cards, elevated surfaces (glass over this)        |
+| Surface 2           | Slate Raised   | `#1E1E2A`  | Higher surfaces, hover                            |
+| Ink (text)          | Warm White     | `#F3F4F8`  | Primary text, headings — never pure white         |
+| Border              | Hairline       | `#2A2A3A`  | Dividers, card edges                             |
 
-#### Neutrals (warm greys only — never pure grey)
+#### Neutrals (cool dark — never pure black, never pure grey)
 
 | Name     | Hex        | Usage                              |
 | -------- | ---------- | ---------------------------------- |
-| Warm 900 | `#1C1A17`  | Highest-contrast text on cream     |
-| Warm 700 | `#4A4540`  | Body text                          |
-| Warm 500 | `#8A837B`  | Secondary text                     |
-| Warm 300 | `#CFC7BD`  | Borders, dividers                  |
-| Warm 100 | `#EFEAE3`  | Subtle backgrounds                 |
+| Ink soft | `#A6AAB8`  | Secondary text                     |
+| Ink muted| `#6B6F80`  | Tertiary text, placeholders        |
+| Slate 200| `#20202C`  | Subtle fills                       |
+| Slate 100| `#16161F`  | Deepest card wells                 |
 
-#### Semantic
+#### Semantic (tuned for the void)
 
 | Role     | Hex        |
 | -------- | ---------- |
-| Success  | `#2E7D5B`  |
-| Warning  | `#C98A2B`  |
-| Danger   | `#B4432F`  |
-| Info     | `#356A8C`  |
+| Success  | `#3DDC97`  |
+| Warning  | `#F5B94D`  |
+| Danger   | `#FF6B5C`  (coral doubles as the one warm alarm) |
+| Info     | `#4DA6FF`  |
 
 #### Rules 🔒
-- Never use pure black (`#000`) or pure white (`#FFF`) in UI surfaces.
-- Never use cold grey — all neutrals are warm-biased.
-- Terracotta is reserved for genuine brand moments and primary CTAs. Using it everywhere kills its signal.
-- Every foreground/background pair must meet WCAG AA (4.5:1 for body, 3:1 for large text).
+- **Never pure black (`#000`) or pure white (`#FFF`).** The void is `#0A0A0F`; text is `#F3F4F8`.
+- **On-accent text is dark.** Aqua, coral and the near-white button all carry `#0A0A0F` text — getting this backwards is how a dark theme goes invisible.
+- **Aqua is the signal.** Reserved for the primary action, focus, and genuine brand moments. Aqua on everything kills it.
+- **Depth comes from glow, not drop shadow.** The neon-sign moment (`glow-aqua`) belongs to the primary CTA and focused controls only.
+- Every foreground/background pair must still meet WCAG AA (4.5:1 body, 3:1 large).
+
+#### Atmosphere (the signature — §7.6, §7.7)
+- **Aurora:** a fixed, ~10%-opacity aqua glow bleeds from top-left, coral from bottom-right. Atmosphere, carried by no element.
+- **Grain:** a ~3.5% SVG film-grain overlay so the void never reads as flat `#000`.
+- **Glass:** floating surfaces (sheets, the command palette, the search bar) are translucent + blurred with a hairline top-highlight — lit from above.
 
 ### 7.3 Typography 🔒
 
@@ -585,6 +601,15 @@ This is a **living document**. The following rules keep it trustworthy:
 ## 18. Changelog
 
 All dates in `YYYY-MM-DD`.
+
+### `2.0.0` — 2026-07-14 — "Ryo, after dark"
+
+- 🔒 **Visual identity goes dark-first.** [§7.2](#72-colour-palette--v20-ryo-after-dark) replaced: an ink-void canvas (`#0A0A0F`) where photography glows like lit windows. Palette **descends from v1** — terracotta → **coral `#FF6B5C`**, ocean teal → **electric aqua `#34E7E4`** (now the hero).
+- 🔒 **Resolved the §0 hero-accent open question:** hero is **aqua**, coral is the warm second voice. On-accent text is dark (`#0A0A0F`).
+- ✏️ **Signature atmosphere added:** aurora corner-glow, ~3.5% film grain, glass floating surfaces, aqua glow reserved for the primary CTA + focus. Depth from glow, not drop shadow.
+- ✏️ **[§7.0](#70-design-ethos-) reframed** as *nocturnal luxury* — the void is the restraint; the single aqua glow is the only loud moment and earns it. "Hotel bar after midnight, not a gamer HUD."
+- 🔒 **JetBrains Mono is now active** for numerals/prices/codes (was listed, now wired via `--font-mono`).
+- Rationale: founder direction — the product should *stand out* and read young/premium without abandoning omotenashi. Light-theme tokens preserved in git (`0.2.0`); tokens are theme-aware by name, so a light mode is a value swap.
 
 ### `0.2.0` — 2026-04-23
 

@@ -73,14 +73,14 @@ export function TopNav({
         </View>
         <View className="flex-row items-center gap-2">
           <Pressable className="rounded-full p-2.5 hover:bg-surface-alt transition">
-            <Globe size={16} color="#0E1A2B" />
+            <Globe size={16} color="#F3F4F8" />
           </Pressable>
           <Pressable
             onPress={onOpenNotifications}
             accessibilityLabel="Notifications"
             className="relative rounded-full p-2.5 hover:bg-surface-alt active:scale-95 transition"
           >
-            <Bell size={16} color="#0E1A2B" />
+            <Bell size={16} color="#F3F4F8" />
             {notificationCount > 0 ? (
               <View className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-brand-500" />
             ) : null}
@@ -89,9 +89,9 @@ export function TopNav({
             onPress={onOpenAccount}
             className="flex-row items-center gap-2 rounded-full border border-surface-border px-3 py-1.5 hover:shadow-soft active:scale-95 transition"
           >
-            <Menu size={14} color="#0E1A2B" />
+            <Menu size={14} color="#F3F4F8" />
             <View className="h-7 w-7 items-center justify-center rounded-full bg-ink">
-              <User size={14} color="#FAF6F0" />
+              <User size={14} color="#0A0A0F" />
             </View>
           </Pressable>
         </View>

@@ -22,20 +22,21 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
       <View
         className={cn(
           'flex-row items-center gap-2 rounded-xl border border-surface-border bg-surface px-4 py-3',
-          error && 'border-brand-500',
+          'transition-colors focus-within:border-brand-500',
+          error && 'border-danger',
         )}
       >
         {leftIcon}
         <TextInput
           ref={ref}
-          placeholderTextColor="#b0b0b0"
+          placeholderTextColor="#6B6F80"
           className={cn('flex-1 text-[15px] text-ink outline-none', className)}
           {...props}
         />
         {rightIcon}
       </View>
       {error ? (
-        <Text variant="caption" className="text-brand-600">
+        <Text variant="caption" className="text-danger">
           {error}
         </Text>
       ) : null}

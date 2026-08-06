@@ -79,7 +79,7 @@ export function ProfileScreen() {
           title={signOut.isPending ? 'Signing out…' : 'Sign out'}
           variant="outline"
           loading={signOut.isPending}
-          leftIcon={<LogOut size={16} color="#0E1A2B" />}
+          leftIcon={<LogOut size={16} color="#F3F4F8" />}
           onPress={() => signOut.mutate(undefined, { onSuccess: () => router.replace('/') })}
         />
       </View>

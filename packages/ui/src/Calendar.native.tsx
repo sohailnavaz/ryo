@@ -98,7 +98,7 @@ export function Calendar({ startDate, endDate, onChange, bookedRanges }: Calenda
       onDayPress={onDayPress}
       minDate={toISODate(new Date())}
       theme={{
-        todayTextColor: '#C87156',
+        todayTextColor: '#FF6B5C',
         arrowColor: '#222',
       }}
     />

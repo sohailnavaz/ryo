@@ -1,11 +1,12 @@
 import type { Metadata, Viewport } from 'next';
-import { Fraunces, Inter } from 'next/font/google';
+import { Fraunces, Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
 import { ServiceWorkerRegister } from './ServiceWorkerRegister';
 
-// Body — Inter (clean, multilingual). Display — Fraunces (soft editorial serif
-// that carries the brand character). Per docs/branding.md §7.3.
+// Body — Inter (clean, multilingual). Display — Fraunces (editorial serif, the brand
+// voice). Numerals — JetBrains Mono (prices, stats, codes: travel-tech precision).
+// Per docs/branding.md §7.3 (v2.0 "Ryo, after dark").
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
@@ -16,6 +17,11 @@ const fraunces = Fraunces({
   variable: '--font-fraunces',
   display: 'swap',
   axes: ['SOFT', 'opsz'],
+});
+const mono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono',
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
@@ -38,13 +44,13 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
-  themeColor: '#FAF6F0',
+  themeColor: '#0A0A0F',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${fraunces.variable}`}>
-      <body className="bg-surface text-ink antialiased">
+    <html lang="en" className={`${inter.variable} ${fraunces.variable} ${mono.variable}`}>
+      <body className="bg-cream text-ink antialiased">
         <ServiceWorkerRegister />
         <Providers>{children}</Providers>
       </body>

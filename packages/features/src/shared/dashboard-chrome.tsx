@@ -32,7 +32,7 @@ export function PreviewBanner({ kind }: { kind: DashboardKind }) {
     <View className="mt-2 rounded-2xl border border-surface-border bg-surface-alt px-4 py-3">
       <HStack className="items-start gap-3">
         <View className="h-8 w-8 rounded-full bg-ink items-center justify-center">
-          <Text className="text-white font-bold">v2</Text>
+          <Text className="text-cream font-bold">v2</Text>
         </View>
         <VStack className="flex-1 gap-0.5">
           <Text className="font-semibold">{title}</Text>

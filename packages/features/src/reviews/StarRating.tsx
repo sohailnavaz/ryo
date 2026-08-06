@@ -22,8 +22,8 @@ export function StarRating({ value, onChange, size = 28, readonly }: StarRatingP
         const star = (
           <Star
             size={size}
-            color={filled ? '#C87156' : '#C9C2B8'}
-            fill={filled ? '#C87156' : 'transparent'}
+            color={filled ? '#FF6B5C' : '#C9C2B8'}
+            fill={filled ? '#FF6B5C' : 'transparent'}
           />
         );
         if (readonly || !onChange) return <View key={n}>{star}</View>;

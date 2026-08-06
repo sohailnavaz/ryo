@@ -86,7 +86,7 @@ export function Map({
               'border-radius:9999px',
               'font:600 13px/1 Inter,system-ui,sans-serif',
               'box-shadow:0 2px 8px rgba(14,26,43,0.18)',
-              selected ? 'background:#C87156;color:#FAF6F0' : 'background:#FAF6F0;color:#0E1A2B',
+              selected ? 'background:#FF6B5C;color:#0A0A0F' : 'background:#14141C;color:#F3F4F8;border:1px solid rgba(255,255,255,0.10)',
             ].join(';');
 
             const text = document.createElement('span');
@@ -105,9 +105,7 @@ export function Map({
                 'padding:0 5px',
                 'border-radius:9999px',
                 'font:600 11px/1 Inter,system-ui,sans-serif',
-                selected
-                  ? 'background:#FAF6F0;color:#C87156'
-                  : 'background:#0E1A2B;color:#FAF6F0',
+                selected ? 'background:#0A0A0F;color:#FF6B5C' : 'background:#34E7E4;color:#0A0A0F',
               ].join(';');
               el.appendChild(badge);
             }
@@ -127,7 +125,7 @@ export function Map({
           }
         } else {
           // Original single-point behaviour — unchanged.
-          new maplibre.Marker({ color: '#C87156' }).setLngLat([lng, lat]).addTo(map);
+          new maplibre.Marker({ color: '#FF6B5C' }).setLngLat([lng, lat]).addTo(map);
         }
 
         cleanup = () => map.remove();

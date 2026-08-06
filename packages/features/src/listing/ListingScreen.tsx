@@ -88,14 +88,14 @@ export function ListingScreen({ id }: ListingScreenProps) {
           {!isDesktop ? (
             <View className="px-4 py-2 flex-row justify-between">
               <IconButton onPress={() => router.back()} className="bg-surface border border-surface-border">
-                <ArrowLeft size={18} color="#0E1A2B" />
+                <ArrowLeft size={18} color="#F3F4F8" />
               </IconButton>
               <HStack className="gap-2">
                 <IconButton
                   className="bg-surface border border-surface-border"
                   onPress={onShare}
                 >
-                  <Share2 size={18} color="#0E1A2B" />
+                  <Share2 size={18} color="#F3F4F8" />
                 </IconButton>
                 <IconButton
                   className="bg-surface border border-surface-border"
@@ -103,8 +103,8 @@ export function ListingScreen({ id }: ListingScreenProps) {
                 >
                   <Heart
                     size={18}
-                    color={isFav ? '#C87156' : '#0E1A2B'}
-                    fill={isFav ? '#C87156' : 'transparent'}
+                    color={isFav ? '#FF6B5C' : '#F3F4F8'}
+                    fill={isFav ? '#FF6B5C' : 'transparent'}
                   />
                 </IconButton>
               </HStack>
@@ -123,7 +123,7 @@ export function ListingScreen({ id }: ListingScreenProps) {
                     accessibilityLabel="Share listing"
                     className="flex-row items-center gap-1.5"
                   >
-                    <Share2 size={16} color="#0E1A2B" />
+                    <Share2 size={16} color="#F3F4F8" />
                     <Text className="font-semibold underline">Share</Text>
                   </Pressable>
                   <Pressable
@@ -133,8 +133,8 @@ export function ListingScreen({ id }: ListingScreenProps) {
                   >
                     <Heart
                       size={16}
-                      color={isFav ? '#C87156' : '#0E1A2B'}
-                      fill={isFav ? '#C87156' : 'transparent'}
+                      color={isFav ? '#FF6B5C' : '#F3F4F8'}
+                      fill={isFav ? '#FF6B5C' : 'transparent'}
                     />
                     <Text className="font-semibold underline">
                       {isFav ? 'Saved' : 'Save'}
@@ -143,7 +143,7 @@ export function ListingScreen({ id }: ListingScreenProps) {
                 </HStack>
               </HStack>
               <HStack className="mt-1 flex-wrap gap-2">
-                <Star size={14} color="#0E1A2B" fill="#0E1A2B" />
+                <Star size={14} color="#F3F4F8" fill="#F3F4F8" />
                 <Text>{listing.rating_avg.toFixed(2)}</Text>
                 <Text className="text-ink-soft">· {listing.rating_count} reviews</Text>
                 <Text className="text-ink-soft">· {listing.city}, {listing.country}</Text>
@@ -192,7 +192,7 @@ export function ListingScreen({ id }: ListingScreenProps) {
               <View className="pt-4">
                 <Heading level={2}>{listing.title}</Heading>
                 <HStack className="mt-1 flex-wrap gap-2">
-                  <Star size={14} color="#0E1A2B" fill="#0E1A2B" />
+                  <Star size={14} color="#F3F4F8" fill="#F3F4F8" />
                   <Text>{listing.rating_avg.toFixed(2)}</Text>
                   <Text className="text-ink-soft">· {listing.city}, {listing.country}</Text>
                 </HStack>
@@ -203,15 +203,15 @@ export function ListingScreen({ id }: ListingScreenProps) {
 
             <HStack className="gap-4 flex-wrap">
               <HStack className="gap-1">
-                <Users size={14} color="#0E1A2B" />
+                <Users size={14} color="#F3F4F8" />
                 <Text>{listing.max_guests} guests</Text>
               </HStack>
               <HStack className="gap-1">
-                <Bed size={14} color="#0E1A2B" />
+                <Bed size={14} color="#F3F4F8" />
                 <Text>{listing.bedrooms} bedrooms</Text>
               </HStack>
               <HStack className="gap-1">
-                <Bath size={14} color="#0E1A2B" />
+                <Bath size={14} color="#F3F4F8" />
                 <Text>{listing.bathrooms} baths</Text>
               </HStack>
               <Badge>{listing.property_type}</Badge>
@@ -240,7 +240,7 @@ export function ListingScreen({ id }: ListingScreenProps) {
             <VStack className="gap-3">
               <Heading level={3}>Where you'll be</Heading>
               <HStack className="gap-2">
-                <MapPin size={14} color="#0E1A2B" />
+                <MapPin size={14} color="#F3F4F8" />
                 <Text variant="small">
                   {listing.city}, {listing.country}
                 </Text>
@@ -252,7 +252,7 @@ export function ListingScreen({ id }: ListingScreenProps) {
 
             <VStack className="gap-3">
               <HStack className="gap-2">
-                <Star size={16} color="#0E1A2B" fill="#0E1A2B" />
+                <Star size={16} color="#F3F4F8" fill="#F3F4F8" />
                 <Heading level={3}>
                   {listing.rating_avg.toFixed(2)} · {listing.rating_count} reviews
                 </Heading>
@@ -289,7 +289,7 @@ export function ListingScreen({ id }: ListingScreenProps) {
                     <Text className="text-[15px] text-ink-soft font-normal"> night</Text>
                   </Text>
                   <HStack className="gap-1">
-                    <Star size={12} color="#0E1A2B" fill="#0E1A2B" />
+                    <Star size={12} color="#F3F4F8" fill="#F3F4F8" />
                     <Text variant="small">{listing.rating_avg.toFixed(2)}</Text>
                   </HStack>
                 </HStack>

@@ -88,7 +88,7 @@ export function HostBookingsScreen({ hostId = DEMO_HOST_ID }: { hostId?: string 
             >
               <Text
                 variant="small"
-                className={active ? 'text-white font-semibold' : 'text-ink'}
+                className={active ? 'text-cream font-semibold' : 'text-ink'}
               >
                 {f.label} {data ? `· ${count}` : ''}
               </Text>
