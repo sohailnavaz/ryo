@@ -631,6 +631,197 @@ export function useAdminFinance() {
   });
 }
 
+// ---------------------------------------------------------------------------
+// Analytics — a time-series + KPI view over the synthetic booking stream, built
+// to drive the forecasting screen. Revenue is MODELLED (take rate applied to
+// GMV), consistent with the finance module's take-rate concept; the definitive
+// ledger-based P&L lives on /admin/finance. Preview data until real admin
+// aggregation lands, so `isPreview` is always true here.
+// ---------------------------------------------------------------------------
+
+/** Blended platform take (guest fee + host fee), in basis points. */
+const TAKE_RATE_BPS = 1500;
+
+export type AnalyticsGrain = 'day' | 'week' | 'month';
+
+export type AnalyticsPoint = {
+  /** ISO date of the period start (`YYYY-MM-DD`). */
+  period: string;
+  /** Short human label for the axis (e.g. `Aug 3`, `Aug`). */
+  label: string;
+  bookings: number;
+  gmv_cents: number;
+  net_revenue_cents: number;
+};
+
+export type AdminAnalytics = {
+  currency: string;
+  grain: AnalyticsGrain;
+  range_days: number;
+  points: AnalyticsPoint[];
+  kpis: {
+    net_revenue_cents: number;
+    net_revenue_delta_pct: number | null;
+    gmv_cents: number;
+    gmv_delta_pct: number | null;
+    bookings: number;
+    bookings_delta_pct: number | null;
+    arpb_cents: number;
+    take_rate_bps: number;
+    new_guests: number;
+  };
+  top_cities: Array<{ city: string; gmv_cents: number; bookings: number }>;
+  isPreview: boolean;
+};
+
+function grainFor(rangeDays: number): AnalyticsGrain {
+  if (rangeDays <= 45) return 'day';
+  if (rangeDays <= 120) return 'week';
+  return 'month';
+}
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+function shortLabel(iso: string, grain: AnalyticsGrain): string {
+  const [y, m, d] = iso.split('-').map((s) => parseInt(s, 10));
+  const mon = MONTHS[(m as number) - 1] ?? '';
+  if (grain === 'month') return `${mon} ${String(y).slice(2)}`;
+  return `${mon} ${d}`;
+}
+
+type DayAgg = { date: string; bookings: number; gmv_cents: number };
+
+/** Build one aggregate per day over [anchorEnd - days + 1 .. anchorEnd]. */
+function dailyAggregates(all: SyntheticBooking[], anchorEnd: string, days: number): DayAgg[] {
+  const start = addDays(anchorEnd, -(days - 1));
+  const byDate = new Map<string, DayAgg>();
+  for (let i = 0; i < days; i++) {
+    const date = addDays(start, i);
+    byDate.set(date, { date, bookings: 0, gmv_cents: 0 });
+  }
+  for (const b of all) {
+    if (b.status === 'cancelled') continue;
+    const date = b.created_at.slice(0, 10);
+    const bucket = byDate.get(date);
+    if (!bucket) continue;
+    bucket.bookings += 1;
+    bucket.gmv_cents += b.total_cents;
+  }
+  return Array.from(byDate.values());
+}
+
+/** Roll daily aggregates up into day / week / month periods. */
+function rollUp(daily: DayAgg[], grain: AnalyticsGrain): AnalyticsPoint[] {
+  const toPoint = (period: string, bookings: number, gmv: number): AnalyticsPoint => ({
+    period,
+    label: shortLabel(period, grain),
+    bookings,
+    gmv_cents: gmv,
+    net_revenue_cents: Math.round((gmv * TAKE_RATE_BPS) / 10_000),
+  });
+
+  if (grain === 'day') {
+    return daily.map((d) => toPoint(d.date, d.bookings, d.gmv_cents));
+  }
+  if (grain === 'week') {
+    const out: AnalyticsPoint[] = [];
+    for (let i = 0; i < daily.length; i += 7) {
+      const chunk = daily.slice(i, i + 7);
+      const bookings = chunk.reduce((s, d) => s + d.bookings, 0);
+      const gmv = chunk.reduce((s, d) => s + d.gmv_cents, 0);
+      out.push(toPoint((chunk[0] as DayAgg).date, bookings, gmv));
+    }
+    return out;
+  }
+  // month
+  const byMonth = new Map<string, { bookings: number; gmv: number; first: string }>();
+  for (const d of daily) {
+    const key = d.date.slice(0, 7); // YYYY-MM
+    const cur = byMonth.get(key) ?? { bookings: 0, gmv: 0, first: `${key}-01` };
+    cur.bookings += d.bookings;
+    cur.gmv += d.gmv_cents;
+    byMonth.set(key, cur);
+  }
+  return Array.from(byMonth.values())
+    .sort((a, b) => a.first.localeCompare(b.first))
+    .map((m) => toPoint(m.first, m.bookings, m.gmv));
+}
+
+export async function fetchAdminAnalytics(rangeDays: number): Promise<AdminAnalytics> {
+  const all = await collectAllBookings();
+  const today = todayIso();
+  const grain = grainFor(rangeDays);
+
+  // Current window + the equal window before it (for period-over-period deltas).
+  const currentDaily = dailyAggregates(all, today, rangeDays);
+  const prevDaily = dailyAggregates(all, addDays(today, -rangeDays), rangeDays);
+
+  const points = rollUp(currentDaily, grain);
+
+  const sumBookings = (ds: DayAgg[]) => ds.reduce((s, d) => s + d.bookings, 0);
+  const sumGmv = (ds: DayAgg[]) => ds.reduce((s, d) => s + d.gmv_cents, 0);
+
+  const curBookings = sumBookings(currentDaily);
+  const curGmv = sumGmv(currentDaily);
+  const curNet = Math.round((curGmv * TAKE_RATE_BPS) / 10_000);
+  const prevBookings = sumBookings(prevDaily);
+  const prevGmv = sumGmv(prevDaily);
+  const prevNet = Math.round((prevGmv * TAKE_RATE_BPS) / 10_000);
+
+  const pct = (cur: number, prev: number): number | null =>
+    prev === 0 ? null : ((cur - prev) / prev) * 100;
+
+  // New guests = distinct guests who booked in the window (grounded in the stream).
+  const windowStart = addDays(today, -(rangeDays - 1));
+  const guestsInWindow = new Set(
+    all
+      .filter((b) => b.status !== 'cancelled' && b.created_at.slice(0, 10) >= windowStart)
+      .map((b) => b.guest_name),
+  );
+
+  // Top cities by GMV within the window.
+  const cityMap = new Map<string, { gmv_cents: number; bookings: number }>();
+  for (const b of all) {
+    if (b.status === 'cancelled' || b.created_at.slice(0, 10) < windowStart) continue;
+    const cur = cityMap.get(b.listing_city) ?? { gmv_cents: 0, bookings: 0 };
+    cur.gmv_cents += b.total_cents;
+    cur.bookings += 1;
+    cityMap.set(b.listing_city, cur);
+  }
+  const top_cities = Array.from(cityMap.entries())
+    .map(([city, v]) => ({ city, ...v }))
+    .sort((a, b) => b.gmv_cents - a.gmv_cents)
+    .slice(0, 5);
+
+  return {
+    currency: all[0]?.currency ?? 'USD',
+    grain,
+    range_days: rangeDays,
+    points,
+    kpis: {
+      net_revenue_cents: curNet,
+      net_revenue_delta_pct: pct(curNet, prevNet),
+      gmv_cents: curGmv,
+      gmv_delta_pct: pct(curGmv, prevGmv),
+      bookings: curBookings,
+      bookings_delta_pct: pct(curBookings, prevBookings),
+      arpb_cents: curBookings === 0 ? 0 : Math.round(curGmv / curBookings),
+      take_rate_bps: TAKE_RATE_BPS,
+      new_guests: guestsInWindow.size,
+    },
+    top_cities,
+    isPreview: true,
+  };
+}
+
+export function useAdminAnalytics(rangeDays: number) {
+  return useQuery({
+    queryKey: ['admin-analytics', rangeDays],
+    queryFn: () => fetchAdminAnalytics(rangeDays),
+    staleTime: 60_000,
+  });
+}
+
 export type AdminFlag = {
   key: string;
   description: string;
