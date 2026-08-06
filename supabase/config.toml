@@ -44,5 +44,23 @@ double_confirm_changes = true
 enable_confirmations = false
 secure_password_change = false
 
+# Branded auth emails (replace Supabase's unbranded defaults). Same markup as the
+# @bnb/emails magic-link/reset/confirm templates, with Supabase {{ .Var }} placeholders.
+[auth.email.template.magic_link]
+subject = "Your Ryo sign-in link"
+content_path = "./supabase/templates/magic_link.html"
+
+[auth.email.template.recovery]
+subject = "Reset your Ryo password"
+content_path = "./supabase/templates/recovery.html"
+
+[auth.email.template.confirmation]
+subject = "Confirm your email for Ryo"
+content_path = "./supabase/templates/confirmation.html"
+
+# Production note: the auth emails above still ride Supabase's shared, rate-limited
+# SMTP (~a few/hour) until a real sender is configured. Set a custom SMTP provider in
+# the Supabase dashboard (Auth → SMTP) before launch, or magic-link sign-in will throttle.
+
 [edge_runtime]
 enabled = true
