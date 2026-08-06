@@ -165,6 +165,25 @@ These are the calls I'd most like a second opinion on. If you're reviewing, skim
 
 Append-only, newest first. One line per shipped thing. Version bumps follow branding.md convention (patch / minor / major).
 
+### `0.15.0` — 2026-07-14 — the console gets real, and the app goes dark
+
+Two big strands landed on `feat/admin-console-phase-0` ([PR #2](https://github.com/sohailnavaz/ryo/pull/2)).
+
+**The admin console stopped being localStorage theatre** — four verified phases:
+- **Spine:** one atomic write path (`admin_action()`) — permission → idempotency → blast-radius → dry-run → four-eyes → hash-chained audit → event, in a single transaction. Tamper-evident `audit_log`, partitioned `events`.
+- **List primitive:** the users page became **segments** + keyset pagination + facet counts + ⌘K omnibox + PII masking, instead of "every account on file". One `<AdminTable>`, reused.
+- **Real persistence:** deleted `admin-store.ts`. Users, moderation, reviews, incidents, flags, bookings all write to Postgres. The fake moderation queue and the synthetic incident seed (which hid *real* guest incidents behind invented ones) are gone.
+- **Money layer:** a double-entry **ledger** built before real payments. Revenue derives from bookings (recognised at check-in); costs are entered (marketing, salaries, host share) with recurring entries + budgets. Real P&L to contribution margin. GMV is never called revenue; escrow float is never summed into it.
+
+**Security:** closed the demo-admin bypass (no client-side staff access), stopped `profiles` leaking every user's role to anonymous callers (column-level grants), and made suspensions actually block booking at the RLS layer.
+
+**Brand v2.0 "Ryo, after dark":** the whole app went **dark-first neon-noir** — an ink-void canvas where the photography glows. Terracotta → coral, ocean teal → electric aqua (the hero). Fraunces in warm white, aurora glow, film grain, glass surfaces, mono numerals. Doc-driven ([branding §7.2](./branding.md) rewritten first). A latent `cn()` class-merge bug (colours resolved by alphabetical order, not intent) was found by measuring computed colour in a browser, and fixed.
+
+**Wishlists** now persist to real owner-scoped tables (dual-path), not just localStorage.
+
+Migrations `0005`–`0012`, all additive. **Verified against real Postgres + driven in a real browser** throughout. Typecheck 7/7; build green (43 routes). **Not yet applied to the live project** — runbook at [`supabase/DEPLOY.md`](../supabase/DEPLOY.md) (needs an owner credential). Still open: real payments, messaging, tests, i18n, legal pages, and 3 remaining client-side stores (notifications, host-actions, host-verification) that follow the wishlist pattern.
+
+
 ### `0.14.0` — 2026-07-14 — the console is real, and the money is on a ledger
 
 **`admin-store.ts` is deleted.** No admin action writes to the browser any more.
