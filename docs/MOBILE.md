@@ -19,6 +19,43 @@ cp ../../.env.example .env.local     # paste the Supabase URL + anon key
 pnpm dev            # then press i (iOS sim) / a (Android) / w (web)
 ```
 
+## Share an Android test build (no Play Store, no $25 account)
+
+The fastest way to get the app onto a tester's Android phone is an EAS **preview
+APK** you send as a link/QR. No Google Play account needed.
+
+`eas` doesn't need a global install (that needs `sudo` on a default `/usr/local`
+npm) — run it through `npx`:
+
+```bash
+cd apps/mobile
+npx eas-cli@latest login    # free Expo account (browser or email+password)
+npx eas-cli@latest init     # links the project; writes projectId into app.json
+npx eas-cli@latest build --profile preview --platform android
+```
+
+The build runs in Expo's cloud (~10–15 min) and prints a **build-page URL + QR**.
+Send it to testers → they open it on Android → **Install** → allow "unknown
+sources" once. The APK bundles the native modules (image picker, maps, auth), so
+unlike Expo Go everything works.
+
+**Before building — fill the anon key**, or the app installs but can't reach the
+backend: in `eas.json` → `build.preview.env`, replace
+`REPLACE_WITH_SUPABASE_ANON_KEY` with the live anon key (Supabase → Settings →
+API; it's public-safe). Also make sure the live DB has migrations applied + a few
+listings so testers see content.
+
+Caveats:
+- **Maps on Android** need a Google Maps API key (`app.json` →
+  `android.config.googleMaps.apiKey`). Without it the app runs but the map view is
+  blank — non-blocking for a test.
+- The preview APK points at your **live** Supabase, so testers share the real DB.
+  Use a separate staging project if you want test data isolated.
+
+> Prefer a plain `eas` command? Point npm at a user folder first, then install
+> without sudo: `npm config set prefix ~/.npm-global` · add `~/.npm-global/bin` to
+> PATH · `npm i -g eas-cli`.
+
 ## Build a real binary — the parts that need YOUR accounts
 
 Store binaries are built in the cloud with EAS. This needs credentials only the owner
