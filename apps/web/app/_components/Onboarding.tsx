@@ -40,8 +40,15 @@ export function Onboarding() {
   const current = STEPS[step]!;
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-end justify-center bg-ink/40 p-4 backdrop-blur-sm md:items-center">
-      <div className="w-full max-w-md overflow-hidden rounded-3xl border border-surface-border bg-surface shadow-pop">
+    <div
+      className="fixed inset-0 z-[70] flex items-end justify-center bg-ink/40 p-4 backdrop-blur-sm md:items-center"
+      onClick={finish}
+      role="presentation"
+    >
+      <div
+        className="w-full max-w-md overflow-hidden rounded-3xl border border-surface-border bg-surface shadow-pop"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="px-6 pt-8 pb-6 text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-surface-alt text-[32px]">
             {current.icon}

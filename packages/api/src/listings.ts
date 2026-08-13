@@ -89,7 +89,9 @@ export async function fetchListings(filters: SearchFilters = {}): Promise<Listin
     .order('created_at', { ascending: false });
 
   if (filters.category && filters.category !== 'All') {
-    q = q.contains('amenities', [filters.category]);
+    // `amenities` is jsonb — containment must be a JSON array (`cs.["Cabins"]`),
+    // not a PG array literal (`cs.{Cabins}`), which errors and hides every result.
+    q = q.contains('amenities', JSON.stringify([filters.category]));
   }
   if (filters.destination) {
     q = q.or(
@@ -104,7 +106,7 @@ export async function fetchListings(filters: SearchFilters = {}): Promise<Listin
     q = q.in('property_type', filters.propertyTypes);
   }
   if (filters.amenities && filters.amenities.length > 0) {
-    q = q.contains('amenities', filters.amenities);
+    q = q.contains('amenities', JSON.stringify(filters.amenities));
   }
 
   const { data, error } = await q;
