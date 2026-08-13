@@ -64,7 +64,10 @@ export function Map({
           style: 'https://tiles.openfreemap.org/styles/liberty',
           center: [lng, lat],
           zoom,
-          attributionControl: false,
+          // Required: OpenFreeMap tiles are OpenStreetMap data (ODbL), which
+          // mandates "© OpenStreetMap contributors" attribution. Compact keeps
+          // it to an unobtrusive expandable ⓘ.
+          attributionControl: { compact: true },
         });
 
         const list = markers && markers.length > 0 ? markers : null;
