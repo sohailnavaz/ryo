@@ -44,6 +44,24 @@ export const zh: Messages = {
   'sort.topRated': '评分最高',
   'sort.newest': '最新',
 
+  // 分类栏
+  'category.All': '全部',
+  'category.Beachfront': '海滨',
+  'category.Cabins': '小木屋',
+  'category.Tiny homes': '迷你屋',
+  'category.Amazing views': '绝美景观',
+  'category.Islands': '海岛',
+  'category.Countryside': '乡村',
+  'category.Design': '设计感',
+  'category.Tropical': '热带',
+  'category.Mansions': '豪宅',
+  'category.Treehouses': '树屋',
+
+  // 房源卡片单位
+  'card.bed': '间卧室',
+  'card.beds': '间卧室',
+  'card.night': '晚',
+
   // Common actions (extended)
   'common.edit': '编辑',
   'common.saving': '保存中…',

@@ -356,11 +356,13 @@ function DayEditorSheet({
 }
 
 function ICalCard() {
+  // Generic .ics feeds — a host connects any external calendar by pasting its
+  // iCal URL. We don't name specific platforms here (no implied integrations).
   const feeds = [
-    { name: 'Airbnb', last: '2 minutes ago', status: 'synced' as const },
-    { name: 'Booking.com', last: '6 minutes ago', status: 'synced' as const },
-    { name: 'VRBO', last: '1 hour ago', status: 'conflict' as const },
-    { name: 'Google', last: '17 hours ago', status: 'stale' as const },
+    { name: 'External calendar 1 (.ics)', last: '2 minutes ago', status: 'synced' as const },
+    { name: 'External calendar 2 (.ics)', last: '6 minutes ago', status: 'synced' as const },
+    { name: 'External calendar 3 (.ics)', last: '1 hour ago', status: 'conflict' as const },
+    { name: 'Personal calendar (.ics)', last: '17 hours ago', status: 'stale' as const },
   ];
   return (
     <Card className="mt-3 p-5">

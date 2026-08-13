@@ -4,3 +4,4 @@ export * from './cn';
 export * from './pricing';
 export * from './images';
 export * from './calendar';
+export * from './forecast';

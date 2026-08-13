@@ -9,6 +9,15 @@ import { localeMeta, useLocaleStore } from '@bnb/features';
  */
 export function LocaleDirection() {
   const locale = useLocaleStore((s) => s.locale);
+  const hydrateFromStorage = useLocaleStore((s) => s.hydrateFromStorage);
+
+  // After mount (hydration done), switch from the default locale to the user's
+  // stored/browser locale. Doing this post-mount avoids an SSR hydration
+  // mismatch.
+  useEffect(() => {
+    hydrateFromStorage();
+  }, [hydrateFromStorage]);
+
   useEffect(() => {
     if (typeof document === 'undefined') return;
     const meta = localeMeta(locale);

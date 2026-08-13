@@ -7,6 +7,7 @@ import { ReactNode, useState } from 'react';
 import { SiteFooter } from '../_components/SiteFooter';
 import { Onboarding } from '../_components/Onboarding';
 import { LanguageSwitcher } from '../_components/LanguageSwitcher';
+import { ThemeToggle } from '../_components/ThemeToggle';
 
 const pathToKey = (p: string) => {
   if (p.startsWith('/stories')) return 'stories';
@@ -100,6 +101,13 @@ function AccountMenu({ open, onClose }: { open: boolean; onClose: () => void }) 
             <p className="text-[12px] capitalize text-ink-soft">{role ?? 'guest'} account</p>
           </div>
         ) : null}
+
+        <div className="border-b border-surface-border px-4 py-3">
+          <p className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-ink-muted">
+            Appearance
+          </p>
+          <ThemeToggle />
+        </div>
 
         <div className="py-1">
           {user ? (

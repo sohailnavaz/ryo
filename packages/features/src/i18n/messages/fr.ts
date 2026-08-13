@@ -44,6 +44,24 @@ export const fr: Messages = {
   'sort.topRated': 'Les mieux notés',
   'sort.newest': 'Les plus récents',
 
+  // Barre de catégories
+  'category.All': 'Tout',
+  'category.Beachfront': 'Bord de mer',
+  'category.Cabins': 'Chalets',
+  'category.Tiny homes': 'Mini-maisons',
+  'category.Amazing views': 'Vues incroyables',
+  'category.Islands': 'Îles',
+  'category.Countryside': 'Campagne',
+  'category.Design': 'Design',
+  'category.Tropical': 'Tropical',
+  'category.Mansions': 'Manoirs',
+  'category.Treehouses': 'Cabanes',
+
+  // Unités de la carte
+  'card.bed': 'chambre',
+  'card.beds': 'chambres',
+  'card.night': 'nuit',
+
   // Common actions (extended)
   'common.edit': 'Modifier',
   'common.saving': 'Enregistrement…',

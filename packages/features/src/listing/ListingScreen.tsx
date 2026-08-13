@@ -1,5 +1,11 @@
 import { Image, ScrollView, View, useWindowDimensions } from 'react-native';
-import { useFavoriteIds, useListing, useReviews, useToggleFavorite } from '@bnb/api';
+import {
+  useContentTranslation,
+  useFavoriteIds,
+  useListing,
+  useReviews,
+  useToggleFavorite,
+} from '@bnb/api';
 import {
   Avatar,
   Badge,
@@ -16,39 +22,26 @@ import {
 } from '@bnb/ui';
 import { ArrowLeft, Bath, Bed, Heart, MapPin, Share2, Star, Users, Pressable, toast } from '@bnb/ui';
 import { Map } from '@bnb/ui/Map';
+import { shareContent } from '@bnb/ui/share';
 import { useRouter } from '@bnb/ui/nav';
 import { formatDateRange, formatPrice } from '@bnb/utils';
 import { useFiltersStore } from '../state/filtersStore';
-import { useT } from '../i18n';
+import { useT, useLocale } from '../i18n';
 
 export type ListingScreenProps = { id: string };
 
-/** Share the current listing via the Web Share API, falling back to clipboard.
- *  Returns true if some form of sharing succeeded so the caller can toast. */
-async function shareListing(opts: { id: string; title: string; city: string }): Promise<'shared' | 'copied' | 'failed'> {
-  if (typeof window === 'undefined') return 'failed';
-  const url = window.location.href;
-  const text = `Check out ${opts.title} in ${opts.city} on Ryo`;
-  const nav = window.navigator as Navigator & {
-    share?: (data: { title?: string; text?: string; url?: string }) => Promise<void>;
-  };
-  if (nav.share) {
-    try {
-      await nav.share({ title: opts.title, text, url });
-      return 'shared';
-    } catch {
-      // user cancelled or share rejected — fall through to clipboard
-    }
-  }
-  if (nav.clipboard?.writeText) {
-    try {
-      await nav.clipboard.writeText(url);
-      return 'copied';
-    } catch {
-      // ignore
-    }
-  }
-  return 'failed';
+const SHARE_ORIGIN = 'https://ryo-web.vercel.app';
+
+/** Share a listing via the OS share sheet (native) or Web Share / clipboard (web).
+ *  Builds a canonical URL from the id so it works with no `window` on native. */
+async function shareListing(opts: { id: string; title: string; city: string }): Promise<'shared' | 'copied' | 'dismissed' | 'failed'> {
+  const url =
+    typeof window !== 'undefined' ? window.location.href : `${SHARE_ORIGIN}/listing/${opts.id}`;
+  return shareContent({
+    title: opts.title,
+    message: `Check out ${opts.title} in ${opts.city} on Ryo`,
+    url,
+  });
 }
 
 export function ListingScreen({ id }: ListingScreenProps) {
@@ -60,6 +53,15 @@ export function ListingScreen({ id }: ListingScreenProps) {
   const { data: favIds = [] } = useFavoriteIds();
   const toggleFav = useToggleFavorite();
   const { filters } = useFiltersStore.getState();
+  const { locale } = useLocale();
+
+  // AI-translate the host-written title + description into the active locale
+  // (cached; no-op for English). Called before the loading return to keep hook
+  // order stable; empty strings until the listing loads.
+  const [tTitle, tDescription] = useContentTranslation(
+    [listing?.title ?? '', listing?.description ?? ''],
+    locale,
+  );
 
   const isDesktop = width >= 1024;
 
@@ -117,7 +119,7 @@ export function ListingScreen({ id }: ListingScreenProps) {
             <>
               <HStack className="justify-between items-start gap-4">
                 <Heading level={2} className="flex-1">
-                  {listing.title}
+                  {tTitle || listing.title}
                 </Heading>
                 <HStack className="gap-4">
                   <Pressable
@@ -192,7 +194,7 @@ export function ListingScreen({ id }: ListingScreenProps) {
           <View className={isDesktop ? 'flex-1' : ''}>
             {!isDesktop ? (
               <View className="pt-4">
-                <Heading level={2}>{listing.title}</Heading>
+                <Heading level={2}>{tTitle || listing.title}</Heading>
                 <HStack className="mt-1 flex-wrap gap-2">
                   <Star size={14} color="#0E1A2B" fill="#0E1A2B" />
                   <Text>{listing.rating_avg.toFixed(2)}</Text>
@@ -223,7 +225,7 @@ export function ListingScreen({ id }: ListingScreenProps) {
 
             <VStack className="gap-2">
               <Heading level={3}>{t('listing.aboutPlace')}</Heading>
-              <Text className="text-ink leading-[22px]">{listing.description}</Text>
+              <Text className="text-ink leading-[22px]">{tDescription || listing.description}</Text>
             </VStack>
 
             <Divider />
@@ -295,13 +297,20 @@ export function ListingScreen({ id }: ListingScreenProps) {
                     <Text variant="small">{listing.rating_avg.toFixed(2)}</Text>
                   </HStack>
                 </HStack>
-                <View className="mt-4 rounded-xl border border-surface-border p-3">
+                <Pressable
+                  onPress={goBook}
+                  accessibilityLabel="Choose your dates"
+                  className="mt-4 flex-row items-center justify-between rounded-xl border border-surface-border p-3 active:bg-surface-alt"
+                >
                   <Text variant="caption" className="font-semibold">
                     {filters.startDate && filters.endDate
                       ? formatDateRange(filters.startDate, filters.endDate)
                       : 'Add dates for prices'}
                   </Text>
-                </View>
+                  <Text variant="caption" className="text-brand-600 font-semibold">
+                    {filters.startDate && filters.endDate ? 'Edit' : 'Choose'}
+                  </Text>
+                </Pressable>
                 <View className="mt-3">
                   <Button title={t('common.reserve')} fullWidth onPress={goBook} />
                 </View>
@@ -321,7 +330,7 @@ export function ListingScreen({ id }: ListingScreenProps) {
 
       {!isDesktop ? (
         <View className="absolute bottom-0 left-0 right-0 border-t border-surface-border bg-surface px-4 py-3 flex-row items-center justify-between">
-          <VStack>
+          <Pressable onPress={goBook} accessibilityLabel="Choose your dates">
             <Text className="font-semibold">
               {formatPrice(listing.price_cents, listing.currency)}{' '}
               <Text className="text-ink-soft font-normal">night</Text>
@@ -331,7 +340,7 @@ export function ListingScreen({ id }: ListingScreenProps) {
                 ? formatDateRange(filters.startDate, filters.endDate)
                 : 'Pick your dates'}
             </Text>
-          </VStack>
+          </Pressable>
           <Button title={t('common.reserve')} onPress={goBook} />
         </View>
       ) : null}

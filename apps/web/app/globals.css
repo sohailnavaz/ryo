@@ -23,3 +23,65 @@ html, body, #__next {
   min-height: 100%;
   width: 100%;
 }
+
+/* ---------------------------------------------------------------------------
+   Dark theme (web only). The design system uses fixed hex tokens compiled into
+   utilities, so we flip them under [data-theme="dark"]. Native never sets that
+   attribute, so mobile is untouched. Warm ink-navy dark — omotenashi, not pure
+   black. Lucide icons carry their colour on the `stroke`/`fill` attribute, so
+   they flip by value.
+   --------------------------------------------------------------------------- */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+:root[data-theme='dark'] body {
+  background-color: #0f1a28;
+}
+
+/* Surfaces */
+:root[data-theme='dark'] .bg-surface,
+:root[data-theme='dark'] .bg-cream { background-color: #0f1a28 !important; }
+:root[data-theme='dark'] .bg-surface-alt,
+:root[data-theme='dark'] .bg-sand,
+:root[data-theme='dark'] .bg-white { background-color: #18293b !important; }
+:root[data-theme='dark'] .bg-warm-50 { background-color: #16222f !important; }
+:root[data-theme='dark'] .bg-warm-100 { background-color: #1b2b3c !important; }
+:root[data-theme='dark'] .bg-warm-300,
+:root[data-theme='dark'] .bg-surface-border { background-color: #2c3e52 !important; }
+/* Dark chips (bg-ink) sit on the darker page — lighten so they + their light text read */
+:root[data-theme='dark'] .bg-ink { background-color: #2a3b4e !important; }
+:root[data-theme='dark'] .bg-ink-soft { background-color: #3a4c60 !important; }
+
+/* Text */
+:root[data-theme='dark'] .text-ink { color: #f1ece3 !important; }
+:root[data-theme='dark'] .text-ink-soft { color: #a7b0bb !important; }
+:root[data-theme='dark'] .text-ink-muted { color: #7e8a96 !important; }
+
+/* Borders */
+:root[data-theme='dark'] .border-surface-border,
+:root[data-theme='dark'] .border-warm-300 { border-color: #2c3e52 !important; }
+:root[data-theme='dark'] .border-ink { border-color: #6b7a8b !important; }
+
+/* Icons (lucide carries colour on stroke/fill) */
+:root[data-theme='dark'] svg.lucide[stroke='#0E1A2B'] { stroke: #f1ece3 !important; }
+:root[data-theme='dark'] svg.lucide[stroke='#5C5750'] { stroke: #a7b0bb !important; }
+:root[data-theme='dark'] svg.lucide[stroke='#1F5A6B'] { stroke: #6fa8b8 !important; }
+:root[data-theme='dark'] svg.lucide[stroke='#B4432F'] { stroke: #e58b77 !important; }
+:root[data-theme='dark'] svg.lucide[stroke='#2E7D5B'] { stroke: #5cbe92 !important; }
+:root[data-theme='dark'] svg.lucide[fill='#0E1A2B'] { fill: #f1ece3 !important; }
+
+/* Error/success text using arbitrary values */
+:root[data-theme='dark'] .text-\[\#B4432F\] { color: #e58b77 !important; }
+
+/* Variant-prefixed semantic utilities (responsive / hover / active) — same
+   tokens, different compiled class names, so they need explicit flips. */
+:root[data-theme='dark'] .md\:bg-surface { background-color: #0f1a28 !important; }
+:root[data-theme='dark'] .md\:bg-surface-alt { background-color: #18293b !important; }
+:root[data-theme='dark'] .md\:border-surface-border { border-color: #2c3e52 !important; }
+:root[data-theme='dark'] .hover\:bg-surface-alt:hover,
+:root[data-theme='dark'] .active\:bg-surface-alt:active { background-color: #1f3247 !important; }
+:root[data-theme='dark'] .active\:bg-warm-100:active { background-color: #1b2b3c !important; }
+:root[data-theme='dark'] .hover\:bg-ink:hover,
+:root[data-theme='dark'] .active\:bg-ink:active { background-color: #34485c !important; }
+:root[data-theme='dark'] .hover\:border-ink:hover { border-color: #6b7a8b !important; }
+:root[data-theme='dark'] .hover\:text-ink:hover { color: #f1ece3 !important; }

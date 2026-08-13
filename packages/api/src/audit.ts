@@ -54,13 +54,11 @@ export async function resolveStaffActor(): Promise<StaffActor | null> {
     const { data: auth } = await sb.auth.getUser();
     const user = auth.user;
     if (!user) return null;
-    const { data, error } = await sb
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .maybeSingle();
-    if (error || !data) return null;
-    const role = (data as { role?: string }).role;
+    // role is no longer selectable over the API (migration 0019); my_role() reads it
+    // server-side for the caller.
+    const { data, error } = await sb.rpc('my_role');
+    if (error) return null;
+    const role = data as string;
     if (role !== 'staff' && role !== 'admin') return null;
     return { id: user.id, label: user.email ?? user.id, role };
   } catch {

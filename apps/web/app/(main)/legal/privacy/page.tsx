@@ -144,6 +144,13 @@ export default function PrivacyPolicyPage() {
           limit their use of your data.
         </li>
         <li>
+          <strong>AI providers</strong> — to translate listing content into your language and
+          to power the AI concierge, the relevant text is sent to our AI provider (Anthropic).
+          It is used only to generate the result you asked for and is not used to train their
+          models. AI translations are automated and may not be perfect; the original,
+          host-written text remains the source of truth.
+        </li>
+        <li>
           <strong>Legal &amp; safety</strong> — authorities or other parties where required
           by law, or to protect the rights, property, and safety of our users and the
           public.
@@ -157,6 +164,34 @@ export default function PrivacyPolicyPage() {
         <strong>We do not sell your personal data.</strong> We also do not “share” it for
         cross-context behavioral advertising as those terms are defined under California law.
       </p>
+
+      <h3 className="font-display text-lg text-ink mt-6 mb-2">Sub-processors we rely on</h3>
+      <p className="text-ink-soft leading-relaxed mb-4">
+        We use the following providers to operate the Services. Each processes personal data
+        only on our instructions and under a data-processing agreement:
+      </p>
+      <ul className="list-disc pl-5 text-ink-soft space-y-1 mb-4">
+        <li>
+          <strong>Supabase</strong> — database, authentication, and file (image) storage.
+        </li>
+        <li>
+          <strong>Vercel</strong> — hosting and delivery of the web app.
+        </li>
+        <li>
+          <strong>Anthropic</strong> — AI content translation and the concierge assistant.
+        </li>
+        <li>
+          <strong>OpenStreetMap / Photon</strong> — address search and map display.
+        </li>
+        <li>
+          <strong>Resend</strong> — transactional email (confirmations, receipts, password
+          resets).
+        </li>
+        <li>
+          <strong>Payment processor</strong> — to process payments and payouts securely (once
+          live payments are enabled).
+        </li>
+      </ul>
 
       <h2 className="font-display text-xl text-ink mt-10 mb-3">
         6. International transfers

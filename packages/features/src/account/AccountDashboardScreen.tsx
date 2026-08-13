@@ -1,5 +1,12 @@
 import { ScrollView, View } from 'react-native';
-import { useGuestDashboard, type GuestBooking } from '@bnb/api';
+import {
+  savedSearchToFilters,
+  useDeleteSavedSearch,
+  useGuestDashboard,
+  useSavedSearches,
+  type GuestBooking,
+  type SavedSearch,
+} from '@bnb/api';
 import type { Listing } from '@bnb/db';
 import {
   Avatar,
@@ -9,13 +16,16 @@ import {
   HStack,
   Image,
   Pressable,
+  Search,
   Skeleton,
   Text,
   VStack,
+  X,
 } from '@bnb/ui';
 import { useRouter } from '@bnb/ui/nav';
 import { formatDateRange, formatPrice } from '@bnb/utils';
 import { PreviewBanner, SectionHeader } from '../shared/dashboard-chrome';
+import { useFiltersStore } from '../state/filtersStore';
 
 export function AccountDashboardScreen() {
   const router = useRouter();
@@ -100,6 +110,14 @@ export function AccountDashboardScreen() {
             </View>
 
             <View>
+              <SectionHeader
+                title="Saved searches"
+                subtitle="Get notified when a new place matches"
+              />
+              <SavedSearches />
+            </View>
+
+            <View>
               <SectionHeader title="Account" subtitle="Quick links" />
               <QuickLinks
                 user={data?.user}
@@ -113,6 +131,71 @@ export function AccountDashboardScreen() {
         </View>
       </View>
     </ScrollView>
+  );
+}
+
+// ---------------------------------------------------------------------------
+
+/** Saved searches with per-item delete and a tap-to-re-run that applies the
+ *  saved filters and returns to explore. Real signed-in users only — demo /
+ *  unconfigured sessions show the empty prompt. */
+function SavedSearches() {
+  const router = useRouter();
+  const { data: searches } = useSavedSearches();
+  const del = useDeleteSavedSearch();
+  const setFilters = useFiltersStore((s) => s.setFilters);
+  const reset = useFiltersStore((s) => s.reset);
+
+  if (!searches || searches.length === 0) {
+    return (
+      <Card className="mt-3 p-5">
+        <Text className="text-ink-soft">
+          No saved searches yet. From explore, set a destination or filters and tap
+          “Save search” — we’ll alert you when a new place matches.
+        </Text>
+      </Card>
+    );
+  }
+
+  const run = (s: SavedSearch) => {
+    reset();
+    setFilters(savedSearchToFilters(s));
+    router.push('/');
+  };
+
+  return (
+    <VStack className="mt-3 gap-2">
+      {searches.map((s) => (
+        <Card key={s.id} className="px-4 py-3">
+          <HStack className="items-center gap-3">
+            <Pressable
+              className="flex-1"
+              onPress={() => run(s)}
+              accessibilityLabel={`Search ${s.label}`}
+            >
+              <HStack className="items-center gap-2">
+                <Search size={14} color="#1F5A6B" />
+                <VStack className="flex-1">
+                  <Text className="font-semibold" numberOfLines={1}>
+                    {s.label}
+                  </Text>
+                  <Text variant="caption" className="text-ink-soft">
+                    {s.notify ? 'Alerts on' : 'Alerts off'} · saved {s.created_at.slice(0, 10)}
+                  </Text>
+                </VStack>
+              </HStack>
+            </Pressable>
+            <Pressable
+              onPress={() => del.mutate(s.id)}
+              accessibilityLabel="Delete saved search"
+              className="h-7 w-7 items-center justify-center rounded-full bg-surface-alt"
+            >
+              <X size={13} color="#5C5750" />
+            </Pressable>
+          </HStack>
+        </Card>
+      ))}
+    </VStack>
   );
 }
 

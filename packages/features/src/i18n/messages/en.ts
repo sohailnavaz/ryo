@@ -45,6 +45,24 @@ export const en = {
   'sort.topRated': 'Top-rated',
   'sort.newest': 'Newest',
 
+  // Category bar (key suffix matches the Category value)
+  'category.All': 'All',
+  'category.Beachfront': 'Beachfront',
+  'category.Cabins': 'Cabins',
+  'category.Tiny homes': 'Tiny homes',
+  'category.Amazing views': 'Amazing views',
+  'category.Islands': 'Islands',
+  'category.Countryside': 'Countryside',
+  'category.Design': 'Design',
+  'category.Tropical': 'Tropical',
+  'category.Mansions': 'Mansions',
+  'category.Treehouses': 'Treehouses',
+
+  // Listing card units
+  'card.bed': 'bed',
+  'card.beds': 'beds',
+  'card.night': 'night',
+
   // Common actions (extended)
   'common.edit': 'Edit',
   'common.saving': 'Saving…',

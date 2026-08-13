@@ -41,6 +41,7 @@ export * from './admin/AdminBookingDetailScreen';
 export * from './admin/AdminHostApplicationsScreen';
 export * from './admin/AdminModerationScreen';
 export * from './admin/AdminFinanceScreen';
+export * from './admin/AdminAnalyticsScreen';
 export * from './admin/AdminIncidentsScreen';
 export * from './admin/AdminFlagsScreen';
 export * from './admin/AdminAuditScreen';

@@ -3,6 +3,7 @@ import { DashboardShell } from '../shared/dashboard-shell';
 
 export const ADMIN_NAV = [
   { key: 'overview',   label: 'Overview',    path: '/admin' },
+  { key: 'analytics',  label: 'Analytics',   path: '/admin/analytics' },
   { key: 'search',     label: 'Search',      path: '/admin/search' },
   { key: 'users',      label: 'Users',       path: '/admin/users' },
   { key: 'host-apps',  label: 'Host applications', path: '/admin/host-applications' },

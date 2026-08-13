@@ -5,8 +5,9 @@
 // `listing_photos` tables. RLS ("listings host write own") enforces
 // auth.uid() = host_id, so a user can only touch their own rows.
 //
-// Photos here are stored as URLs (paste a public image URL). Real file upload
-// arrives with the Supabase Storage bucket (M17).
+// Photos are stored as public URLs in `listing_photos.url`. Hosts now upload real
+// files via `@bnb/ui/image-picker` + `uploadListingPhoto` (see ./storage.ts), which
+// writes to the `listing_photos` Storage bucket and returns the public URL saved here.
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Listing } from '@bnb/db';

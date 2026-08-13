@@ -1,20 +1,29 @@
 import { useMemo, useState } from 'react';
 import { FlatList, View, useWindowDimensions } from 'react-native';
-import { useFavoriteIds, useListings, useToggleFavorite } from '@bnb/api';
+import {
+  filtersAreSavable,
+  useFavoriteIds,
+  useListings,
+  useSaveSearch,
+  useToggleFavorite,
+} from '@bnb/api';
 import type { Listing } from '@bnb/db';
 import {
   CategoryBar,
   Heading,
+  Heart,
   ListingCard,
   Pressable,
   SearchBar,
   Skeleton,
   Text,
+  toast,
 } from '@bnb/ui';
 import { useRouter } from '@bnb/ui/nav';
 import { FilterSheet } from '../search/FilterSheet';
 import { useFiltersStore } from '../state/filtersStore';
-import { useT } from '../i18n';
+import { useContentTranslation } from '@bnb/api';
+import { useT, useLocale } from '../i18n';
 import type { MessageKey } from '../i18n';
 
 type SortKey = 'recommended' | 'price_asc' | 'price_desc' | 'top_rated' | 'newest';
@@ -57,8 +66,35 @@ export function HomeScreen() {
   const { data: favIds = [] } = useFavoriteIds();
   const toggleFav = useToggleFavorite();
   const [sort, setSort] = useState<SortKey>('recommended');
+  const saveSearch = useSaveSearch();
+
+  const onSaveSearch = async () => {
+    try {
+      const res = await saveSearch.mutateAsync(filters);
+      if (res === 'saved') {
+        toast.success('Search saved', {
+          description: "We'll notify you when a new place matches.",
+        });
+      } else {
+        toast.info('Sign in to save searches and get match alerts.');
+      }
+    } catch {
+      toast.error("Couldn't save this search. Try again.");
+    }
+  };
 
   const sortedData = useMemo(() => sortListings(data ?? [], sort), [data, sort]);
+
+  // AI-translate the visible listing titles into the active locale (cached +
+  // no-op for English). Map id → translated title for the cards.
+  const { locale } = useLocale();
+  const titles = useMemo(() => sortedData.map((l) => l.title), [sortedData]);
+  const translatedTitles = useContentTranslation(titles, locale);
+  const titleById = useMemo(() => {
+    const m = new Map<string, string>();
+    sortedData.forEach((l, i) => m.set(l.id, translatedTitles[i] ?? l.title));
+    return m;
+  }, [sortedData, translatedTitles]);
 
   // Inner gutter (matches px-4 / md:px-10 on the rows). The content column is
   // capped at CONTENT_MAX and centered; PADDING_X is the side space that
@@ -110,6 +146,7 @@ export function HomeScreen() {
         <CategoryBar
           value={filters.category ?? 'All'}
           onChange={(c) => setFilters({ category: c })}
+          getLabel={(c) => t(`category.${c}` as MessageKey)}
         />
       </View>
 
@@ -147,6 +184,19 @@ export function HomeScreen() {
             </Pressable>
           );
         })}
+        {filtersAreSavable(filters) ? (
+          <Pressable
+            onPress={onSaveSearch}
+            disabled={saveSearch.isPending}
+            accessibilityLabel="Save this search"
+            className="ml-auto rounded-full px-3 py-1.5 border border-brand-500 flex-row items-center gap-1.5"
+          >
+            <Heart size={13} color="#C87156" />
+            <Text variant="small" className="font-semibold text-brand-600">
+              {saveSearch.isPending ? 'Saving…' : 'Save search'}
+            </Text>
+          </Pressable>
+        ) : null}
       </View>
 
       {isLoading ? (
@@ -192,6 +242,8 @@ export function HomeScreen() {
                   toggleFav.mutate({ listingId: item.id, on: !favIds.includes(item.id) })
                 }
                 onPress={() => router.push(`/listing/${item.id}`)}
+                labels={{ bed: t('card.bed'), beds: t('card.beds'), night: t('card.night') }}
+                titleOverride={titleById.get(item.id)}
               />
             </View>
           )}

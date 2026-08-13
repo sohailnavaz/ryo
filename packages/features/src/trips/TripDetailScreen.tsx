@@ -39,6 +39,7 @@ import {
 import { GetHelpSheet } from '../incidents/GetHelpSheet';
 import { ReviewCard } from '../reviews/ReviewCard';
 import { AddToCalendar } from '../shared/AddToCalendar';
+import { shareContent } from '@bnb/ui/share';
 
 export type TripDetailScreenProps = { id: string };
 
@@ -166,6 +167,23 @@ export function TripDetailScreen({ id }: TripDetailScreenProps) {
                       details: `Your Ryo stay at ${booking.listing_title}, hosted by ${
                         booking.host_name
                       }.\nConfirmation ${confirmationCode(booking.id)} · check-in after ${CHECK_IN_TIME}, check-out before ${CHECK_OUT_TIME}.`,
+                    }}
+                  />
+                  <Button
+                    title="Share this trip"
+                    variant="ghost"
+                    onPress={async () => {
+                      const url = `https://ryo-web.vercel.app/listing/${booking.listing_id}`;
+                      const r = await shareContent({
+                        title: `My Ryo stay — ${booking.listing_title}`,
+                        message: `I'm staying at ${booking.listing_title} in ${booking.listing_city} (${formatDateRange(
+                          booking.start_date,
+                          booking.end_date,
+                        )}) via Ryo.`,
+                        url,
+                      });
+                      if (r === 'copied') toast.success('Trip link copied.');
+                      else if (r === 'failed') toast.info("Couldn't share on this device.");
                     }}
                   />
                 </>

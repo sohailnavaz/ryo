@@ -43,4 +43,6 @@ export {
   Bed,
   Bath,
   Bell,
+  ImagePlus,
+  Camera,
 } from 'lucide-react';

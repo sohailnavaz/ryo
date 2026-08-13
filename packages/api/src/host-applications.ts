@@ -415,12 +415,8 @@ async function fetchCanPublish(): Promise<boolean> {
     } = await supabase.auth.getUser();
     if (user && (user.app_metadata as { demo?: boolean } | undefined)?.demo !== true) {
       // Real session: host role OR an approved application qualifies.
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .maybeSingle();
-      const role = (profile as { role?: string } | null)?.role;
+      const { data: roleData } = await supabase.rpc('my_role'); // role not API-readable (0019)
+      const role = roleData as string | null;
       if (role === 'host' || role === 'staff' || role === 'admin') return true;
       const { data: app } = await applicationsTable()
         .select('status')
@@ -471,12 +467,8 @@ async function realStaffUserId(): Promise<string | null> {
   } = await supabase.auth.getUser();
   if (!user) return null;
   if ((user.app_metadata as { demo?: boolean } | undefined)?.demo === true) return null;
-  const { data } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .maybeSingle();
-  const role = (data as { role?: string } | null)?.role;
+  const { data } = await supabase.rpc('my_role'); // role not API-readable (0019)
+  const role = data as string | null;
   return role === 'staff' || role === 'admin' ? user.id : null;
 }
 

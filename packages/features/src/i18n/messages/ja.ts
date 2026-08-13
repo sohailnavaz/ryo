@@ -44,6 +44,24 @@ export const ja: Messages = {
   'sort.topRated': '高評価順',
   'sort.newest': '新着順',
 
+  // カテゴリーバー
+  'category.All': 'すべて',
+  'category.Beachfront': 'ビーチフロント',
+  'category.Cabins': 'キャビン',
+  'category.Tiny homes': 'タイニーハウス',
+  'category.Amazing views': '絶景',
+  'category.Islands': '島',
+  'category.Countryside': '田舎',
+  'category.Design': 'デザイン',
+  'category.Tropical': 'トロピカル',
+  'category.Mansions': '大邸宅',
+  'category.Treehouses': 'ツリーハウス',
+
+  // カードの単位
+  'card.bed': '寝室',
+  'card.beds': '寝室',
+  'card.night': '泊',
+
   // Common actions (extended)
   'common.edit': '編集',
   'common.saving': '保存中…',

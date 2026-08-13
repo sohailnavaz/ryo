@@ -72,18 +72,19 @@ export function useRole(): { role: UserRole | null; loading: boolean } {
     enabled: realLookup,
     staleTime: 60_000,
     queryFn: async (): Promise<UserRole> => {
-      const { data, error } = await getSupabase()
-        .from('profiles')
-        .select('role')
-        .eq('id', user!.id)
-        .single();
-      if (error) return 'guest'; // column missing / row absent → safe default
-      return ((data as { role?: UserRole } | null)?.role ?? 'guest') as UserRole;
+      const { data, error } = await getSupabase().rpc('my_role');
+      if (error) return 'guest';
+      return ((data as UserRole | null) ?? 'guest') as UserRole;
     },
   });
 
   if (!user) return { role: null, loading: sessionLoading };
-  if (isDemo) return { role: meta?.role ?? 'guest', loading: sessionLoading };
+  // A demo identity is NEVER staff. Even if localStorage is hand-edited to claim
+  // 'admin', clamp it to guest/host — and the database refuses it anyway (no JWT).
+  if (isDemo) {
+    const claimed = meta?.role;
+    return { role: claimed === 'host' ? 'host' : 'guest', loading: sessionLoading };
+  }
   if (!realLookup) return { role: 'guest', loading: sessionLoading };
   return { role: data ?? null, loading: sessionLoading || isLoading };
 }
@@ -135,6 +136,36 @@ export function useSignInWithGoogle() {
       if (error) throw error;
     },
   });
+}
+
+/**
+ * Sign in with Apple — the WEB path (OAuth redirect). Native uses the OS Apple sheet
+ * via expo-apple-authentication → `signInWithAppleIdToken` below.
+ *
+ * Apple Guideline 4.8: if the app offers any third-party login (we offer Google),
+ * "Sign in with Apple" is REQUIRED, or App Store review rejects it. Enable the Apple
+ * provider in Supabase (Auth → Providers → Apple) for this to complete.
+ */
+export function useSignInWithApple() {
+  return useMutation({
+    mutationFn: async ({ redirectTo }: { redirectTo?: string } = {}) => {
+      const { error } = await getSupabase().auth.signInWithOAuth({
+        provider: 'apple',
+        options: { redirectTo },
+      });
+      if (error) throw error;
+    },
+  });
+}
+
+/** Native path: exchange the Apple identity token from the OS sheet for a session. */
+export async function signInWithAppleIdToken(idToken: string, nonce?: string): Promise<void> {
+  const { error } = await getSupabase().auth.signInWithIdToken({
+    provider: 'apple',
+    token: idToken,
+    nonce,
+  });
+  if (error) throw error;
 }
 
 export async function signInWithPassword(email: string, password: string) {

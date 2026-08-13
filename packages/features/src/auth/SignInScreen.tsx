@@ -1,14 +1,17 @@
 import { useState } from 'react';
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
 import {
   isGoogleAuthEnabled,
   requestPasswordReset,
+  isDemoEnabled,
   signInAsRole,
   signInWithPassword,
   signUpWithPassword,
   tryGetSupabase,
   useSignInWithEmail,
+  useSignInWithApple,
   useSignInWithGoogle,
+  signInWithAppleIdToken,
 } from '@bnb/api';
 import {
   Button,
@@ -22,6 +25,7 @@ import {
   VStack,
 } from '@bnb/ui';
 import { useRouter } from '@bnb/ui/nav';
+import { isAppleAuthAvailable, signInWithApple } from '@bnb/ui/apple-auth';
 
 export type SignInScreenProps = { redirectTo?: string };
 
@@ -33,6 +37,7 @@ export function SignInScreen({ redirectTo }: SignInScreenProps) {
   const [error, setError] = useState<string | null>(null);
   const signIn = useSignInWithEmail();
   const signInGoogle = useSignInWithGoogle();
+  const signInApple = useSignInWithApple();
   const router = useRouter();
   const supabaseConfigured = tryGetSupabase() !== null;
   const googleEnabled = isGoogleAuthEnabled();
@@ -93,10 +98,11 @@ export function SignInScreen({ redirectTo }: SignInScreenProps) {
     }
   };
 
-  const enterAs = (role: 'guest' | 'host' | 'admin') => {
+  const demoEnabled = isDemoEnabled();
+  // No demo admin -- staff access is never granted client-side.
+  const enterAs = (role: 'guest' | 'host') => {
     signInAsRole(role);
-    const dest = role === 'host' ? '/host' : role === 'admin' ? '/admin' : (redirectTo ?? '/account');
-    router.replace(dest);
+    router.replace(role === 'host' ? '/host' : (redirectTo ?? '/account'));
   };
 
   const continueWithGoogle = async () => {
@@ -107,6 +113,26 @@ export function SignInScreen({ redirectTo }: SignInScreenProps) {
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Google sign-in failed.';
       setError(msg);
+    }
+  };
+
+  // Apple is shown on iOS always (App Store requirement) and on web alongside Google.
+  const showApple = Platform.OS === 'ios' || (Platform.OS === 'web' && googleEnabled);
+  const [applePending, setApplePending] = useState(false);
+  const continueWithApple = async () => {
+    setError(null);
+    setApplePending(true);
+    try {
+      if (Platform.OS === 'ios' && (await isAppleAuthAvailable())) {
+        const cred = await signInWithApple(); // native OS sheet
+        if (cred) await signInWithAppleIdToken(cred.idToken, cred.nonce);
+      } else {
+        await signInApple.mutateAsync({ redirectTo }); // web OAuth redirect
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Apple sign-in failed.');
+    } finally {
+      setApplePending(false);
     }
   };
 
@@ -206,22 +232,38 @@ export function SignInScreen({ redirectTo }: SignInScreenProps) {
                 fullWidth
               />
             ) : null}
+            {/* Sign in with Apple — REQUIRED by App Store review when any other social
+                login is offered (Guideline 4.8). Native uses the OS sheet; web falls
+                back to OAuth. Shown on iOS always, and on web when Google is shown. */}
+            {showApple ? (
+              <Button
+                title="Continue with Apple"
+                variant="secondary"
+                onPress={continueWithApple}
+                loading={applePending}
+                disabled={!supabaseConfigured}
+                fullWidth
+              />
+            ) : null}
             {error ? (
               <Text variant="small" className="text-[#B4432F]">
                 {error}
               </Text>
             ) : null}
 
-            <Divider className="my-2" />
-            <Text variant="small" className="text-ink-soft text-center">
-              Or explore instantly with a demo account (no email needed):
-            </Text>
-            <Button title="Explore as Guest" variant="outline" onPress={() => enterAs('guest')} fullWidth />
-            <Button title="Explore as Host" variant="outline" onPress={() => enterAs('host')} fullWidth />
-            <Button title="Explore as Admin" variant="outline" onPress={() => enterAs('admin')} fullWidth />
-            <Text variant="caption" className="text-ink-soft text-center">
-              Demo only — no real account; stored locally, clears on sign-out.
-            </Text>
+            {demoEnabled ? (
+              <>
+                <Divider className="my-2" />
+                <Text variant="small" className="text-ink-soft text-center">
+                  Or explore instantly with a demo account (no email needed):
+                </Text>
+                <Button title="Explore as Guest" variant="outline" onPress={() => enterAs('guest')} fullWidth />
+                <Button title="Explore as Host" variant="outline" onPress={() => enterAs('host')} fullWidth />
+                <Text variant="caption" className="text-ink-soft text-center">
+                  Demo only — stored locally; staff access is never granted this way.
+                </Text>
+              </>
+            ) : null}
 
             <Button title="Back" variant="ghost" onPress={() => router.back()} />
           </VStack>

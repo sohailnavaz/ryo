@@ -18,4 +18,12 @@ config.resolver.nodeModulesPaths = [
 
 config.resolver.disableHierarchicalLookup = false;
 
+// `@bnb/ui` ships subpath exports (./nav, ./Map, ./Calendar, ./CommandPalette) via the
+// package.json "exports" map with react-native/default conditions. Metro ignores that
+// map unless package-exports is enabled — without this, `@bnb/ui/nav` fails to resolve
+// and the whole app fails to bundle. `react-native` must win over `default` so the
+// native platform split is picked.
+config.resolver.unstable_enablePackageExports = true;
+config.resolver.unstable_conditionNames = ['react-native', 'require', 'default'];
+
 module.exports = withNativeWind(config, { input: './global.css' });
