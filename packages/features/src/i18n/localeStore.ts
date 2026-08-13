@@ -7,25 +7,33 @@ import { DEFAULT_LOCALE, isLocale, resolveLocale, type Locale } from './locales'
 
 const STORAGE_KEY = 'ryo.locale';
 
-function readInitial(): Locale {
-  if (typeof window === 'undefined') return DEFAULT_LOCALE;
+/** The persisted / browser-preferred locale, or null if none / unavailable. */
+function readStored(): Locale | null {
+  if (typeof window === 'undefined') return null;
   try {
     const saved = window.localStorage.getItem(STORAGE_KEY);
     if (saved && isLocale(saved)) return saved;
     // First visit: best-effort from the browser language.
     return resolveLocale(window.navigator?.language);
   } catch {
-    return DEFAULT_LOCALE;
+    return null;
   }
 }
 
 type State = {
   locale: Locale;
   setLocale: (locale: Locale) => void;
+  /** Apply the stored/browser locale. Call AFTER mount (see LocaleDirection) so
+   *  the client's first render matches the server's (both DEFAULT_LOCALE) — a
+   *  synchronous localStorage read at init caused an SSR hydration mismatch that
+   *  could crash react-native-web while regenerating the tree. */
+  hydrateFromStorage: () => void;
 };
 
-export const useLocaleStore = create<State>((set) => ({
-  locale: readInitial(),
+export const useLocaleStore = create<State>((set, get) => ({
+  // Start at the default so SSR and the client's first paint agree; the real
+  // locale is applied post-mount via hydrateFromStorage().
+  locale: DEFAULT_LOCALE,
   setLocale: (locale) => {
     if (typeof window !== 'undefined') {
       try {
@@ -35,5 +43,9 @@ export const useLocaleStore = create<State>((set) => ({
       }
     }
     set({ locale });
+  },
+  hydrateFromStorage: () => {
+    const stored = readStored();
+    if (stored && stored !== get().locale) set({ locale: stored });
   },
 }));

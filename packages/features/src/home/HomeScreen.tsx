@@ -134,6 +134,7 @@ export function HomeScreen() {
         <CategoryBar
           value={filters.category ?? 'All'}
           onChange={(c) => setFilters({ category: c })}
+          getLabel={(c) => t(`category.${c}` as MessageKey)}
         />
       </View>
 
@@ -229,6 +230,7 @@ export function HomeScreen() {
                   toggleFav.mutate({ listingId: item.id, on: !favIds.includes(item.id) })
                 }
                 onPress={() => router.push(`/listing/${item.id}`)}
+                labels={{ bed: t('card.bed'), beds: t('card.beds'), night: t('card.night') }}
               />
             </View>
           )}

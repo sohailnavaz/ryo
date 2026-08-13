@@ -36,9 +36,13 @@ export type CategoryBarProps = {
   value: Category;
   onChange: (c: Category) => void;
   className?: string;
+  /** Localise a category label. Defaults to the built-in English label.
+   *  (i18n lives in @bnb/features, which this primitive can't import, so the
+   *  translated label is injected from the screen.) */
+  getLabel?: (category: Category) => string;
 };
 
-export function CategoryBar({ value, onChange, className }: CategoryBarProps) {
+export function CategoryBar({ value, onChange, className, getLabel }: CategoryBarProps) {
   return (
     <ScrollView
       horizontal
@@ -71,7 +75,7 @@ export function CategoryBar({ value, onChange, className }: CategoryBarProps) {
               variant="caption"
               className={cn('text-ink-soft', active && 'text-ink font-semibold')}
             >
-              {c.label}
+              {getLabel ? getLabel(c.key) : c.label}
             </Text>
           </Pressable>
         );

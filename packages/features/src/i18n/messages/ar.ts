@@ -45,6 +45,24 @@ export const ar: Messages = {
   'sort.topRated': 'الأعلى تقييمًا',
   'sort.newest': 'الأحدث',
 
+  // شريط الفئات
+  'category.All': 'الكل',
+  'category.Beachfront': 'على الشاطئ',
+  'category.Cabins': 'أكواخ',
+  'category.Tiny homes': 'منازل صغيرة',
+  'category.Amazing views': 'إطلالات رائعة',
+  'category.Islands': 'جزر',
+  'category.Countryside': 'الريف',
+  'category.Design': 'تصميم',
+  'category.Tropical': 'استوائي',
+  'category.Mansions': 'قصور',
+  'category.Treehouses': 'بيوت الشجر',
+
+  // وحدات البطاقة
+  'card.bed': 'غرفة',
+  'card.beds': 'غرف',
+  'card.night': 'ليلة',
+
   // Common actions (extended)
   'common.edit': 'تعديل',
   'common.saving': 'جارٍ الحفظ…',
