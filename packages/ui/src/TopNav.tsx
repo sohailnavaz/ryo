@@ -44,7 +44,10 @@ export function TopNav({
   return (
     <View
       className={cn(
-        'hidden md:flex md:border-b md:border-surface-border md:bg-surface',
+        // `relative z-40` establishes a stacking context so the language
+        // dropdown (absolute z-50 within) paints above page content instead of
+        // being trapped behind it. Stays below modals (z-[70]).
+        'hidden md:flex md:relative md:z-40 md:border-b md:border-surface-border md:bg-surface',
         className,
       )}
     >
