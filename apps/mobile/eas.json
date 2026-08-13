@@ -13,7 +13,11 @@
       "distribution": "internal",
       "channel": "preview",
       "ios": { "simulator": false },
-      "android": { "buildType": "apk" }
+      "android": { "buildType": "apk" },
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://mtldmawenkdebtchnocs.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "REPLACE_WITH_SUPABASE_ANON_KEY"
+      }
     },
     "production": {
       "channel": "production",
