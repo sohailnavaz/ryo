@@ -15,6 +15,8 @@ export type ListingCardProps = {
   /** Localised unit labels, injected from the screen (i18n is in @bnb/features).
    *  Default to English. */
   labels?: { bed?: string; beds?: string; night?: string };
+  /** AI-translated title, injected from the screen. Falls back to listing.title. */
+  titleOverride?: string;
 };
 
 export function ListingCard({
@@ -24,9 +26,11 @@ export function ListingCard({
   onToggleFavorite,
   className,
   labels,
+  titleOverride,
 }: ListingCardProps) {
   const bedLabel = listing.bedrooms === 1 ? (labels?.bed ?? 'bed') : (labels?.beds ?? 'beds');
   const nightLabel = labels?.night ?? 'night';
+  const title = titleOverride ?? listing.title;
   const [photoIdx, setPhotoIdx] = useState(0);
   const photos = listing.photos ?? [];
   const current = photos[photoIdx]?.url ?? photos[0]?.url;
@@ -99,7 +103,7 @@ export function ListingCard({
           ) : null}
         </View>
         <Text variant="small" className="text-ink-soft" numberOfLines={1}>
-          {listing.title}
+          {title}
         </Text>
         <Text variant="small" className="text-ink-soft" numberOfLines={1}>
           {`${listing.bedrooms} ${bedLabel}`}

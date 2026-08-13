@@ -39,3 +39,4 @@ export * from './places';
 export * from './finance';
 export * from './storage';
 export * from './saved-searches';
+export * from './content-translate';

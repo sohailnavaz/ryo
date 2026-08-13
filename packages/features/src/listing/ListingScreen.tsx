@@ -1,5 +1,11 @@
 import { Image, ScrollView, View, useWindowDimensions } from 'react-native';
-import { useFavoriteIds, useListing, useReviews, useToggleFavorite } from '@bnb/api';
+import {
+  useContentTranslation,
+  useFavoriteIds,
+  useListing,
+  useReviews,
+  useToggleFavorite,
+} from '@bnb/api';
 import {
   Avatar,
   Badge,
@@ -20,7 +26,7 @@ import { shareContent } from '@bnb/ui/share';
 import { useRouter } from '@bnb/ui/nav';
 import { formatDateRange, formatPrice } from '@bnb/utils';
 import { useFiltersStore } from '../state/filtersStore';
-import { useT } from '../i18n';
+import { useT, useLocale } from '../i18n';
 
 export type ListingScreenProps = { id: string };
 
@@ -47,6 +53,15 @@ export function ListingScreen({ id }: ListingScreenProps) {
   const { data: favIds = [] } = useFavoriteIds();
   const toggleFav = useToggleFavorite();
   const { filters } = useFiltersStore.getState();
+  const { locale } = useLocale();
+
+  // AI-translate the host-written title + description into the active locale
+  // (cached; no-op for English). Called before the loading return to keep hook
+  // order stable; empty strings until the listing loads.
+  const [tTitle, tDescription] = useContentTranslation(
+    [listing?.title ?? '', listing?.description ?? ''],
+    locale,
+  );
 
   const isDesktop = width >= 1024;
 
@@ -104,7 +119,7 @@ export function ListingScreen({ id }: ListingScreenProps) {
             <>
               <HStack className="justify-between items-start gap-4">
                 <Heading level={2} className="flex-1">
-                  {listing.title}
+                  {tTitle || listing.title}
                 </Heading>
                 <HStack className="gap-4">
                   <Pressable
@@ -179,7 +194,7 @@ export function ListingScreen({ id }: ListingScreenProps) {
           <View className={isDesktop ? 'flex-1' : ''}>
             {!isDesktop ? (
               <View className="pt-4">
-                <Heading level={2}>{listing.title}</Heading>
+                <Heading level={2}>{tTitle || listing.title}</Heading>
                 <HStack className="mt-1 flex-wrap gap-2">
                   <Star size={14} color="#0E1A2B" fill="#0E1A2B" />
                   <Text>{listing.rating_avg.toFixed(2)}</Text>
@@ -210,7 +225,7 @@ export function ListingScreen({ id }: ListingScreenProps) {
 
             <VStack className="gap-2">
               <Heading level={3}>{t('listing.aboutPlace')}</Heading>
-              <Text className="text-ink leading-[22px]">{listing.description}</Text>
+              <Text className="text-ink leading-[22px]">{tDescription || listing.description}</Text>
             </VStack>
 
             <Divider />

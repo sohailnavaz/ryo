@@ -22,7 +22,8 @@ import {
 import { useRouter } from '@bnb/ui/nav';
 import { FilterSheet } from '../search/FilterSheet';
 import { useFiltersStore } from '../state/filtersStore';
-import { useT } from '../i18n';
+import { useContentTranslation } from '@bnb/api';
+import { useT, useLocale } from '../i18n';
 import type { MessageKey } from '../i18n';
 
 type SortKey = 'recommended' | 'price_asc' | 'price_desc' | 'top_rated' | 'newest';
@@ -83,6 +84,17 @@ export function HomeScreen() {
   };
 
   const sortedData = useMemo(() => sortListings(data ?? [], sort), [data, sort]);
+
+  // AI-translate the visible listing titles into the active locale (cached +
+  // no-op for English). Map id → translated title for the cards.
+  const { locale } = useLocale();
+  const titles = useMemo(() => sortedData.map((l) => l.title), [sortedData]);
+  const translatedTitles = useContentTranslation(titles, locale);
+  const titleById = useMemo(() => {
+    const m = new Map<string, string>();
+    sortedData.forEach((l, i) => m.set(l.id, translatedTitles[i] ?? l.title));
+    return m;
+  }, [sortedData, translatedTitles]);
 
   // Inner gutter (matches px-4 / md:px-10 on the rows). The content column is
   // capped at CONTENT_MAX and centered; PADDING_X is the side space that
@@ -231,6 +243,7 @@ export function HomeScreen() {
                 }
                 onPress={() => router.push(`/listing/${item.id}`)}
                 labels={{ bed: t('card.bed'), beds: t('card.beds'), night: t('card.night') }}
+                titleOverride={titleById.get(item.id)}
               />
             </View>
           )}
