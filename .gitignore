@@ -47,3 +47,6 @@ pnpm-debug.log*
 .claude/scheduled_tasks.lock
 .claude/.local/
 .claude/*.local.json
+
+# Claude Code agent worktrees (transient)
+.claude/worktrees/
