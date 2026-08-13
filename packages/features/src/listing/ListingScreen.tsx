@@ -297,13 +297,20 @@ export function ListingScreen({ id }: ListingScreenProps) {
                     <Text variant="small">{listing.rating_avg.toFixed(2)}</Text>
                   </HStack>
                 </HStack>
-                <View className="mt-4 rounded-xl border border-surface-border p-3">
+                <Pressable
+                  onPress={goBook}
+                  accessibilityLabel="Choose your dates"
+                  className="mt-4 flex-row items-center justify-between rounded-xl border border-surface-border p-3 active:bg-surface-alt"
+                >
                   <Text variant="caption" className="font-semibold">
                     {filters.startDate && filters.endDate
                       ? formatDateRange(filters.startDate, filters.endDate)
                       : 'Add dates for prices'}
                   </Text>
-                </View>
+                  <Text variant="caption" className="text-brand-600 font-semibold">
+                    {filters.startDate && filters.endDate ? 'Edit' : 'Choose'}
+                  </Text>
+                </Pressable>
                 <View className="mt-3">
                   <Button title={t('common.reserve')} fullWidth onPress={goBook} />
                 </View>
@@ -323,7 +330,7 @@ export function ListingScreen({ id }: ListingScreenProps) {
 
       {!isDesktop ? (
         <View className="absolute bottom-0 left-0 right-0 border-t border-surface-border bg-surface px-4 py-3 flex-row items-center justify-between">
-          <VStack>
+          <Pressable onPress={goBook} accessibilityLabel="Choose your dates">
             <Text className="font-semibold">
               {formatPrice(listing.price_cents, listing.currency)}{' '}
               <Text className="text-ink-soft font-normal">night</Text>
@@ -333,7 +340,7 @@ export function ListingScreen({ id }: ListingScreenProps) {
                 ? formatDateRange(filters.startDate, filters.endDate)
                 : 'Pick your dates'}
             </Text>
-          </VStack>
+          </Pressable>
           <Button title={t('common.reserve')} onPress={goBook} />
         </View>
       ) : null}
